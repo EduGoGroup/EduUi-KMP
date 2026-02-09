@@ -2,10 +2,12 @@ package com.edugo.kmp.di
 
 import com.edugo.kmp.di.module.authModule
 import com.edugo.kmp.di.module.configModule
+import com.edugo.kmp.di.module.coreModule
 import com.edugo.kmp.di.module.foundationModule
 import com.edugo.kmp.di.module.loggerModule
 import com.edugo.kmp.di.module.networkModule
 import com.edugo.kmp.di.module.storageModule
+import com.edugo.kmp.di.module.validationModule
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -34,12 +36,14 @@ import org.koin.dsl.KoinAppDeclaration
 public object KoinInitializer {
 
     /**
-     * Modulos core: foundation + logger.
+     * Modulos core: foundation + core + logger + validation.
      * Son las dependencias base sin efectos secundarios de I/O.
      */
     public fun coreModules(): List<Module> = listOf(
         foundationModule,
-        loggerModule
+        coreModule,
+        loggerModule,
+        validationModule
     )
 
     /**

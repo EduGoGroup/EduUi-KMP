@@ -184,14 +184,15 @@ class KoinModulesTest : KoinTest {
     @Test
     fun coreModulesReturnCorrectCount() {
         val modules = KoinInitializer.coreModules()
-        assertEquals(2, modules.size)
+        // foundation + core + logger + validation = 4
+        assertEquals(4, modules.size)
     }
 
     @Test
     fun allModulesReturnCorrectCount() {
         val modules = KoinInitializer.allModules()
-        // core(2) + infrastructure(3) + domain(1) = 6
-        assertEquals(6, modules.size)
+        // core(4) + infrastructure(3) + domain(1) = 8
+        assertEquals(8, modules.size)
     }
 
     @Test
