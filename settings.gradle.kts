@@ -26,3 +26,7 @@ include(":modules:validation")
 include(":modules:config")
 include(":modules:storage")
 include(":modules:network")
+
+// Sprint 3 modules
+include(":modules:auth")
+include(":modules:di")
