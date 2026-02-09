@@ -530,8 +530,9 @@ class ModelMergeTest {
         assertEquals("user-123", merged.id)
         assertEquals(createdTime, merged.createdAt)
 
-        // Verificar que se actualizó updatedAt
-        assertTrue(merged.updatedAt > createdTime)
+        // Verificar que se actualizó updatedAt (>= porque en WasmJS Clock.System.now()
+        // tiene resolución gruesa y puede devolver el mismo instante en llamadas consecutivas)
+        assertTrue(merged.updatedAt >= createdTime)
     }
 
     @Test

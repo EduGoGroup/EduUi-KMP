@@ -7,6 +7,7 @@ import com.edugo.kmp.foundation.entity.EntityBase
 import com.edugo.kmp.foundation.entity.ValidatableModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -440,7 +441,9 @@ class ModelPatchTest {
         val patch = TestEntity.Patch(name = "Jane")
         val patched = entity.applyPatch(patch)
 
-        assertTrue(patched.updatedAt > originalTime)
+        // >= porque en WasmJS Clock.System.now() tiene resolución gruesa
+        // y puede devolver el mismo instante en llamadas consecutivas
+        assertTrue(patched.updatedAt >= originalTime)
     }
 
     @Test
@@ -465,18 +468,23 @@ class ModelPatchTest {
 
     @Test
     fun `patchEntityBase lanza excepción si createdAt cambia`() {
+        val createdTime = Clock.System.now()
         val entity = TestEntity(
             id = "id-1",
             name = "John",
             email = "john@example.com",
             age = 30,
-            createdAt = Clock.System.now(),
-            updatedAt = Clock.System.now()
+            createdAt = createdTime,
+            updatedAt = createdTime
         )
 
+        // Usar tiempo explícitamente diferente en vez de Clock.System.now(),
+        // ya que en WasmJS la resolución del reloj es gruesa y dos llamadas
+        // consecutivas pueden devolver el mismo instante.
+        val differentTime = createdTime + 1.seconds
         val exception = assertFailsWith<IllegalArgumentException> {
             entity.patchEntityBase { original ->
-                original.copy(createdAt = Clock.System.now())
+                original.copy(createdAt = differentTime)
             }
         }
 
