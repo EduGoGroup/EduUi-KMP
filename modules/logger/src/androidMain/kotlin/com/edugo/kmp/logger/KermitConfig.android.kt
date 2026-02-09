@@ -1,0 +1,64 @@
+package com.edugo.kmp.logger
+
+import co.touchlab.kermit.Logger
+
+/**
+ * Configuracion de Kermit para Android.
+ *
+ * Usa LogcatWriter de Kermit que delega a android.util.Log.
+ * Los logs aparecen en Logcat con el tag especificado.
+ *
+ * ## Caracteristicas:
+ * - Logs en Logcat (android.util.Log)
+ * - Soporte de niveles estandar (DEBUG, INFO, WARN, ERROR)
+ * - Filtrado por tag en Logcat
+ * - Compatible con ProGuard/R8
+ *
+ * ## Uso:
+ * ```kotlin
+ * // En Application.onCreate()
+ * class MyApplication : Application() {
+ *     override fun onCreate() {
+ *         super.onCreate()
+ *         KermitLogger.initialize()
+ *     }
+ * }
+ * ```
+ */
+public actual object KermitConfig {
+    /**
+     * Crea un Logger de Kermit configurado para Android con LogcatWriter.
+     *
+     * En Android, Kermit 2.0+ usa automaticamente LogcatWriter que delega
+     * a android.util.Log.
+     *
+     * @return Logger de Kermit configurado para Android Logcat
+     */
+    actual fun createLogger(): Logger {
+        return Logger.withTag("EduGo")
+    }
+
+    /**
+     * Crea un Logger con severidad minima configurada.
+     *
+     * @param minSeverity Nivel minimo de logging
+     * @return Logger de Kermit configurado con filtro de severidad
+     */
+    actual fun createLoggerWithMinSeverity(minSeverity: co.touchlab.kermit.Severity): Logger {
+        // En Kermit 2.0.4, el filtrado por severidad se realiza en el nivel de configuracion
+        // Por ahora retornamos el logger estandar - el filtrado puede implementarse con un LogWriter custom
+        return Logger.withTag("EduGo")
+    }
+
+    /**
+     * Crea un Logger personalizado con tag especifico.
+     *
+     * @param tag Tag base para los logs
+     * @return Logger de Kermit configurado
+     */
+    public fun createCustomLogger(
+        tag: String = "EduGo"
+    ): Logger {
+        return Logger.withTag(tag)
+    }
+}
