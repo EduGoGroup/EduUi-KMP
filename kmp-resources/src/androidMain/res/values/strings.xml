@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EduGo</string>
+
+    <!-- Splash -->
+    <string name="splash_title">EduGo</string>
+    <string name="splash_subtitle">Plataforma Educativa</string>
+    <string name="splash_loading">Cargando…</string>
+
+    <!-- Login -->
+    <string name="login_title">Inicio de sesión</string>
+    <string name="login_email_label">Email</string>
+    <string name="login_password_label">Contraseña</string>
+    <string name="login_button">Iniciar sesión</string>
+    <string name="login_error_empty_fields">Email y contraseña son requeridos</string>
+
+    <!-- Home -->
+    <string name="home_welcome">¡Bienvenido!</string>
+    <string name="home_subtitle">Has iniciado sesión exitosamente</string>
+    <string name="home_card_title">EduGo KMP</string>
+    <string name="home_card_description">Plataforma educativa multiplataforma con Kotlin</string>
+    <string name="home_settings_button">Configuración</string>
+    <string name="home_logout_button">Cerrar Sesión</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Configuración</string>
+    <string name="settings_theme_section">Tema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_reset_button">Restablecer configuración</string>
+    <string name="settings_logout_button">Cerrar Sesión</string>
+
+    <!-- Messaging System -->
+    <string name="message_error_title">Error</string>
+    <string name="message_error_retry">Reintentar</string>
+    <string name="message_error_dismiss">Cerrar</string>
+    <string name="message_success_title">Éxito</string>
+    <string name="message_success_ok">Aceptar</string>
+    <string name="message_warning_title">Advertencia</string>
+    <string name="message_warning_understood">Entendido</string>
+    <string name="message_info_title">Información</string>
+    <string name="message_info_ok">Aceptar</string>
+
+    <!-- Common -->
+    <string name="back_button">Volver</string>
+    <string name="error_unknown">Ocurrió un error inesperado</string>
+</resources>

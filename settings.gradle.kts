@@ -30,3 +30,13 @@ include(":modules:network")
 // Sprint 3 modules
 include(":modules:auth")
 include(":modules:di")
+
+// Sprint 4 modules (UI Layer)
+include(":kmp-design")
+include(":kmp-resources")
+include(":kmp-screens")
+
+// Sprint 4 platform apps
+include(":platforms:mobile:app")
+include(":platforms:desktop:app")
+include(":platforms:web:app")
