@@ -8,7 +8,7 @@ package com.edugo.kmp.storage
 import com.edugo.kmp.foundation.result.Result
 
 /**
- * Extensiones asíncronas para serialización/deserialización de objetos en AsyncEduGoStorage.
+ * Extensiones asíncronas para serialización/deserialization de objetos en AsyncEduGoStorage.
  *
  * ## Limitación técnica de Kotlin
  * Las funciones con `reified` type parameters no pueden usar `withContext` internamente
@@ -17,7 +17,7 @@ import com.edugo.kmp.foundation.result.Result
  *
  * **Implicación:** Estas operaciones se ejecutan en el thread que las invoca, NO en el
  * dispatcher configurado en AsyncEduGoStorage. Para objetos muy grandes donde la
- * serialización/deserialización podría ser costosa, considera envolver la llamada
+ * serialización/deserialization podría ser costosa, considera envolver la llamada
  * manualmente:
  *
  * ```kotlin
@@ -56,7 +56,7 @@ suspend inline fun <reified T> AsyncEduGoStorage.putObject(key: String, value: T
 }
 
 /**
- * Recupera un objeto deserializándolo desde JSON de forma asíncrona.
+ * Recupera un objeto deserialization desde JSON de forma asíncrona.
  */
 suspend inline fun <reified T> AsyncEduGoStorage.getObject(key: String): T? {
     return sync.getObject<T>(key)
@@ -88,7 +88,7 @@ suspend inline fun <reified T> AsyncEduGoStorage.putObjectSafe(key: String, valu
 // =============================================================================
 
 /**
- * Guarda una lista de objetos serializables de forma asíncrona.
+ * Guarda una lista de objetos serializable de forma asíncrona.
  */
 suspend inline fun <reified T> AsyncEduGoStorage.putList(key: String, value: List<T>) {
     sync.putList(key, value)
@@ -127,7 +127,7 @@ suspend inline fun <reified T> AsyncEduGoStorage.removeFromList(key: String, ele
 // =============================================================================
 
 /**
- * Guarda un Set de objetos serializables de forma asíncrona.
+ * Guarda un Set de objetos serializable de forma asíncrona.
  */
 suspend inline fun <reified T> AsyncEduGoStorage.putSet(key: String, value: Set<T>) {
     sync.putSet(key, value)

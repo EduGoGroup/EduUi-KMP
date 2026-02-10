@@ -203,7 +203,7 @@ class AsyncEduGoStorageTest {
     fun `sync property provides access to synchronous storage`() = runTest {
         asyncStorage.putString("key", "value")
 
-        // Acceso sincrono directo
+        // Acceso síncrono directo
         assertEquals("value", asyncStorage.sync.getString("key"))
     }
 

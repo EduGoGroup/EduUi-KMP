@@ -1,10 +1,10 @@
 package com.edugo.kmp.screens.navigation
 
 /**
- * Rutas de navegacion de la aplicacion.
+ * Rutas de navegación de la aplicación.
  *
  * Sealed class que define todas las pantallas navegables.
- * Cada ruta tiene un path unico para serializacion.
+ * Cada ruta tiene un path único para serialización.
  */
 sealed class Route(val path: String) {
     data object Splash : Route("splash")

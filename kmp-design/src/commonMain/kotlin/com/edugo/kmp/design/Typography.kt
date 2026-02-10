@@ -7,7 +7,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * Tipografia de EduGo basada en Material 3.
+ * Tipografía de EduGo basada en Material 3.
  * Usa la fuente del sistema por defecto.
  */
 val EduGoTypography = Typography(

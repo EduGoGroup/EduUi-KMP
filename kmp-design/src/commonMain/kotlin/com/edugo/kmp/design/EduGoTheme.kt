@@ -67,8 +67,8 @@ private val EduGoDarkColors = darkColorScheme(
 
 /**
  * Theme principal de EduGo.
- * Aplica Material 3 con colores personalizados y tipografia.
- * Soporta modo oscuro automatico.
+ * Aplica Material 3 con colores personalizados y tipografía.
+ * Soporta modo oscuro automático.
  */
 @Composable
 fun EduGoTheme(

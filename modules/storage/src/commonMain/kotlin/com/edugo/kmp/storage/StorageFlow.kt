@@ -64,11 +64,7 @@ fun EduGoStorage.observeString(
     default: String = ""
 ): Flow<String> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getStringFlow(key, default)
-    } else {
-        flowOf(getString(key, default))
-    }
+    return observable?.getStringFlow(key, default) ?: flowOf(getString(key, default))
 }
 
 /**
@@ -78,11 +74,7 @@ fun EduGoStorage.observeString(
 @OptIn(ExperimentalSettingsApi::class)
 fun EduGoStorage.observeStringOrNull(key: String): Flow<String?> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getStringOrNullFlow(key)
-    } else {
-        flowOf(getStringOrNull(key))
-    }
+    return observable?.getStringOrNullFlow(key) ?: flowOf(getStringOrNull(key))
 }
 
 // =============================================================================
@@ -99,11 +91,7 @@ fun EduGoStorage.observeInt(
     default: Int = 0
 ): Flow<Int> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getIntFlow(key, default)
-    } else {
-        flowOf(getInt(key, default))
-    }
+    return observable?.getIntFlow(key, default) ?: flowOf(getInt(key, default))
 }
 
 /**
@@ -112,11 +100,7 @@ fun EduGoStorage.observeInt(
 @OptIn(ExperimentalSettingsApi::class)
 fun EduGoStorage.observeIntOrNull(key: String): Flow<Int?> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getIntOrNullFlow(key)
-    } else {
-        flowOf(getIntOrNull(key))
-    }
+    return observable?.getIntOrNullFlow(key) ?: flowOf(getIntOrNull(key))
 }
 
 // =============================================================================
@@ -133,11 +117,7 @@ fun EduGoStorage.observeLong(
     default: Long = 0L
 ): Flow<Long> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getLongFlow(key, default)
-    } else {
-        flowOf(getLong(key, default))
-    }
+    return observable?.getLongFlow(key, default) ?: flowOf(getLong(key, default))
 }
 
 /**
@@ -146,11 +126,7 @@ fun EduGoStorage.observeLong(
 @OptIn(ExperimentalSettingsApi::class)
 fun EduGoStorage.observeLongOrNull(key: String): Flow<Long?> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getLongOrNullFlow(key)
-    } else {
-        flowOf(getLongOrNull(key))
-    }
+    return observable?.getLongOrNullFlow(key) ?: flowOf(getLongOrNull(key))
 }
 
 // =============================================================================
@@ -167,11 +143,7 @@ fun EduGoStorage.observeBoolean(
     default: Boolean = false
 ): Flow<Boolean> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getBooleanFlow(key, default)
-    } else {
-        flowOf(getBoolean(key, default))
-    }
+    return observable?.getBooleanFlow(key, default) ?: flowOf(getBoolean(key, default))
 }
 
 /**
@@ -180,11 +152,7 @@ fun EduGoStorage.observeBoolean(
 @OptIn(ExperimentalSettingsApi::class)
 fun EduGoStorage.observeBooleanOrNull(key: String): Flow<Boolean?> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getBooleanOrNullFlow(key)
-    } else {
-        flowOf(getBooleanOrNull(key))
-    }
+    return observable?.getBooleanOrNullFlow(key) ?: flowOf(getBooleanOrNull(key))
 }
 
 // =============================================================================
@@ -201,11 +169,7 @@ fun EduGoStorage.observeFloat(
     default: Float = 0f
 ): Flow<Float> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getFloatFlow(key, default)
-    } else {
-        flowOf(getFloat(key, default))
-    }
+    return observable?.getFloatFlow(key, default) ?: flowOf(getFloat(key, default))
 }
 
 /**
@@ -214,11 +178,7 @@ fun EduGoStorage.observeFloat(
 @OptIn(ExperimentalSettingsApi::class)
 fun EduGoStorage.observeFloatOrNull(key: String): Flow<Float?> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getFloatOrNullFlow(key)
-    } else {
-        flowOf(getFloatOrNull(key))
-    }
+    return observable?.getFloatOrNullFlow(key) ?: flowOf(getFloatOrNull(key))
 }
 
 // =============================================================================
@@ -235,11 +195,7 @@ fun EduGoStorage.observeDouble(
     default: Double = 0.0
 ): Flow<Double> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getDoubleFlow(key, default)
-    } else {
-        flowOf(getDouble(key, default))
-    }
+    return observable?.getDoubleFlow(key, default) ?: flowOf(getDouble(key, default))
 }
 
 /**
@@ -248,11 +204,7 @@ fun EduGoStorage.observeDouble(
 @OptIn(ExperimentalSettingsApi::class)
 fun EduGoStorage.observeDoubleOrNull(key: String): Flow<Double?> {
     val observable = getObservableSettings()
-    return if (observable != null) {
-        observable.getDoubleOrNullFlow(key)
-    } else {
-        flowOf(getDoubleOrNull(key))
-    }
+    return observable?.getDoubleOrNullFlow(key) ?: flowOf(getDoubleOrNull(key))
 }
 
 // =============================================================================

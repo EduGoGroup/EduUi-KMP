@@ -4,12 +4,12 @@ import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 
 /**
- * Configuracion de Kermit para JVM/Desktop.
+ * Configuración de Kermit para JVM/Desktop.
  *
  * Usa ConsoleWriter con colores ANSI para mejor legibilidad en la consola.
  * Los logs se formatean con timestamp, nivel y tag.
  *
- * ## Caracteristicas:
+ * ## Características:
  * - Console logger con colores ANSI
  * - Formateo personalizado (timestamp, nivel, tag)
  * - Soporte de System.out y System.err
@@ -23,15 +23,15 @@ import co.touchlab.kermit.Severity
  *
  * ## Uso:
  * ```kotlin
- * // En el main() de la aplicacion
+ * // En el main() de la aplicación
  * fun main() {
  *     KermitLogger.initialize()
- *     // ... resto de la aplicacion
+ *     // ... resto de la aplicación
  * }
  * ```
  */
 public actual object KermitConfig {
-    // Codigos ANSI para colores
+    // Códigos ANSI para colores
     private const val ANSI_RESET = "\u001B[0m"
     private const val ANSI_CYAN = "\u001B[36m"    // DEBUG
     private const val ANSI_GREEN = "\u001B[32m"   // INFO
@@ -43,7 +43,7 @@ public actual object KermitConfig {
      * Obtiene el color ANSI apropiado para el nivel de severidad.
      *
      * @param severity Nivel de severidad del log
-     * @return Codigo ANSI del color correspondiente
+     * @return Código ANSI del color correspondiente
      */
     private fun getColorForSeverity(severity: Severity): String = when (severity) {
         Severity.Verbose -> ANSI_CYAN
@@ -57,7 +57,7 @@ public actual object KermitConfig {
     /**
      * Crea un Logger de Kermit configurado para JVM con console output.
      *
-     * En JVM, Kermit 2.0+ usa automaticamente ConsoleWriter para salida
+     * En JVM, Kermit 2.0+ usa automáticamente ConsoleWriter para salida
      * a la consola con colores ANSI.
      *
      * @return Logger de Kermit configurado para JVM console
@@ -69,12 +69,12 @@ public actual object KermitConfig {
     /**
      * Crea un Logger con severidad minima configurada.
      *
-     * @param minSeverity Nivel minimo de logging
+     * @param minSeverity Nivel mínimo de logging
      * @return Logger de Kermit configurado con filtro de severidad
      */
     actual fun createLoggerWithMinSeverity(minSeverity: Severity): Logger {
-        // En Kermit 2.0.4, el filtrado por severidad se realiza en el nivel de configuracion
-        // Por ahora retornamos el logger estandar - el filtrado puede implementarse con un LogWriter custom
+        // En Kermit 2.0.4, el filtrado por severidad se realiza en el nivel de configuración
+        // Por ahora retornamos el logger estándar - el filtrado puede implementarse con un LogWriter custom
         return Logger.withTag("EduGo")
     }
 

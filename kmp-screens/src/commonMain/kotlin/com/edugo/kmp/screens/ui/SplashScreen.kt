@@ -27,7 +27,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
- * Pantalla de splash - Primera pantalla al iniciar la aplicacion.
+ * Pantalla de splash - Primera pantalla al iniciar la aplicación.
  *
  * Muestra titulo y loading, luego auto-navega a Login o Home.
  */
@@ -38,7 +38,7 @@ fun SplashScreen(
     modifier: Modifier = Modifier,
     delayMs: Long = Durations.splash,
 ) {
-    // TODO: Inyectar PreferencesManager para verificar sesion
+    // TODO: Inyectar PreferencesManager para verificar sesión
     val isLoggedIn = false
 
     LaunchedEffect(Unit) {

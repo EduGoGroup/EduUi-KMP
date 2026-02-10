@@ -6,12 +6,12 @@ import androidx.activity.compose.setContent
 import com.edugo.kmp.screens.App
 
 /**
- * MainActivity - Punto de entrada de la aplicacion Android.
+ * MainActivity - Punto de entrada de la aplicación Android.
  *
  * Usa el componente App compartido que gestiona:
  * - Koin DI
  * - EduGoTheme
- * - Navegacion: Splash -> Login -> Home -> Settings
+ * - Navegación: Splash -> Login -> Home -> Settings
  */
 class MainActivity : ComponentActivity() {
 

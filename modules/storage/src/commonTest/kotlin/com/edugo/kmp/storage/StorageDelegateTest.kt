@@ -174,8 +174,8 @@ class StorageDelegateTest {
         var counter by storage.int("counter", 0)
 
         counter = 10
-        counter = counter + 5
-        counter = counter * 2
+        counter += 5
+        counter *= 2
 
         assertEquals(30, counter)
         assertEquals(30, storage.getInt("counter"))

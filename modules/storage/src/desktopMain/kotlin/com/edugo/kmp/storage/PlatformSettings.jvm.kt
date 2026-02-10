@@ -10,7 +10,7 @@ import com.russhwolf.settings.Settings
 import java.util.prefs.Preferences
 
 /**
- * Implementacion Desktop/JVM de Settings usando java.util.prefs.Preferences.
+ * Implementación Desktop/JVM de Settings usando java.util.prefs.Preferences.
  * Los datos se almacenan en el registro del sistema (Windows) o archivos plist (macOS).
  */
 actual fun createPlatformSettings(): Settings {

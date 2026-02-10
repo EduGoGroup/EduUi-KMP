@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 /**
  * Interface para acceso a strings localizados multiplataforma.
  *
- * Implementacion:
+ * Implementación:
  * - Android: usa strings.xml con recursos nativos
  * - iOS/Desktop/Wasm: usa strings hardcoded
  */

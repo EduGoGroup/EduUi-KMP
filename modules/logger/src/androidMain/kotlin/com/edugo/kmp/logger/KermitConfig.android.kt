@@ -3,14 +3,14 @@ package com.edugo.kmp.logger
 import co.touchlab.kermit.Logger
 
 /**
- * Configuracion de Kermit para Android.
+ * Configuración de Kermit para Android.
  *
  * Usa LogcatWriter de Kermit que delega a android.util.Log.
  * Los logs aparecen en Logcat con el tag especificado.
  *
- * ## Caracteristicas:
+ * ## Características:
  * - Logs en Logcat (android.util.Log)
- * - Soporte de niveles estandar (DEBUG, INFO, WARN, ERROR)
+ * - Soporte de niveles estándar (DEBUG, INFO, WARN, ERROR)
  * - Filtrado por tag en Logcat
  * - Compatible con ProGuard/R8
  *
@@ -29,7 +29,7 @@ public actual object KermitConfig {
     /**
      * Crea un Logger de Kermit configurado para Android con LogcatWriter.
      *
-     * En Android, Kermit 2.0+ usa automaticamente LogcatWriter que delega
+     * En Android, Kermit 2.0+ usa automáticamente LogcatWriter que delega
      * a android.util.Log.
      *
      * @return Logger de Kermit configurado para Android Logcat
@@ -41,12 +41,12 @@ public actual object KermitConfig {
     /**
      * Crea un Logger con severidad minima configurada.
      *
-     * @param minSeverity Nivel minimo de logging
+     * @param minSeverity Nivel mínimo de logging
      * @return Logger de Kermit configurado con filtro de severidad
      */
     actual fun createLoggerWithMinSeverity(minSeverity: co.touchlab.kermit.Severity): Logger {
-        // En Kermit 2.0.4, el filtrado por severidad se realiza en el nivel de configuracion
-        // Por ahora retornamos el logger estandar - el filtrado puede implementarse con un LogWriter custom
+        // En Kermit 2.0.4, el filtrado por severidad se realiza en el nivel de configuración
+        // Por ahora retornamos el logger estándar - el filtrado puede implementarse con un LogWriter custom
         return Logger.withTag("EduGo")
     }
 

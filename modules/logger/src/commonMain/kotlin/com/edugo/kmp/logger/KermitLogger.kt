@@ -11,16 +11,16 @@ import com.edugo.kmp.core.platform.PlatformVolatile
  * compatibilidad con la interfaz Logger existente. Kermit proporciona
  * logging multiplataforma con configuraciones especificas por plataforma.
  *
- * ## Caracteristicas:
+ * ## Características:
  * - Android: Usa Logcat para logging
  * - JVM: Console logger con colores ANSI
  * - JS: Console logger (console.log/warn/error)
  * - Formatters personalizables (timestamp, thread, class)
- * - Multiples loggers simultaneos
+ * - Multiples loggers simultáneos
  *
  * ## Uso:
  * ```kotlin
- * // Inicializar Kermit con configuracion especifica por plataforma
+ * // Inicializar Kermit con configuración especifica por plataforma
  * KermitLogger.initialize()
  *
  * // Usar el wrapper para logging
@@ -30,7 +30,7 @@ import com.edugo.kmp.core.platform.PlatformVolatile
  * ```
  *
  * @see Logger Interfaz original expect/actual (no modificada)
- * @see KermitConfig Configuracion especifica por plataforma
+ * @see KermitConfig Configuración especifica por plataforma
  */
 public object KermitLogger {
     private var kermitInstance: KermitLoggerImpl = KermitLoggerImpl
@@ -39,13 +39,13 @@ public object KermitLogger {
     private var isInitialized: Boolean = false
 
     /**
-     * Inicializa Kermit con la configuracion especifica de la plataforma.
+     * Inicializa Kermit con la configuración especifica de la plataforma.
      *
-     * Debe llamarse una vez al inicio de la aplicacion, preferiblemente
+     * Debe llamarse una vez al inicio de la aplicación, preferiblemente
      * en el punto de entrada de cada plataforma (Application.onCreate en Android,
      * main() en JVM, etc.).
      *
-     * La configuracion especifica se obtiene de KermitConfig expect/actual.
+     * La configuración especifica se obtiene de KermitConfig expect/actual.
      *
      * Es idempotente: llamadas subsecuentes son ignoradas.
      */
@@ -116,31 +116,31 @@ public object KermitLogger {
      *
      * @param tag Identificador de la fuente del log (nombre de clase)
      * @param message Mensaje de error a registrar
-     * @param throwable Excepcion opcional a incluir con stack trace
+     * @param throwable Excepción opcional a incluir con stack trace
      */
     public fun error(tag: String, message: String, throwable: Throwable? = null) {
         kermitInstance.e(tag = tag, throwable = throwable) { message }
     }
 
     /**
-     * Configura el nivel minimo de severidad para logging.
+     * Configura el nivel mínimo de severidad para logging.
      *
      * NOTA: Kermit 2.0.4 usa un sistema de configuration basado en LogWriter.
      * Para cambiar la severidad minima, se debe configurar cada LogWriter
-     * especificamente. Esta funcion permite recrear el logger con configuracion
+     * específicamente. Esta función permite recrear el logger con configuración
      * personalizada desde KermitConfig.
      *
-     * @param severity Nivel minimo de Kermit (Verbose, Debug, Info, Warn, Error, Assert)
+     * @param severity Nivel mínimo de Kermit (Verbose, Debug, Info, Warn, Error, Assert)
      */
     public fun setMinSeverity(severity: Severity) {
         // Kermit 2.0.4 requiere configurar los LogWriters para filtrar por severidad
-        // Recrear el logger con configuracion actualizada desde la plataforma
+        // Recrear el logger con configuración actualizada desde la plataforma
         kermitInstance = KermitConfig.createLoggerWithMinSeverity(severity)
     }
 }
 
 /**
- * Configuracion de Kermit especifica por plataforma.
+ * Configuración de Kermit especifica por plataforma.
  *
  * Implementado mediante expect/actual para cada target:
  * - Android: LogcatWriter
@@ -162,7 +162,7 @@ public expect object KermitConfig {
     /**
      * Crea un logger con severidad minima configurada.
      *
-     * @param minSeverity Nivel minimo de logging
+     * @param minSeverity Nivel mínimo de logging
      * @return Logger de Kermit configurado con filtro de severidad
      */
     public fun createLoggerWithMinSeverity(minSeverity: Severity): KermitLoggerImpl

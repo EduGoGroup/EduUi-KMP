@@ -6,7 +6,7 @@ import com.edugo.kmp.screens.App
 import kotlinx.browser.document
 
 /**
- * Punto de entrada de la aplicacion Web (Wasm).
+ * Punto de entrada de la aplicación Web (Wasm).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {

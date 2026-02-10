@@ -5,21 +5,21 @@ import com.edugo.kmp.foundation.result.failure
 import com.edugo.kmp.foundation.result.success
 
 /**
- * Sistema de validacion acumulativa que recolecta todos los errores.
+ * Sistema de validación acumulativa que recolecta todos los errores.
  *
  * A diferencia del patron fail-fast de ValidatableModel, este sistema
- * acumula todos los errores de validacion antes de retornar, proporcionando
+ * acumula todos los errores de validación antes de retornar, proporcionando
  * mejor UX al mostrar todos los problemas al usuario de una vez.
  *
- * ## Caracteristicas
+ * ## Características
  *
  * - **Acumula Errores**: Recolecta todos los errores, no solo el primero
  * - **DSL Fluido**: Sintaxis clara y expresiva para validaciones
- * - **Type-Safe**: Verificacion de tipos en compilacion
+ * - **Type-Safe**: Verificación de tipos en compilación
  * - **Composable**: Se puede combinar con ValidationHelpers
  * - **Performance**: Eficiente con lazy evaluation
  *
- * ## Uso Basico
+ * ## Uso Básico
  *
  * ```kotlin
  * data class UserDto(val email: String, val age: Int, val username: String)
@@ -55,7 +55,7 @@ import com.edugo.kmp.foundation.result.success
  * }
  * ```
  *
- * ## Validacion Condicional
+ * ## Validación Condicional
  *
  * ```kotlin
  * fun validateProduct(product: ProductDto): Result<Unit> {
@@ -63,12 +63,12 @@ import com.edugo.kmp.foundation.result.success
  *         add(validateNotBlank(product.name, "Name"))
  *         add(validatePositive(product.price, "Price"))
  *
- *         // Validacion condicional
+ *         // Validación condicional
  *         if (product.onSale) {
  *             add(validateRange(product.discount, 0, 100, "Discount"))
  *         }
  *
- *         // Validacion de coleccion
+ *         // Validación de colección
  *         if (product.tags.isEmpty()) {
  *             add("Product must have at least one tag")
  *         }
@@ -78,30 +78,30 @@ import com.edugo.kmp.foundation.result.success
  */
 
 /**
- * Builder para acumular errores de validacion.
+ * Builder para acumular errores de validación.
  *
- * Esta clase proporciona un DSL fluido para agregar errores de validacion
+ * Esta clase proporciona un DSL fluido para agregar errores de validación
  * y construir el resultado final.
  */
 public class ValidationErrorAccumulator {
     private val errors = mutableListOf<String>()
 
     /**
-     * Agrega un error de validacion si no es null.
+     * Agrega un error de validación si no es null.
      *
-     * Si el error es null, se ignora (validacion paso).
+     * Si el error es null, se ignora (validación paso).
      * Si el error es un String, se agrega a la lista de errores.
      *
-     * @param error Mensaje de error o null si la validacion paso
+     * @param error Mensaje de error o null si la validación paso
      */
     public fun add(error: String?) {
         error?.let { errors.add(it) }
     }
 
     /**
-     * Agrega multiples errores de validacion.
+     * Agrega multiples errores de validación.
      *
-     * Util cuando se tienen multiples validaciones en una sola expresion.
+     * Util cuando se tienen multiples validaciones en una sola expresión.
      *
      * ```kotlin
      * add(listOf(
@@ -117,13 +117,13 @@ public class ValidationErrorAccumulator {
     }
 
     /**
-     * Construye el resultado de validacion.
+     * Construye el resultado de validación.
      *
      * Si no hay errores, retorna Success(Unit).
      * Si hay errores, retorna Failure con todos los errores concatenados.
      *
      * @param separator Separador entre errores (default: "; ")
-     * @return Result con exito o todos los errores acumulados
+     * @return Result con éxito o todos los errores acumulados
      */
     public fun build(separator: String = "; "): Result<Unit> {
         return if (errors.isEmpty()) {
@@ -159,7 +159,7 @@ public class ValidationErrorAccumulator {
     /**
      * Limpia todos los errores acumulados.
      *
-     * Util si se quiere reutilizar el mismo acumulador.
+     * Util sí se quiere reutilizar el mismo acumulador.
      */
     public fun clear() {
         errors.clear()
@@ -167,15 +167,15 @@ public class ValidationErrorAccumulator {
 }
 
 /**
- * DSL function para acumular errores de validacion.
+ * DSL function para acumular errores de validación.
  *
- * Esta funcion proporciona un builder scope donde se pueden agregar
- * multiples validaciones y automaticamente construye el resultado.
+ * Esta función proporciona un builder scope donde se pueden agregar
+ * multiples validaciones y automáticamente construye el resultado.
  *
  * ## Ejemplos
  *
  * ```kotlin
- * // Ejemplo basico
+ * // Ejemplo básico
  * val result = accumulateValidationErrors {
  *     add(validateEmail(email))
  *     add(validateRange(age, 18, 120, "Age"))
@@ -202,7 +202,7 @@ public class ValidationErrorAccumulator {
  * ```
  *
  * @param separator Separador entre errores (default: "; ")
- * @param block Bloque de codigo que agrega validaciones
+ * @param block Bloque de código que agrega validaciones
  * @return Result.Success si no hay errores, Result.Failure con todos los errores si hay
  */
 public inline fun accumulateValidationErrors(
@@ -215,7 +215,7 @@ public inline fun accumulateValidationErrors(
 }
 
 /**
- * Extension function para ValidatableModel que acumula errores de validacion.
+ * Extension function para ValidatableModel que acumula errores de validación.
  *
  * Permite validar una lista de modelos ValidatableModel y acumular todos
  * los errores en lugar de retornar el primero (fail-fast).
@@ -235,7 +235,7 @@ public inline fun accumulateValidationErrors(
  *
  * @param separator Separador entre errores (default: "; ")
  * @param itemPrefix Prefijo para cada item en el error (default: "Item")
- * @return Result.Success si todos son validos, Result.Failure con todos los errores
+ * @return Result.Success si todos son válidos, Result.Failure con todos los errores
  */
 public fun List<com.edugo.kmp.foundation.entity.ValidatableModel>.validateAllAccumulative(
     separator: String = "; ",
@@ -267,7 +267,7 @@ public fun List<com.edugo.kmp.foundation.entity.ValidatableModel>.validateAllAcc
  * val combined = combineValidations(emailValidation, ageValidation, nameValidation)
  * ```
  *
- * @param validations Resultados de validacion a combinar
+ * @param validations Resultados de validación a combinar
  * @param separator Separador entre errores (default: "; ")
  * @return Result.Success si todos son Success, Result.Failure con errores acumulados
  */
@@ -285,7 +285,7 @@ public fun combineValidations(
 }
 
 /**
- * Extension function para ejecutar validacion acumulativa en un objeto.
+ * Extension function para ejecutar validación acumulativa en un objeto.
  *
  * Proporciona un contexto donde el receptor (this) es el objeto a validar,
  * y se pueden agregar multiples validaciones sobre sus propiedades.
@@ -303,7 +303,7 @@ public fun combineValidations(
  * ```
  *
  * @param separator Separador entre errores (default: "; ")
- * @param block Bloque de validacion con el receptor como contexto
+ * @param block Bloque de validación con el receptor como contexto
  * @return Result.Success si todas las validaciones pasan, Result.Failure si alguna falla
  */
 public inline fun <T> T.validateWith(
@@ -316,9 +316,9 @@ public inline fun <T> T.validateWith(
 }
 
 /**
- * Valida condicionalmente basado en un predicado.
+ * Válida condicionalmente basado en un predicado.
  *
- * Solo ejecuta la validacion si la condicion es verdadera.
+ * Solo ejecuta la validación si la condición es verdadera.
  *
  * ## Ejemplo
  *
@@ -334,9 +334,9 @@ public inline fun <T> T.validateWith(
  * }
  * ```
  *
- * @param condition Condicion que determina si se ejecuta la validacion
- * @param validation Funcion que retorna el error de validacion o null
- * @return Error de validacion si la condicion es true y la validacion falla, null en otro caso
+ * @param condition Condición que determina si se ejecuta la validación
+ * @param validation Función que retorna el error de validación o null
+ * @return Error de validación si la condición es true y la validación falla, null en otro caso
  */
 public inline fun validateIf(
     condition: Boolean,
@@ -346,14 +346,14 @@ public inline fun validateIf(
 }
 
 /**
- * Valida que al menos una de las validaciones pase.
+ * Válida que al menos una de las validaciones pase.
  *
- * Util para validaciones alternativas (OR logico).
+ * Util para validaciones alternativas (OR lógico).
  *
  * ## Ejemplo
  *
  * ```kotlin
- * // Usuario debe tener email O telefono
+ * // Usuario debe tener email O teléfono
  * val result = validateAtLeastOne(
  *     "User must have email or phone",
  *     { validateEmail(email) },
@@ -362,8 +362,8 @@ public inline fun validateIf(
  * ```
  *
  * @param errorMessage Mensaje de error si todas las validaciones fallan
- * @param validations Lista de funciones de validacion
- * @return null si al menos una validacion pasa, errorMessage si todas fallan
+ * @param validations Lista de funciones de validación
+ * @return null si al menos una validación pasa, errorMessage si todas fallan
  */
 public fun validateAtLeastOne(
     errorMessage: String,
@@ -374,7 +374,7 @@ public fun validateAtLeastOne(
 }
 
 /**
- * Valida que todas las validaciones pasen (AND logico).
+ * Válida que todas las validaciones pasen (AND lógico).
  *
  * Retorna el primer error encontrado, o null si todas pasan.
  *
@@ -388,7 +388,7 @@ public fun validateAtLeastOne(
  * )
  * ```
  *
- * @param validations Lista de funciones de validacion
+ * @param validations Lista de funciones de validación
  * @return Primer error encontrado, o null si todas pasan
  */
 public fun validateAll(vararg validations: () -> String?): String? {

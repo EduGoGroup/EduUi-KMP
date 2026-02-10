@@ -38,8 +38,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 /**
  * Pantalla de login con campos de email y password.
  *
- * Implementacion simplificada sin ViewModel.
- * Valida que los campos no esten vacios y navega a Home.
+ * Implementación simplificada sin ViewModel.
+ * Válida que los campos no estén vacíos y navega a Home.
  */
 @Composable
 fun LoginScreen(

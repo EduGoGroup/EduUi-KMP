@@ -6,7 +6,7 @@ import com.edugo.kmp.resources.Strings
 import com.edugo.kmp.screens.App
 
 /**
- * Punto de entrada de la aplicacion Desktop.
+ * Punto de entrada de la aplicación Desktop.
  */
 fun main() {
     application {

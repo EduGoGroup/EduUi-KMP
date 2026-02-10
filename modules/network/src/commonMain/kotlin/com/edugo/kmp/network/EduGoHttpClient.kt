@@ -12,7 +12,7 @@ import io.ktor.http.*
 /**
  * Cliente HTTP type-safe para EduGo.
  *
- * Encapsula operaciones HTTP con serialización/deserialización automática
+ * Encapsula operaciones HTTP con serialización/deserialization automática
  * usando kotlinx.serialization. Proporciona una API fluida y type-safe
  * sobre Ktor Client con soporte para interceptores.
  *
@@ -121,9 +121,9 @@ public class EduGoHttpClient(
     }
 
     /**
-     * Realiza petición GET y deserializa respuesta al tipo especificado.
+     * Realiza petición GET y deserialize respuesta al tipo especificado.
      *
-     * La deserialización se realiza automáticamente usando kotlinx.serialization.
+     * La deserialization se realiza automáticamente usando kotlinx.serialization.
      * El tipo T debe ser serializable (@Serializable).
      *
      * ```kotlin
@@ -133,13 +133,13 @@ public class EduGoHttpClient(
      * val user: User = client.get("https://api.example.com/users/1")
      * ```
      *
-     * @param T Tipo del objeto a deserializar (debe ser @Serializable)
+     * @param T Tipo del objeto a deserializer (debe ser @Serializable)
      * @param url URL del endpoint
      * @param config Configuración opcional de headers y query params
-     * @return Objeto deserializado del tipo T
+     * @return Objeto deserialize del tipo T
      * @throws io.ktor.client.plugins.ClientRequestException Si el servidor retorna 4xx
      * @throws io.ktor.client.plugins.ServerResponseException Si el servidor retorna 5xx
-     * @throws kotlinx.serialization.SerializationException Si la deserialización falla
+     * @throws kotlinx.serialization.SerializationException Si la deserialization falla
      */
     public suspend inline fun <reified T> get(
         url: String,
@@ -193,14 +193,14 @@ public class EduGoHttpClient(
      * ```
      *
      * @param T Tipo del objeto a enviar en el body (debe ser @Serializable)
-     * @param R Tipo del objeto a deserializar de la respuesta (debe ser @Serializable)
+     * @param R Tipo del objeto a deserializer de la respuesta (debe ser @Serializable)
      * @param url URL del endpoint
      * @param body Objeto a serializar como JSON en el body
      * @param config Configuración opcional de headers y query params
-     * @return Objeto deserializado del tipo R
+     * @return Objeto deserialize del tipo R
      * @throws io.ktor.client.plugins.ClientRequestException Si el servidor retorna 4xx
      * @throws io.ktor.client.plugins.ServerResponseException Si el servidor retorna 5xx
-     * @throws kotlinx.serialization.SerializationException Si la serialización/deserialización falla
+     * @throws kotlinx.serialization.SerializationException Si la serialización/deserialization falla
      */
     public suspend inline fun <reified T, reified R> post(
         url: String,
@@ -311,14 +311,14 @@ public class EduGoHttpClient(
      * ```
      *
      * @param T Tipo del objeto a enviar en el body (debe ser @Serializable)
-     * @param R Tipo del objeto a deserializar de la respuesta (debe ser @Serializable)
+     * @param R Tipo del objeto a deserializer de la respuesta (debe ser @Serializable)
      * @param url URL del endpoint
      * @param body Objeto completo a serializar como JSON
      * @param config Configuración opcional de headers y query params
-     * @return Objeto deserializado del tipo R
+     * @return Objeto deserialize del tipo R
      * @throws io.ktor.client.plugins.ClientRequestException Si el servidor retorna 4xx
      * @throws io.ktor.client.plugins.ServerResponseException Si el servidor retorna 5xx
-     * @throws kotlinx.serialization.SerializationException Si la serialización/deserialización falla
+     * @throws kotlinx.serialization.SerializationException Si la serialización/deserialization falla
      * @see patch Para actualizaciones parciales
      */
     public suspend inline fun <reified T, reified R> put(
@@ -373,14 +373,14 @@ public class EduGoHttpClient(
      * ```
      *
      * @param T Tipo del objeto parcial a enviar en el body (debe ser @Serializable)
-     * @param R Tipo del objeto a deserializar de la respuesta (debe ser @Serializable)
+     * @param R Tipo del objeto a deserializer de la respuesta (debe ser @Serializable)
      * @param url URL del endpoint
      * @param body Objeto parcial a serializar como JSON
      * @param config Configuración opcional de headers y query params
-     * @return Objeto deserializado del tipo R
+     * @return Objeto deserialize del tipo R
      * @throws io.ktor.client.plugins.ClientRequestException Si el servidor retorna 4xx
      * @throws io.ktor.client.plugins.ServerResponseException Si el servidor retorna 5xx
-     * @throws kotlinx.serialization.SerializationException Si la serialización/deserialización falla
+     * @throws kotlinx.serialization.SerializationException Si la serialización/deserialization falla
      * @see put Para reemplazos completos
      */
     public suspend inline fun <reified T, reified R> patch(
@@ -421,7 +421,7 @@ public class EduGoHttpClient(
     }
 
     /**
-     * Realiza petición DELETE y deserializa respuesta al tipo especificado.
+     * Realiza petición DELETE y deserialize respuesta al tipo especificado.
      *
      * Útil cuando el servidor retorna información del recurso eliminado
      * o un objeto de confirmación.
@@ -433,13 +433,13 @@ public class EduGoHttpClient(
      * val result: DeleteResponse = client.delete("https://api.example.com/users/1")
      * ```
      *
-     * @param T Tipo del objeto a deserializar (debe ser @Serializable)
+     * @param T Tipo del objeto a deserializer (debe ser @Serializable)
      * @param url URL del recurso a eliminar
      * @param config Configuración opcional de headers y query params
-     * @return Objeto deserializado del tipo T
+     * @return Objeto deserialize del tipo T
      * @throws io.ktor.client.plugins.ClientRequestException Si el servidor retorna 4xx
      * @throws io.ktor.client.plugins.ServerResponseException Si el servidor retorna 5xx
-     * @throws kotlinx.serialization.SerializationException Si la deserialización falla
+     * @throws kotlinx.serialization.SerializationException Si la deserialization falla
      * @see deleteNoResponse Para DELETE sin body en respuesta (204 No Content)
      */
     public suspend inline fun <reified T> delete(
@@ -548,7 +548,7 @@ public class EduGoHttpClient(
      * }
      * ```
      *
-     * @param T Tipo del objeto a deserializar (debe ser @Serializable)
+     * @param T Tipo del objeto a deserializer (debe ser @Serializable)
      * @param url URL del endpoint
      * @param config Configuración opcional de headers y query params
      * @return Result.Success con datos o Result.Failure con mensaje de error
@@ -597,7 +597,7 @@ public class EduGoHttpClient(
      * ```
      *
      * @param T Tipo del objeto a enviar en el body (debe ser @Serializable)
-     * @param R Tipo del objeto a deserializar de la respuesta (debe ser @Serializable)
+     * @param R Tipo del objeto a deserializer de la respuesta (debe ser @Serializable)
      * @param url URL del endpoint
      * @param body Objeto a serializar como JSON en el body
      * @param config Configuración opcional de headers y query params
@@ -650,7 +650,7 @@ public class EduGoHttpClient(
      * ```
      *
      * @param T Tipo del objeto a enviar en el body (debe ser @Serializable)
-     * @param R Tipo del objeto a deserializar de la respuesta (debe ser @Serializable)
+     * @param R Tipo del objeto a deserializer de la respuesta (debe ser @Serializable)
      * @param url URL del endpoint
      * @param body Objeto completo a serializar como JSON
      * @param config Configuración opcional de headers y query params
@@ -703,7 +703,7 @@ public class EduGoHttpClient(
      * ```
      *
      * @param T Tipo del objeto parcial a enviar en el body (debe ser @Serializable)
-     * @param R Tipo del objeto a deserializar de la respuesta (debe ser @Serializable)
+     * @param R Tipo del objeto a deserializer de la respuesta (debe ser @Serializable)
      * @param url URL del endpoint
      * @param body Objeto parcial a serializar como JSON
      * @param config Configuración opcional de headers y query params
@@ -754,7 +754,7 @@ public class EduGoHttpClient(
      * val result: Result<DeleteResponse> = client.deleteSafe("https://api.example.com/users/1")
      * ```
      *
-     * @param T Tipo del objeto a deserializar (debe ser @Serializable)
+     * @param T Tipo del objeto a deserializer (debe ser @Serializable)
      * @param url URL del recurso a eliminar
      * @param config Configuración opcional de headers y query params
      * @return Result.Success con datos o Result.Failure con mensaje de error

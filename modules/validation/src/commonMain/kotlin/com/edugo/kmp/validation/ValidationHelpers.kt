@@ -1,22 +1,22 @@
 package com.edugo.kmp.validation
 
 /**
- * Helpers de validacion reutilizables y componibles.
+ * Helpers de validación reutilizable y componibles.
  *
- * Este archivo contiene funciones de validacion comunes que pueden ser
- * usadas en cualquier parte del codigo para validar datos de entrada.
- * Todas las funciones retornan null si la validacion pasa, o un mensaje
+ * Este archivo contiene funciones de validación comunes que pueden ser
+ * usadas en cualquier parte del código para validar datos de entrada.
+ * Todas las funciones retornan null si la validación pasa, o un mensaje
  * de error String si falla.
  *
- * ## Caracteristicas
+ * ## Características
  *
  * - **Reutilizables**: Se pueden usar en modelos, mappers, DTOs
  * - **Componibles**: Se pueden combinar multiples validaciones
- * - **Type-Safe**: Verificacion de tipos en compilacion
- * - **Null-safe**: Manejan valores null explicitamente
+ * - **Type-Safe**: Verificación de tipos en compilación
+ * - **Null-safe**: Manejan valores null explícitamente
  * - **Customizables**: Permiten mensajes de error personalizados
  *
- * ## Uso Basico
+ * ## Uso Básico
  *
  * ```kotlin
  * data class User(val email: String, val age: Int) : ValidatableModel {
@@ -28,7 +28,7 @@ package com.edugo.kmp.validation
  * }
  * ```
  *
- * ## Validacion Acumulativa
+ * ## Validación Acumulativa
  *
  * ```kotlin
  * data class User(val email: String, val age: Int) : ValidatableModel {
@@ -48,9 +48,9 @@ package com.edugo.kmp.validation
  */
 
 /**
- * Valida que un String no este vacio o en blanco.
+ * Válida que un String no este vacío o en blanco.
  *
- * Verifica que el valor no sea null, no este vacio (length == 0),
+ * Verifica que el valor no sea null, no este vacío (length == 0),
  * y no contenga solo espacios en blanco.
  *
  * ## Ejemplos
@@ -72,7 +72,7 @@ package com.edugo.kmp.validation
  * @param value Valor a validar
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateNotBlank(
     value: String?,
@@ -87,9 +87,9 @@ public fun validateNotBlank(
 }
 
 /**
- * Valida que un valor numerico este dentro de un rango.
+ * Válida que un valor numérico este dentro de un rango.
  *
- * Verifica que el valor sea mayor o igual al minimo y menor o igual
+ * Verifica que el valor sea mayor o igual al mínimo y menor o igual
  * al maximo especificado (inclusivo en ambos extremos).
  *
  * ## Ejemplos
@@ -110,11 +110,11 @@ public fun validateNotBlank(
  * ```
  *
  * @param value Valor a validar
- * @param min Valor minimo permitido (inclusivo)
+ * @param min Valor mínimo permitido (inclusivo)
  * @param max Valor maximo permitido (inclusivo)
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateRange(
     value: Int,
@@ -123,7 +123,7 @@ public fun validateRange(
     fieldName: String,
     customMessage: String? = null
 ): String? {
-    return if (value < min || value > max) {
+    return if (value !in min..max) {
         customMessage ?: "$fieldName must be between $min and $max"
     } else {
         null
@@ -131,16 +131,16 @@ public fun validateRange(
 }
 
 /**
- * Valida que un valor numerico de tipo Long este dentro de un rango.
+ * Válida que un valor numérico de tipo Long este dentro de un rango.
  *
  * Sobrecarga de validateRange para valores Long.
  *
  * @param value Valor a validar
- * @param min Valor minimo permitido (inclusivo)
+ * @param min Valor mínimo permitido (inclusivo)
  * @param max Valor maximo permitido (inclusivo)
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateRange(
     value: Long,
@@ -149,7 +149,7 @@ public fun validateRange(
     fieldName: String,
     customMessage: String? = null
 ): String? {
-    return if (value < min || value > max) {
+    return if (value !in min..max) {
         customMessage ?: "$fieldName must be between $min and $max"
     } else {
         null
@@ -157,16 +157,16 @@ public fun validateRange(
 }
 
 /**
- * Valida que un valor numerico de tipo Double este dentro de un rango.
+ * Válida que un valor numérico de tipo Double este dentro de un rango.
  *
  * Sobrecarga de validateRange para valores Double.
  *
  * @param value Valor a validar
- * @param min Valor minimo permitido (inclusivo)
+ * @param min Valor mínimo permitido (inclusivo)
  * @param max Valor maximo permitido (inclusivo)
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateRange(
     value: Double,
@@ -175,7 +175,7 @@ public fun validateRange(
     fieldName: String,
     customMessage: String? = null
 ): String? {
-    val isInRange = value >= min && value <= max
+    val isInRange = value in min..max
 
     return if (isInRange) {
         null // Valido
@@ -185,18 +185,18 @@ public fun validateRange(
 }
 
 /**
- * Valida que un String tenga formato de email valido.
+ * Válida que un String tenga formato de email válido.
  *
- * Verifica que el email contenga exactamente un simbolo @ y que tenga
- * texto antes y despues del @. No valida completamente segun RFC 5322,
+ * Verifica que el email contenga exactamente un símbolo @ y que tenga
+ * texto antes y después del @. No válida completamente según RFC 5322,
  * pero cubre los casos comunes.
  *
- * ## Reglas de Validacion
+ * ## Reglas de Validación
  *
  * - Debe contener exactamente un @
- * - Debe tener al menos un caracter antes del @
- * - Debe tener al menos un caracter despues del @
- * - No debe estar vacio o en blanco
+ * - Debe tener al menos un carácter antes del @
+ * - Debe tener al menos un carácter después del @
+ * - No debe estar vacío o en blanco
  *
  * ## Ejemplos
  *
@@ -219,7 +219,7 @@ public fun validateRange(
  *
  * @param email Email a validar
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateEmail(
     email: String?,
@@ -232,7 +232,7 @@ public fun validateEmail(
     val atCount = email.count { it == '@' }
     val atIndex = email.indexOf('@')
 
-    // Variables descriptivas para cada validacion
+    // Variables descriptivas para cada validación
     val hasExactlyOneAt = atCount == 1
     val atIsNotFirst = atIndex > 0
     val atIsNotLast = atIndex < email.length - 1
@@ -246,7 +246,7 @@ public fun validateEmail(
 }
 
 /**
- * Valida que un String tenga una longitud minima.
+ * Válida que un String tenga una longitud minima.
  *
  * Verifica que el valor no sea null y tenga al menos la longitud minima
  * especificada.
@@ -264,7 +264,7 @@ public fun validateEmail(
  * @param minLength Longitud minima permitida
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateMinLength(
     value: String?,
@@ -280,7 +280,7 @@ public fun validateMinLength(
 }
 
 /**
- * Valida que un String no exceda una longitud maxima.
+ * Válida que un String no exceda una longitud maxima.
  *
  * Verifica que el valor no sea null y no exceda la longitud maxima
  * especificada.
@@ -297,7 +297,7 @@ public fun validateMinLength(
  * @param maxLength Longitud maxima permitida
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateMaxLength(
     value: String?,
@@ -313,7 +313,7 @@ public fun validateMaxLength(
 }
 
 /**
- * Valida que un String tenga una longitud dentro de un rango.
+ * Válida que un String tenga una longitud dentro de un rango.
  *
  * Combina validateMinLength y validateMaxLength.
  *
@@ -330,7 +330,7 @@ public fun validateMaxLength(
  * @param maxLength Longitud maxima permitida
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateLengthRange(
     value: String?,
@@ -341,14 +341,14 @@ public fun validateLengthRange(
 ): String? {
     return when {
         value == null -> customMessage ?: "$fieldName cannot be null"
-        value.length < minLength || value.length > maxLength ->
+        value.length !in minLength..maxLength ->
             customMessage ?: "$fieldName must be between $minLength and $maxLength characters"
         else -> null
     }
 }
 
 /**
- * Valida que un valor numerico sea positivo (mayor que cero).
+ * Válida que un valor numérico sea positivo (mayor que cero).
  *
  * ## Ejemplos
  *
@@ -361,7 +361,7 @@ public fun validateLengthRange(
  * @param value Valor a validar
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validatePositive(
     value: Int,
@@ -376,12 +376,12 @@ public fun validatePositive(
 }
 
 /**
- * Valida que un valor numerico Double sea positivo (mayor que cero).
+ * Válida que un valor numérico Double sea positivo (mayor que cero).
  *
  * @param value Valor a validar
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validatePositive(
     value: Double,
@@ -396,7 +396,7 @@ public fun validatePositive(
 }
 
 /**
- * Valida que un valor numerico no sea negativo (mayor o igual a cero).
+ * Válida que un valor numérico no sea negativo (mayor o igual a cero).
  *
  * ## Ejemplos
  *
@@ -409,7 +409,7 @@ public fun validatePositive(
  * @param value Valor a validar
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateNonNegative(
     value: Int,
@@ -424,12 +424,12 @@ public fun validateNonNegative(
 }
 
 /**
- * Valida que un valor numerico Double no sea negativo.
+ * Valida que un valor numérico Double no sea negativo.
  *
  * @param value Valor a validar
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validateNonNegative(
     value: Double,
@@ -444,7 +444,7 @@ public fun validateNonNegative(
 }
 
 /**
- * Valida que un String coincida con un patron regex.
+ * Válida que un String coincida con un patron regex.
  *
  * ## Ejemplos
  *
@@ -454,10 +454,10 @@ public fun validateNonNegative(
  * ```
  *
  * @param value Valor a validar
- * @param pattern Expresion regular a coincidir
+ * @param pattern Expresión regular a coincidir
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun validatePattern(
     value: String?,
@@ -473,7 +473,7 @@ public fun validatePattern(
 }
 
 /**
- * Valida que un valor este contenido en una coleccion de valores permitidos.
+ * Válida que un valor este contenido en una colección de valores permitidos.
  *
  * ## Ejemplos
  *
@@ -484,10 +484,10 @@ public fun validatePattern(
  * ```
  *
  * @param value Valor a validar
- * @param allowedValues Coleccion de valores permitidos
+ * @param allowedValues Colección de valores permitidos
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun <T> validateIn(
     value: T,
@@ -503,7 +503,7 @@ public fun <T> validateIn(
 }
 
 /**
- * Valida que una coleccion no este vacia.
+ * Válida que una colección no este vacía.
  *
  * ## Ejemplos
  *
@@ -513,10 +513,10 @@ public fun <T> validateIn(
  * validateNotEmpty(null, "Items") // "Items cannot be empty"
  * ```
  *
- * @param collection Coleccion a validar
+ * @param collection Colección a validar
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun <T> validateNotEmpty(
     collection: Collection<T>?,
@@ -531,7 +531,7 @@ public fun <T> validateNotEmpty(
 }
 
 /**
- * Valida que una coleccion tenga un tamano minimo.
+ * Válida que una colección tenga un tamaño mínimo.
  *
  * ## Ejemplos
  *
@@ -540,11 +540,11 @@ public fun <T> validateNotEmpty(
  * validateMinSize(listOf(1), 2, "Tags") // "Tags must contain at least 2 items"
  * ```
  *
- * @param collection Coleccion a validar
- * @param minSize Tamano minimo permitido
+ * @param collection Colección a validar
+ * @param minSize Tamaño mínimo permitido
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun <T> validateMinSize(
     collection: Collection<T>?,
@@ -560,7 +560,7 @@ public fun <T> validateMinSize(
 }
 
 /**
- * Valida que una coleccion no exceda un tamano maximo.
+ * Valida que una colección no exceda un tamaño maximo.
  *
  * ## Ejemplos
  *
@@ -569,11 +569,11 @@ public fun <T> validateMinSize(
  * validateMaxSize(listOf(1, 2, 3, 4, 5, 6), 5, "Tags") // "Tags cannot contain more than 5 items"
  * ```
  *
- * @param collection Coleccion a validar
- * @param maxSize Tamano maximo permitido
+ * @param collection Colección a validar
+ * @param maxSize Tamaño maximo permitido
  * @param fieldName Nombre del campo para el mensaje de error
  * @param customMessage Mensaje de error personalizado (opcional)
- * @return null si la validacion pasa, mensaje de error si falla
+ * @return null si la validación pasa, mensaje de error si falla
  */
 public fun <T> validateMaxSize(
     collection: Collection<T>?,
@@ -610,7 +610,7 @@ public fun <T> validateMaxSize(
  * }
  * ```
  *
- * @return true si el email es valido, false en caso contrario
+ * @return true si el email es válido, false en caso contrario
  */
 public inline fun String.isValidEmail(): Boolean = validateEmail(this) == null
 
@@ -639,15 +639,15 @@ public inline fun String.validateEmail(): com.edugo.kmp.foundation.result.Result
  * Extension function que valida si un String es un UUID v4 valido.
  *
  * Valida que el string cumpla con el formato UUID v4:
- * - 8 digitos hexadecimales
+ * - 8 dígitos hexadecimales
  * - guion
- * - 4 digitos hexadecimales
+ * - 4 dígitos hexadecimales
  * - guion
- * - "4" seguido de 3 digitos hexadecimales (version 4)
+ * - "4" seguido de 3 dígitos hexadecimales (version 4)
  * - guion
- * - uno de [89ab] seguido de 3 digitos hexadecimales (variante RFC 4122)
+ * - uno de [89ab] seguido de 3 dígitos hexadecimales (variante RFC 4122)
  * - guion
- * - 12 digitos hexadecimales
+ * - 12 dígitos hexadecimales
  *
  * ## Ejemplo
  *
@@ -690,9 +690,9 @@ public inline fun String.validateUUID(): com.edugo.kmp.foundation.result.Result<
     else com.edugo.kmp.foundation.result.failure("Invalid UUID format")
 
 /**
- * Extension function que valida si un valor Comparable esta dentro de un rango.
+ * Extension function que válida si un valor Comparable esta dentro de un rango.
  *
- * Verifica que el valor sea mayor o igual al minimo y menor o igual al maximo
+ * Verifica que el valor sea mayor o igual al mínimo y menor o igual al maximo
  * (inclusivo en ambos extremos).
  *
  * ## Ejemplos
@@ -709,18 +709,18 @@ public inline fun String.validateUUID(): com.edugo.kmp.foundation.result.Result<
  * }
  * ```
  *
- * @param min Valor minimo permitido (inclusivo)
+ * @param min Valor mínimo permitido (inclusivo)
  * @param max Valor maximo permitido (inclusivo)
- * @return true si el valor esta en el rango [min, max], false en caso contrario
+ * @return true si el valor está en el rango [min, max], false en caso contrario
  */
 public inline fun <T : Comparable<T>> T.isInRange(min: T, max: T): Boolean =
-    this >= min && this <= max
+    this in min..max
 
 /**
- * Extension function que valida coincidencia de passwords.
+ * Extension function que válida coincidencia de passwords.
  *
- * Compara el password con el campo de confirmacion para verificar que coincidan.
- * Util en formularios de registro o cambio de contrasena.
+ * Compara el password con el campo de confirmación para verificar que coincidan.
+ * Util en formularios de registro o cambio de contraseña.
  *
  * ## Ejemplo
  *
@@ -729,11 +729,11 @@ public inline fun <T : Comparable<T>> T.isInRange(min: T, max: T): Boolean =
  * val confirmation = "secret123"
  *
  * if (password.matchesPassword(confirmation)) {
- *     println("Las contrasenas coinciden")
+ *     println("Las contraseñas coinciden")
  * }
  * ```
  *
- * @param confirmation Password de confirmacion a comparar
+ * @param confirmation Password de confirmación a comparar
  * @return true si ambos passwords coinciden, false en caso contrario
  */
 public inline fun String.matchesPassword(confirmation: String): Boolean =
@@ -751,12 +751,12 @@ public inline fun String.matchesPassword(confirmation: String): Boolean =
  * val confirmation = "secret456"
  *
  * when (val result = password.validatePasswordMatch(confirmation)) {
- *     is Result.Success -> println("Contrasenas coinciden")
+ *     is Result.Success -> println("Contraseñas coinciden")
  *     is Result.Failure -> println("Error: ${result.error}")
  * }
  * ```
  *
- * @param confirmation Password de confirmacion a comparar
+ * @param confirmation Password de confirmación a comparar
  * @return Result.Success si coinciden, Result.Failure con mensaje si no coinciden
  */
 public inline fun String.validatePasswordMatch(confirmation: String): com.edugo.kmp.foundation.result.Result<Unit> =

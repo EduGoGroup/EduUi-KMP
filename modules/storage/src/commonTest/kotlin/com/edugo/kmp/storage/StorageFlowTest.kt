@@ -17,7 +17,7 @@ import kotlin.test.*
  *
  * Nota: MapSettings NO implementa ObservableSettings, por lo que estos tests
  * verifican el comportamiento de fallback (emite solo valor actual).
- * Los tests de observacion real requieren Android con SharedPreferences.
+ * Los tests de observación real requieren Android con SharedPreferences.
  */
 class StorageFlowTest {
 

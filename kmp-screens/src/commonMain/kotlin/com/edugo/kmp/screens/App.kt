@@ -13,12 +13,12 @@ import com.edugo.kmp.screens.ui.SplashScreen
 import org.koin.compose.KoinApplication
 
 /**
- * Componente principal de la aplicacion compartido entre plataformas.
+ * Componente principal de la aplicación compartido entre plataformas.
  *
  * Inicializa:
- * - Koin con modulos de DI
+ * - Koin con módulos de DI
  * - EduGoTheme (Material 3)
- * - Navegacion entre pantallas
+ * - Navegación entre pantallas
  *
  * Flujo: Splash -> Login -> Home -> Settings
  */

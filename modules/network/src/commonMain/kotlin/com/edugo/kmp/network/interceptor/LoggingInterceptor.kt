@@ -3,7 +3,6 @@ package com.edugo.kmp.network.interceptor
 import com.edugo.kmp.network.NetworkLogger
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.http.*
 
 /**
  * Interceptor que loguea requests/responses usando NetworkLogger.

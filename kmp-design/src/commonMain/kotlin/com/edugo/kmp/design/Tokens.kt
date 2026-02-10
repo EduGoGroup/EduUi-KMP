@@ -3,7 +3,7 @@ package com.edugo.kmp.design
 import androidx.compose.ui.unit.dp
 
 /**
- * Espaciado estandar para padding, margins y gaps.
+ * Espaciado estándar para padding, margins y gaps.
  */
 object Spacing {
     val xxs = 4.dp
@@ -16,7 +16,7 @@ object Spacing {
 }
 
 /**
- * Tamanos de componentes especificos.
+ * Tamaños de componentes específicos.
  */
 object Sizes {
     val iconSmall = 16.dp

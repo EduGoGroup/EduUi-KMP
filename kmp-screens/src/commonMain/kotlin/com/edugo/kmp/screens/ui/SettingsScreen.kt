@@ -46,10 +46,10 @@ enum class ThemeOption {
 }
 
 /**
- * Pantalla de configuracion.
+ * Pantalla de configuración.
  *
- * Permite seleccionar tema (Light/Dark/System) y cerrar sesion.
- * Implementacion simplificada sin ViewModel.
+ * Permite seleccionar tema (Light/Dark/System) y cerrar sesión.
+ * Implementación simplificada sin ViewModel.
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable

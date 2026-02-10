@@ -4,7 +4,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Valores de elevacion para componentes.
+ * Valores de elevación para componentes.
  * Basados en Material Design 3 elevation levels.
  */
 object Elevation {

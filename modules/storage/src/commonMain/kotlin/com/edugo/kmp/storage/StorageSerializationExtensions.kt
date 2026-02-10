@@ -11,7 +11,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 
 /**
- * Extension functions para serialización/deserialización de objetos @Serializable en EduGoStorage.
+ * Extension functions para serialización/deserialization de objetos @Serializable en EduGoStorage.
  *
  * Permite almacenar cualquier objeto marcado con @Serializable como JSON string en el storage
  * multiplataforma, utilizando [JsonConfig.Default] para la serialización.
@@ -66,13 +66,13 @@ inline fun <reified T> EduGoStorage.putObject(key: String, value: T) {
 }
 
 /**
- * Recupera un objeto deserializándolo desde JSON.
+ * Recupera un objeto de serializándolo desde JSON.
  *
- * Lee el JSON string del storage y lo deserializa al tipo especificado
+ * Lee el JSON string del storage y lo deserialize al tipo especificado
  * usando [JsonConfig.Default].
  *
  * @param key Clave de almacenamiento
- * @return Objeto deserializado o null si no existe la key o hay error de deserialización
+ * @return Objeto deserialize o null si no existe la key o hay error de deserialization
  *
  * @sample
  * ```kotlin
@@ -94,7 +94,7 @@ inline fun <reified T> EduGoStorage.getObject(key: String): T? {
  *
  * @param key Clave de almacenamiento
  * @param default Valor por defecto a retornar si la key no existe o hay error
- * @return Objeto deserializado o el valor por defecto
+ * @return Objeto deserialize o el valor por defecto
  *
  * @sample
  * ```kotlin
@@ -110,10 +110,10 @@ inline fun <reified T> EduGoStorage.getObject(key: String, default: T): T {
  *
  * Útil cuando necesitas distinguir entre:
  * - Key no encontrada
- * - Error de deserialización (JSON corrupto o incompatible)
+ * - Error de deserialization (JSON corrupto o incompatible)
  *
  * @param key Clave de almacenamiento
- * @return [Result.Success] con el objeto deserializado o [Result.Failure] con mensaje de error
+ * @return [Result.Success] con el objeto deserialize o [Result.Failure] con mensaje de error
  *
  * @sample
  * ```kotlin
@@ -169,7 +169,7 @@ inline fun <reified T> EduGoStorage.putObjectSafe(key: String, value: T): Result
 // =============================================================================
 
 /**
- * Guarda una lista de objetos serializables.
+ * Guarda una lista de objetos serializable.
  *
  * @param key Clave de almacenamiento
  * @param value Lista de objetos @Serializable a guardar
@@ -189,7 +189,7 @@ inline fun <reified T> EduGoStorage.putList(key: String, value: List<T>) {
  * Recupera una lista de objetos.
  *
  * @param key Clave de almacenamiento
- * @return Lista deserializada o lista vacía si no existe la key o hay error
+ * @return Lista deserialize o lista vacía si no existe la key o hay error
  *
  * @sample
  * ```kotlin
@@ -254,7 +254,7 @@ inline fun <reified T> EduGoStorage.removeFromList(key: String, element: T) {
 // =============================================================================
 
 /**
- * Guarda un Set de objetos serializables.
+ * Guarda un Set de objetos serializable.
  *
  * Internamente se serializa como List para compatibilidad JSON estándar.
  *
@@ -276,7 +276,7 @@ inline fun <reified T> EduGoStorage.putSet(key: String, value: Set<T>) {
  * Recupera un Set de objetos.
  *
  * @param key Clave de almacenamiento
- * @return Set deserializado o set vacío si no existe la key o hay error
+ * @return Set deserialize o set vacío si no existe la key o hay error
  *
  * @sample
  * ```kotlin
@@ -319,7 +319,7 @@ inline fun <reified V> EduGoStorage.putMap(key: String, value: Map<String, V>) {
  * Recupera un Map.
  *
  * @param key Clave de almacenamiento
- * @return Map deserializado o map vacío si no existe la key o hay error
+ * @return Map deserialize o map vacío si no existe la key o hay error
  *
  * @sample
  * ```kotlin

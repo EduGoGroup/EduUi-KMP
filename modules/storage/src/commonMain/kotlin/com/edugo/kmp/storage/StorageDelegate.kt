@@ -114,7 +114,7 @@ fun EduGoStorage.doubleOrNull(key: String): ReadWriteProperty<Any?, Double?> {
 /**
  * Delegated property para objeto @Serializable nullable.
  *
- * Permite usar objetos serializables como propiedades delegadas, con soporte
+ * Permite usar objetos serializable como propiedades delegadas, con soporte
  * para valores null. Cuando se asigna null, la key se elimina del storage.
  *
  * Ejemplo:
@@ -192,7 +192,7 @@ inline fun <reified T : Any> EduGoStorage.serializableWithDefault(
 /**
  * Delegated property para lista de objetos @Serializable.
  *
- * Simplifica el almacenamiento de listas serializables como propiedades delegadas.
+ * Simplifica el almacenamiento de listas serializable como propiedades delegadas.
  * Siempre retorna una lista (vacía si no existe la key).
  *
  * Ejemplo:

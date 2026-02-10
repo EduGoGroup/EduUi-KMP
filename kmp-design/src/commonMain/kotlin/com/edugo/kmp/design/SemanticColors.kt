@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Colores semanticos para mensajes y estados.
+ * Colores semánticos para mensajes y estados.
  * Usa MaterialTheme.colorScheme como base para mantener consistencia con el tema.
  */
 object SemanticColors {

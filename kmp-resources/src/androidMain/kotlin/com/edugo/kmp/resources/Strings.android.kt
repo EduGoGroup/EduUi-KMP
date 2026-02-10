@@ -6,10 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * Implementacion Android de Strings usando recursos nativos (strings.xml).
+ * Implementación Android de Strings usando recursos nativos (strings.xml).
  *
  * Requiere llamar [init] desde Application.onCreate().
- * En previews, si el contexto no esta disponible, usa fallbacks hardcoded.
+ * En previews, si el contexto no está disponible, usa fallbacks hardcoded.
  */
 actual object Strings {
     private lateinit var appContext: Context

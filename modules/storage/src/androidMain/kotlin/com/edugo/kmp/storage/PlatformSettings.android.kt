@@ -8,7 +8,7 @@ package com.edugo.kmp.storage
 import com.russhwolf.settings.Settings
 
 /**
- * Implementacion Android de Settings usando SharedPreferences.
+ * Implementación Android de Settings usando SharedPreferences.
  * Usa multiplatform-settings-no-arg que auto-detecta el contexto.
  *
  * Settings() usa PreferenceManager.getDefaultSharedPreferences() internamente.

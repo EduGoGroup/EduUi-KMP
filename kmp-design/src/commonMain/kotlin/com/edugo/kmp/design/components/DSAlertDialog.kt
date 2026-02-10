@@ -16,7 +16,7 @@ import com.edugo.kmp.design.MessageType
 import com.edugo.kmp.design.SemanticColors
 
 /**
- * Dialog de alerta con estilos consistentes segun el tipo de mensaje.
+ * Dialog de alerta con estilos consistentes según el tipo de mensaje.
  */
 @Composable
 fun DSAlertDialog(

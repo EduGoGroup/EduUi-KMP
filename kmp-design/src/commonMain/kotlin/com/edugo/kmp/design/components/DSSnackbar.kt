@@ -12,7 +12,7 @@ import com.edugo.kmp.design.MessageType
 import com.edugo.kmp.design.SemanticColors
 
 /**
- * Snackbar con estilos consistentes segun el tipo de mensaje.
+ * Snackbar con estilos consistentes según el tipo de mensaje.
  */
 @Composable
 fun DSSnackbar(
