@@ -45,3 +45,6 @@ actual object Strings {
 
 @Composable
 actual fun stringResource(key: String): String = key
+
+@Composable
+actual fun InitStringsForPreview() { /* No-op: strings hardcoded */ }

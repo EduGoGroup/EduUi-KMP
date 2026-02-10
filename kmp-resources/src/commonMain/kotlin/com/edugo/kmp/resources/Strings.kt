@@ -61,3 +61,10 @@ expect object Strings {
  */
 @Composable
 expect fun stringResource(key: String): String
+
+/**
+ * Inicializa Strings para previews de Android Studio.
+ * En Android obtiene el contexto via LocalContext; en otras plataformas es no-op.
+ */
+@Composable
+expect fun InitStringsForPreview()

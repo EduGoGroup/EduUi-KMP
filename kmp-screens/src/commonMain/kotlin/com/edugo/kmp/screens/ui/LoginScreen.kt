@@ -28,9 +28,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
+import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Pantalla de login con campos de email y password.
@@ -139,5 +142,27 @@ fun LoginScreen(
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun LoginScreenPreview() {
+    InitStringsForPreview()
+    EduGoTheme {
+        LoginScreen(
+            onLoginSuccess = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LoginScreenDarkPreview() {
+    InitStringsForPreview()
+    EduGoTheme(darkTheme = true) {
+        LoginScreen(
+            onLoginSuccess = {},
+        )
     }
 }

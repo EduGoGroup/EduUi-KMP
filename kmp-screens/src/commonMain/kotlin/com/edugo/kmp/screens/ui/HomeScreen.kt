@@ -25,14 +25,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.edugo.kmp.design.Alpha
+import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
+import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
- * Pantalla principal - Home despues de login exitoso.
+ * Pantalla principal - Home después de login exitoso.
  *
- * Muestra bienvenida, info card, boton de settings y logout.
+ * Muestra bienvenida, info card, botón de settings y logout.
  */
 @Composable
 fun HomeScreen(
@@ -122,5 +125,29 @@ fun HomeScreen(
                 Text(Strings.home_logout_button)
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun HomeScreenPreview() {
+    InitStringsForPreview()
+    EduGoTheme {
+        HomeScreen(
+            onNavigateToSettings = {},
+            onLogout = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun HomeScreenDarkPreview() {
+    InitStringsForPreview()
+    EduGoTheme(darkTheme = true) {
+        HomeScreen(
+            onNavigateToSettings = {},
+            onLogout = {},
+        )
     }
 }

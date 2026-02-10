@@ -29,9 +29,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
+import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Opciones de tema disponibles.
@@ -147,6 +150,30 @@ private fun ThemeOptionRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun SettingsScreenPreview() {
+    InitStringsForPreview()
+    EduGoTheme {
+        SettingsScreen(
+            onBack = {},
+            onLogout = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun SettingsScreenDarkPreview() {
+    InitStringsForPreview()
+    EduGoTheme(darkTheme = true) {
+        SettingsScreen(
+            onBack = {},
+            onLogout = {},
         )
     }
 }

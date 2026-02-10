@@ -92,6 +92,7 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation(compose.preview)
+                implementation(compose.uiTooling)
 
                 implementation(libs.findLibrary("androidx-activity-compose")
                     .orElseThrow { IllegalStateException("Library 'androidx-activity-compose' not found") })

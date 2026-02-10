@@ -18,10 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.edugo.kmp.design.Alpha
 import com.edugo.kmp.design.Durations
+import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
+import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Pantalla de splash - Primera pantalla al iniciar la aplicacion.
@@ -87,5 +90,29 @@ fun SplashScreen(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.muted)
             )
         }
+    }
+}
+
+@Preview
+@Composable
+private fun SplashScreenPreview() {
+    InitStringsForPreview()
+    EduGoTheme {
+        SplashScreen(
+            onNavigateToLogin = {},
+            onNavigateToHome = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun SplashScreenDarkPreview() {
+    InitStringsForPreview()
+    EduGoTheme(darkTheme = true) {
+        SplashScreen(
+            onNavigateToLogin = {},
+            onNavigateToHome = {},
+        )
     }
 }
