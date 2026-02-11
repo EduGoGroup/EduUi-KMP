@@ -1,11 +1,16 @@
 package com.edugo.kmp.di.module
 
+import com.edugo.kmp.auth.circuit.CircuitBreaker
+import com.edugo.kmp.auth.config.AuthConfig
 import com.edugo.kmp.auth.interceptor.AuthInterceptor
+import com.edugo.kmp.auth.logging.AuthLogger
 import com.edugo.kmp.auth.repository.AuthRepository
 import com.edugo.kmp.auth.repository.AuthRepositoryImpl
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.auth.service.AuthServiceImpl
+import com.edugo.kmp.auth.throttle.RateLimiter
 import com.edugo.kmp.config.AppConfig
+import com.edugo.kmp.logger.Logger
 import com.edugo.kmp.network.EduGoHttpClient
 import com.edugo.kmp.network.interceptor.TokenProvider
 import com.edugo.kmp.storage.SafeEduGoStorage
@@ -26,17 +31,37 @@ public val authModule = module {
     single<CoroutineScope>(named("authScope")) {
         CoroutineScope(Dispatchers.Default + SupervisorJob())
     }
+    single {
+        AuthConfig.forEnvironment(get<AppConfig>().environment)
+    }
+    single {
+        val authConfig = get<AuthConfig>()
+        CircuitBreaker(authConfig.circuitBreakerConfig)
+    }
+    single(named("loginRateLimiter")) {
+        val authConfig = get<AuthConfig>()
+        RateLimiter(
+            maxRequests = authConfig.rateLimitMaxRequests,
+            timeWindow = authConfig.rateLimitWindow
+        )
+    }
+    single { AuthLogger(get<Logger>()) }
     single<AuthRepository> {
         AuthRepositoryImpl(
             httpClient = get<EduGoHttpClient>(),
-            baseUrl = get<AppConfig>().getFullApiUrl()
+            baseUrl = get<AppConfig>().getFullApiUrl(),
+            circuitBreaker = get()
         )
     }
     single<AuthService> {
+        val authConfig = get<AuthConfig>()
         AuthServiceImpl(
             repository = get(),
             storage = get<SafeEduGoStorage>(),
-            scope = get(named("authScope"))
+            scope = get(named("authScope")),
+            refreshConfig = authConfig.refreshConfig,
+            loginRateLimiter = get(named("loginRateLimiter")),
+            authLogger = get()
         )
     } bind TokenProvider::class
     single {

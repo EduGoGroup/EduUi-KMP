@@ -1,5 +1,6 @@
 package com.edugo.kmp.auth.service
 
+import com.edugo.kmp.auth.logging.AuthLogger
 import com.edugo.kmp.auth.model.AuthError
 import com.edugo.kmp.auth.model.AuthToken
 import com.edugo.kmp.auth.model.AuthUserInfo
@@ -7,6 +8,7 @@ import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResult
 import com.edugo.kmp.auth.model.LogoutResult
 import com.edugo.kmp.auth.repository.AuthRepository
+import com.edugo.kmp.auth.throttle.RateLimiter
 import com.edugo.kmp.auth.token.RefreshFailureReason
 import com.edugo.kmp.auth.token.TokenRefreshConfig
 import com.edugo.kmp.auth.token.TokenRefreshManager
@@ -38,7 +40,9 @@ public class AuthServiceImpl(
     private val storage: SafeEduGoStorage,
     private val json: Json = Json { ignoreUnknownKeys = true },
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
-    refreshConfig: TokenRefreshConfig = TokenRefreshConfig.DEFAULT
+    refreshConfig: TokenRefreshConfig = TokenRefreshConfig.DEFAULT,
+    private val loginRateLimiter: RateLimiter? = null,
+    private val authLogger: AuthLogger? = null
 ) : AuthService {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
@@ -67,12 +71,26 @@ public class AuthServiceImpl(
                     is RefreshFailureReason.TokenExpired,
                     is RefreshFailureReason.TokenRevoked,
                     is RefreshFailureReason.NoRefreshToken -> {
+                        authLogger?.logSessionExpired(reason.toLogString())
                         clearSession()
                         _onSessionExpired.emit(Unit)
                     }
                     is RefreshFailureReason.NetworkError,
                     is RefreshFailureReason.ServerError -> {
-                        // Error temporal, no limpiar sesión
+                        authLogger?.logTokenRefresh(false)
+                    }
+                }
+            }
+        }
+
+        scope.launch {
+            tokenRefreshManager.onRefreshSuccess.collect { newToken ->
+                authLogger?.logTokenRefresh(true)
+                stateMutex.withLock {
+                    val currentState = _authState.value
+                    if (currentState is AuthState.Authenticated) {
+                        saveToken(newToken)
+                        _authState.value = currentState.copy(token = newToken)
                     }
                 }
             }
@@ -81,6 +99,7 @@ public class AuthServiceImpl(
 
     private suspend fun clearSession() {
         stateMutex.withLock {
+            tokenRefreshManager.stopAutomaticRefresh()
             clearAuthData()
             _authState.value = AuthState.Unauthenticated
         }
@@ -93,15 +112,23 @@ public class AuthServiceImpl(
 
     override suspend fun login(credentials: LoginCredentials): LoginResult {
         return stateMutex.withLock {
+            authLogger?.logLoginAttempt(credentials.email)
             _authState.value = AuthState.Loading
 
             val validationResult = credentials.validate()
             if (validationResult is Result.Failure) {
                 _authState.value = AuthState.Unauthenticated
+                authLogger?.logLoginFailure(credentials.email, "validation_failed")
                 return LoginResult.Error(AuthError.InvalidCredentials)
             }
 
-            when (val result = repository.login(credentials)) {
+            val loginResult = if (loginRateLimiter != null) {
+                loginRateLimiter.execute { repository.login(credentials) }
+            } else {
+                repository.login(credentials)
+            }
+
+            when (val result = loginResult) {
                 is Result.Success -> {
                     val loginResponse = result.data
                     val authToken = loginResponse.toAuthToken()
@@ -113,11 +140,15 @@ public class AuthServiceImpl(
                         token = authToken
                     )
 
+                    tokenRefreshManager.startAutomaticRefresh(authToken)
+                    authLogger?.logLoginSuccess(credentials.email, loginResponse.user.id)
+
                     LoginResult.Success(loginResponse)
                 }
                 is Result.Failure -> {
                     _authState.value = AuthState.Unauthenticated
                     val authError = mapErrorToAuthError(result.error)
+                    authLogger?.logLoginFailure(credentials.email, result.error)
                     LoginResult.Error(authError)
                 }
                 is Result.Loading -> {
@@ -130,6 +161,10 @@ public class AuthServiceImpl(
 
     override suspend fun logout(): Result<Unit> {
         return stateMutex.withLock {
+            val userId = getCurrentUser()?.id
+            authLogger?.logLogout(userId)
+            tokenRefreshManager.stopAutomaticRefresh()
+
             val token = getCurrentAuthToken()?.token
 
             if (token != null) {
@@ -185,6 +220,7 @@ public class AuthServiceImpl(
     }
 
     private suspend fun clearAllSessionData() {
+        tokenRefreshManager.stopAutomaticRefresh()
         tokenRefreshManager.cancelPendingRefresh()
 
         storage.removeSafe(AUTH_TOKEN_KEY)
@@ -260,12 +296,15 @@ public class AuthServiceImpl(
 
                     if (!token.isExpired()) {
                         _authState.value = AuthState.Authenticated(user, token)
+                        tokenRefreshManager.startAutomaticRefresh(token)
+                        authLogger?.logSessionRestored(user.id)
                     } else {
                         if (token.hasRefreshToken()) {
                             val refreshResult = tokenRefreshManager.forceRefresh()
                             if (refreshResult is Result.Success) {
                                 val newToken = refreshResult.data
                                 _authState.value = AuthState.Authenticated(user, newToken)
+                                tokenRefreshManager.startAutomaticRefresh(newToken)
                             } else {
                                 clearAuthData()
                                 _authState.value = AuthState.Unauthenticated
@@ -305,6 +344,10 @@ public class AuthServiceImpl(
 
     private fun mapErrorToAuthError(error: String): AuthError {
         return when {
+            error.contains("Rate limit", ignoreCase = true) ->
+                AuthError.AccountLocked
+            error.contains("Circuit breaker", ignoreCase = true) ->
+                AuthError.NetworkError(error)
             error.contains("401") || error.contains("invalid credentials", ignoreCase = true) ->
                 AuthError.InvalidCredentials
             error.contains("404") || error.contains("not found", ignoreCase = true) ->

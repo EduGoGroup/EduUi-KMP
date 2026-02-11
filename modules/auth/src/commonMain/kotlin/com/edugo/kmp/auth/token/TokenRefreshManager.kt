@@ -17,5 +17,11 @@ public interface TokenRefreshManager {
 
     public val onRefreshFailed: Flow<RefreshFailureReason>
 
+    public val onRefreshSuccess: Flow<AuthToken>
+
+    public fun startAutomaticRefresh(token: AuthToken)
+
+    public fun stopAutomaticRefresh()
+
     public fun cancelPendingRefresh()
 }

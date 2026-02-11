@@ -1,5 +1,6 @@
 package com.edugo.kmp.auth.repository
 
+import com.edugo.kmp.auth.circuit.CircuitBreaker
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResponse
 import com.edugo.kmp.foundation.error.ErrorCode
@@ -64,7 +65,8 @@ import kotlinx.serialization.Serializable
  */
 public class AuthRepositoryImpl(
     private val httpClient: EduGoHttpClient,
-    private val baseUrl: String
+    private val baseUrl: String,
+    private val circuitBreaker: CircuitBreaker = CircuitBreaker()
 ) : AuthRepository {
 
     /**
@@ -77,23 +79,26 @@ public class AuthRepositoryImpl(
     )
 
     override suspend fun login(credentials: LoginCredentials): Result<LoginResponse> {
+        return circuitBreaker.execute {
+            performLogin(credentials)
+        }
+    }
+
+    private suspend fun performLogin(credentials: LoginCredentials): Result<LoginResponse> {
         return try {
             val url = "$baseUrl/v1/auth/login"
 
-            // Usar postSafe que retorna Result<T> automaticamente
             val result = httpClient.postSafe<LoginCredentials, LoginResponse>(
                 url = url,
                 body = credentials
             )
 
-            // Mapear a errores mas especificos si es necesario
             when (result) {
                 is Result.Success -> result
                 is Result.Failure -> result
                 is Result.Loading -> Result.Failure("Unexpected loading state")
             }
         } catch (e: ClientRequestException) {
-            // Mapeo explicito de errores HTTP 4xx
             val errorMessage = when (e.response.status.value) {
                 400 -> ErrorCode.VALIDATION_INVALID_INPUT.description
                 401 -> ErrorCode.AUTH_INVALID_CREDENTIALS.description
@@ -104,7 +109,6 @@ public class AuthRepositoryImpl(
             }
             Result.Failure(errorMessage)
         } catch (e: ServerResponseException) {
-            // Mapeo explicito de errores HTTP 5xx
             val errorMessage = when (e.response.status.value) {
                 500 -> ErrorCode.SYSTEM_INTERNAL_ERROR.description
                 502 -> ErrorCode.NETWORK_SERVER_ERROR.description
@@ -113,7 +117,6 @@ public class AuthRepositoryImpl(
             }
             Result.Failure(errorMessage)
         } catch (e: Throwable) {
-            // Mapeo de otros errores (network, timeout, etc.)
             val networkException = ExceptionMapper.map(e)
             Result.Failure(networkException.toAppError().toString())
         }
@@ -156,13 +159,17 @@ public class AuthRepositoryImpl(
     }
 
     override suspend fun refresh(refreshToken: String): Result<RefreshResponse> {
+        return circuitBreaker.execute {
+            performRefresh(refreshToken)
+        }
+    }
+
+    private suspend fun performRefresh(refreshToken: String): Result<RefreshResponse> {
         return try {
             val url = "$baseUrl/v1/auth/refresh"
 
-            // Crear body con el refresh token
             val requestBody = RefreshRequest(refreshToken = refreshToken)
 
-            // Usar postSafe que retorna Result<T> automaticamente
             val result = httpClient.postSafe<RefreshRequest, RefreshResponse>(
                 url = url,
                 body = requestBody
@@ -174,7 +181,6 @@ public class AuthRepositoryImpl(
                 is Result.Loading -> Result.Failure("Unexpected loading state")
             }
         } catch (e: ClientRequestException) {
-            // Mapeo explicito de errores HTTP 4xx en refresh
             val errorMessage = when (e.response.status.value) {
                 401 -> ErrorCode.AUTH_REFRESH_TOKEN_INVALID.description
                 403 -> ErrorCode.AUTH_FORBIDDEN.description
@@ -182,7 +188,6 @@ public class AuthRepositoryImpl(
             }
             Result.Failure(errorMessage)
         } catch (e: ServerResponseException) {
-            // Mapeo explicito de errores HTTP 5xx
             val errorMessage = when (e.response.status.value) {
                 500 -> ErrorCode.SYSTEM_INTERNAL_ERROR.description
                 502 -> ErrorCode.NETWORK_SERVER_ERROR.description
@@ -191,7 +196,6 @@ public class AuthRepositoryImpl(
             }
             Result.Failure(errorMessage)
         } catch (e: Throwable) {
-            // Mapeo de otros errores (network, timeout, etc.)
             val networkException = ExceptionMapper.map(e)
             Result.Failure(networkException.toAppError().toString())
         }
@@ -279,9 +283,10 @@ public class AuthRepositoryImpl(
          */
         public fun withHttpClient(
             httpClient: EduGoHttpClient,
-            baseUrl: String = BaseUrls.LOCAL
+            baseUrl: String = BaseUrls.LOCAL,
+            circuitBreaker: CircuitBreaker = CircuitBreaker()
         ): AuthRepositoryImpl {
-            return AuthRepositoryImpl(httpClient, baseUrl)
+            return AuthRepositoryImpl(httpClient, baseUrl, circuitBreaker)
         }
     }
 }

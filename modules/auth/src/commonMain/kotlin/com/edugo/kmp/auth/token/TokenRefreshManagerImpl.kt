@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -41,8 +42,14 @@ public class TokenRefreshManagerImpl(
     private val _onRefreshFailed = MutableSharedFlow<RefreshFailureReason>(replay = 0)
     override val onRefreshFailed: Flow<RefreshFailureReason> = _onRefreshFailed.asSharedFlow()
 
+    private val _onRefreshSuccess = MutableSharedFlow<AuthToken>(replay = 0)
+    override val onRefreshSuccess: Flow<AuthToken> = _onRefreshSuccess.asSharedFlow()
+
+    private var refreshScheduleJob: Job? = null
+
     private companion object {
         private const val AUTH_TOKEN_KEY = "auth_token"
+        private const val MIN_SCHEDULE_DELAY_MS = 5_000L
     }
 
     override suspend fun refreshIfNeeded(): Result<AuthToken> {
@@ -214,6 +221,36 @@ public class TokenRefreshManagerImpl(
     private fun saveToken(token: AuthToken) {
         val tokenJson = json.encodeToString(token)
         storage.putStringSafe(AUTH_TOKEN_KEY, tokenJson)
+    }
+
+    override fun startAutomaticRefresh(token: AuthToken) {
+        stopAutomaticRefresh()
+        refreshScheduleJob = scope.launch {
+            scheduleNextRefresh(token)
+        }
+    }
+
+    override fun stopAutomaticRefresh() {
+        refreshScheduleJob?.cancel()
+        refreshScheduleJob = null
+    }
+
+    private suspend fun scheduleNextRefresh(token: AuthToken) {
+        val now = Clock.System.now()
+        val timeUntilExpiration = token.expiresAt - now
+        val threshold = config.refreshThresholdSeconds.seconds
+        val delayDuration = timeUntilExpiration - threshold
+
+        val delayMs = delayDuration.inWholeMilliseconds
+            .coerceAtLeast(MIN_SCHEDULE_DELAY_MS)
+
+        delay(delayMs)
+
+        val result = performRefresh()
+        if (result is Result.Success) {
+            _onRefreshSuccess.emit(result.data)
+            scheduleNextRefresh(result.data)
+        }
     }
 
     override fun cancelPendingRefresh() {

@@ -12,6 +12,7 @@ kotlin {
             dependencies {
                 api(project(":modules:foundation"))
                 api(project(":modules:logger"))
+                implementation(project(":modules:config"))
                 implementation(project(":modules:core"))
                 implementation(project(":modules:validation"))
                 implementation(project(":modules:network"))
