@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.design.Alpha
 import com.edugo.kmp.design.Durations
 import com.edugo.kmp.design.EduGoTheme
@@ -25,6 +26,7 @@ import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.koinInject
 
 /**
  * Pantalla de splash - Primera pantalla al iniciar la aplicación.
@@ -38,13 +40,16 @@ fun SplashScreen(
     modifier: Modifier = Modifier,
     delayMs: Long = Durations.splash,
 ) {
-    // TODO: Inyectar PreferencesManager para verificar sesión
-    val isLoggedIn = false
+    val authService = koinInject<AuthService>()
 
     LaunchedEffect(Unit) {
+        try {
+            authService.restoreSession()
+        } catch (_: Exception) {
+            // Si falla restore, continuamos al login
+        }
         delay(delayMs)
-
-        if (isLoggedIn) {
+        if (authService.isAuthenticated()) {
             onNavigateToHome()
         } else {
             onNavigateToLogin()

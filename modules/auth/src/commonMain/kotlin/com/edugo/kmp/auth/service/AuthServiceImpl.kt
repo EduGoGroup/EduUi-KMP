@@ -285,39 +285,50 @@ public class AuthServiceImpl(
     }
 
     override suspend fun restoreSession() {
+        // Leer datos del storage con mutex
+        val tokenJson: String
+        val userJson: String
         stateMutex.withLock {
-            val tokenJson = storage.getStringSafe(AUTH_TOKEN_KEY, "")
-            val userJson = storage.getStringSafe(AUTH_USER_KEY, "")
+            tokenJson = storage.getStringSafe(AUTH_TOKEN_KEY, "")
+            userJson = storage.getStringSafe(AUTH_USER_KEY, "")
+        }
 
-            if (tokenJson.isNotBlank() && userJson.isNotBlank()) {
-                try {
-                    val token = json.decodeFromString<AuthToken>(tokenJson)
-                    val user = json.decodeFromString<AuthUserInfo>(userJson)
+        if (tokenJson.isBlank() || userJson.isBlank()) return
 
-                    if (!token.isExpired()) {
-                        _authState.value = AuthState.Authenticated(user, token)
-                        tokenRefreshManager.startAutomaticRefresh(token)
-                        authLogger?.logSessionRestored(user.id)
+        try {
+            val token = json.decodeFromString<AuthToken>(tokenJson)
+            val user = json.decodeFromString<AuthUserInfo>(userJson)
+
+            if (!token.isExpired()) {
+                stateMutex.withLock {
+                    _authState.value = AuthState.Authenticated(user, token)
+                    tokenRefreshManager.startAutomaticRefresh(token)
+                    authLogger?.logSessionRestored(user.id)
+                }
+            } else if (token.hasRefreshToken()) {
+                // forceRefresh FUERA del mutex para evitar deadlock
+                // (onRefreshSuccess collector tambien necesita el mutex)
+                val refreshResult = tokenRefreshManager.forceRefresh()
+                stateMutex.withLock {
+                    if (refreshResult is Result.Success) {
+                        val newToken = refreshResult.data
+                        _authState.value = AuthState.Authenticated(user, newToken)
+                        tokenRefreshManager.startAutomaticRefresh(newToken)
                     } else {
-                        if (token.hasRefreshToken()) {
-                            val refreshResult = tokenRefreshManager.forceRefresh()
-                            if (refreshResult is Result.Success) {
-                                val newToken = refreshResult.data
-                                _authState.value = AuthState.Authenticated(user, newToken)
-                                tokenRefreshManager.startAutomaticRefresh(newToken)
-                            } else {
-                                clearAuthData()
-                                _authState.value = AuthState.Unauthenticated
-                            }
-                        } else {
-                            clearAuthData()
-                            _authState.value = AuthState.Unauthenticated
-                        }
+                        clearAuthData()
+                        _authState.value = AuthState.Unauthenticated
                     }
-                } catch (_: Exception) {
+                }
+            } else {
+                stateMutex.withLock {
                     clearAuthData()
                     _authState.value = AuthState.Unauthenticated
                 }
+            }
+        } catch (_: Exception) {
+            stateMutex.withLock {
+                clearAuthData()
+                _authState.value = AuthState.Unauthenticated
             }
         }
     }

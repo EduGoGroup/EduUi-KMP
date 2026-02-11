@@ -13,6 +13,8 @@ kotlin {
                 implementation(project(":kmp-design"))
                 implementation(project(":kmp-resources"))
                 implementation(project(":modules:di"))
+                implementation(project(":modules:auth"))
+                implementation(project(":modules:network"))
             }
         }
     }

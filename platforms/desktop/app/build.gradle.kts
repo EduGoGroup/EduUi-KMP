@@ -26,6 +26,7 @@ kotlin {
                 implementation(libs.koin.core)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.coroutines.swing)
+                implementation(libs.slf4j.nop)
             }
         }
     }

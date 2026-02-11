@@ -17,24 +17,22 @@ package com.edugo.kmp.logger
  * logger.d("Tag", "message")
  * ```
  *
- * ## Platform-specific implementations:
+ * ## Platform-specific implementations (via Kermit backend):
  *
  * ### Android:
- * - Uses `android.util.Log`
- * - Logs appear in Logcat
- * - Tag is used for filtering
+ * - Kermit LogcatWriter -> `android.util.Log`
+ * - Logs appear in Logcat with tag filtering
  *
  * ### JVM/Desktop:
- * - Uses `println` or SLF4J (if available)
- * - Logs to console or configured appender
+ * - Kermit platformLogWriter -> ANSI-colored console output
  *
  * ### iOS:
- * - Uses `NSLog` or `os_log`
+ * - Kermit NSLogWriter -> `NSLog`
  * - Logs appear in Xcode console
  *
- * ### JS:
- * - Uses `console.log`, `console.info`, `console.warn`, `console.error`
- * - Logs appear in browser/Node.js console
+ * ### WasmJs:
+ * - Kermit CommonWriter -> `console.log`
+ * - Compatible with browser and Node.js environments
  *
  * ## Tag naming conventions:
  * - Use class/module name: `"NetworkClient"`, `"UserRepository"`
@@ -262,12 +260,12 @@ public interface Logger {
 /**
  * Creates the default platform-specific Logger instance.
  *
- * This is the recommended way to obtain a Logger instance. Each platform
- * provides its own implementation:
- * - Android: Uses android.util.Log
- * - JVM/Desktop: Uses println with formatting
- * - iOS: Uses os_log (future)
- * - JS: Uses console (future)
+ * This is the recommended way to obtain a Logger instance.
+ * Each platform returns a [KermitDelegateLogger] backed by Kermit:
+ * - Android: LogcatWriter (android.util.Log)
+ * - JVM/Desktop: platformLogWriter (ANSI colors)
+ * - iOS: NSLogWriter (NSLog)
+ * - WasmJs: CommonWriter (console.log)
  *
  * ## Usage:
  * ```kotlin

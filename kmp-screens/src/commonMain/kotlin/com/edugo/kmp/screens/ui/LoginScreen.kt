@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,12 +29,17 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.edugo.kmp.auth.model.LoginCredentials
+import com.edugo.kmp.auth.model.LoginResult
+import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.koinInject
 
 /**
  * Pantalla de login con campos de email y password.
@@ -46,6 +52,9 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val authService = koinInject<AuthService>()
+    val scope = rememberCoroutineScope()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -60,7 +69,15 @@ fun LoginScreen(
         }
         errorMessage = null
         isLoading = true
-        onLoginSuccess()
+        scope.launch {
+            when (val result = authService.login(LoginCredentials(email, password))) {
+                is LoginResult.Success -> onLoginSuccess()
+                is LoginResult.Error -> {
+                    errorMessage = result.error.getUserFriendlyMessage()
+                    isLoading = false
+                }
+            }
+        }
     }
 
     Surface(

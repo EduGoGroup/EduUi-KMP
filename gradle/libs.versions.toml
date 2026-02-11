@@ -16,6 +16,7 @@ kotlinx-serialization = "1.8.0"
 ktor = "3.1.3"
 multiplatform-settings = "1.3.0"
 kermit = "2.0.4"
+slf4j = "2.0.16"
 kover = "0.8.3"
 turbine = "1.2.0"
 
@@ -68,6 +69,7 @@ multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-t
 
 # Logging
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 
 # Testing
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
