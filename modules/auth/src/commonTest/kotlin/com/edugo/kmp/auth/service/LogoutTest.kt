@@ -55,7 +55,7 @@ class LogoutTest {
     }
 
     @Test
-    fun `logoutWithDetails despues de login, segundo logout es idempotente`() = runTest {
+    fun `logoutWithDetails despues de login segundo logout es idempotente`() = runTest {
         authService.login(validCredentials)
         assertTrue(authService.isAuthenticated())
 

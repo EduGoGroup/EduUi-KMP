@@ -3,6 +3,8 @@ package com.edugo.kmp.auth.repository
 import com.edugo.kmp.auth.circuit.CircuitBreaker
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResponse
+import com.edugo.kmp.auth.retry.RetryPolicy
+import com.edugo.kmp.auth.retry.withRetry
 import com.edugo.kmp.foundation.error.ErrorCode
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.network.EduGoHttpClient
@@ -66,7 +68,8 @@ import kotlinx.serialization.Serializable
 public class AuthRepositoryImpl(
     private val httpClient: EduGoHttpClient,
     private val baseUrl: String,
-    private val circuitBreaker: CircuitBreaker = CircuitBreaker()
+    private val circuitBreaker: CircuitBreaker = CircuitBreaker(),
+    private val retryPolicy: RetryPolicy = RetryPolicy.DEFAULT
 ) : AuthRepository {
 
     /**
@@ -80,7 +83,7 @@ public class AuthRepositoryImpl(
 
     override suspend fun login(credentials: LoginCredentials): Result<LoginResponse> {
         return circuitBreaker.execute {
-            performLogin(credentials)
+            withRetry(retryPolicy) { performLogin(credentials) }
         }
     }
 
@@ -160,7 +163,7 @@ public class AuthRepositoryImpl(
 
     override suspend fun refresh(refreshToken: String): Result<RefreshResponse> {
         return circuitBreaker.execute {
-            performRefresh(refreshToken)
+            withRetry(retryPolicy) { performRefresh(refreshToken) }
         }
     }
 
@@ -284,9 +287,10 @@ public class AuthRepositoryImpl(
         public fun withHttpClient(
             httpClient: EduGoHttpClient,
             baseUrl: String = BaseUrls.LOCAL,
-            circuitBreaker: CircuitBreaker = CircuitBreaker()
+            circuitBreaker: CircuitBreaker = CircuitBreaker(),
+            retryPolicy: RetryPolicy = RetryPolicy.DEFAULT
         ): AuthRepositoryImpl {
-            return AuthRepositoryImpl(httpClient, baseUrl, circuitBreaker)
+            return AuthRepositoryImpl(httpClient, baseUrl, circuitBreaker, retryPolicy)
         }
     }
 }

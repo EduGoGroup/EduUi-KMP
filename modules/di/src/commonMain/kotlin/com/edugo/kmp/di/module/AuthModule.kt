@@ -47,10 +47,12 @@ public val authModule = module {
     }
     single { AuthLogger(get<Logger>()) }
     single<AuthRepository> {
+        val authConfig = get<AuthConfig>()
         AuthRepositoryImpl(
             httpClient = get<EduGoHttpClient>(),
             baseUrl = get<AppConfig>().getFullApiUrl(),
-            circuitBreaker = get()
+            circuitBreaker = get(),
+            retryPolicy = authConfig.retryPolicy
         )
     }
     single<AuthService> {
