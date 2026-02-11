@@ -1,0 +1,50 @@
+package com.edugo.kmp.resources
+
+import androidx.compose.runtime.Composable
+
+actual object Strings {
+    actual val splash_title: String = "EduGo"
+    actual val splash_subtitle: String = "Plataforma Educativa"
+    actual val splash_loading: String = "Cargando\u2026"
+
+    actual val login_title: String = "Inicio de sesi\u00f3n"
+    actual val login_email_label: String = "Email"
+    actual val login_password_label: String = "Contrase\u00f1a"
+    actual val login_button: String = "Iniciar sesi\u00f3n"
+    actual val login_error_empty_fields: String = "Email y contrase\u00f1a son requeridos"
+
+    actual val home_welcome: String = "\u00a1Bienvenido!"
+    actual val home_subtitle: String = "Has iniciado sesi\u00f3n exitosamente"
+    actual val home_card_title: String = "EduGo KMP"
+    actual val home_card_description: String = "Plataforma educativa multiplataforma con Kotlin"
+    actual val home_settings_button: String = "Configuraci\u00f3n"
+    actual val home_logout_button: String = "Cerrar Sesi\u00f3n"
+
+    actual val settings_title: String = "Configuraci\u00f3n"
+    actual val settings_theme_section: String = "Tema"
+    actual val settings_theme_light: String = "Claro"
+    actual val settings_theme_dark: String = "Oscuro"
+    actual val settings_theme_system: String = "Sistema"
+    actual val settings_reset_button: String = "Restablecer configuraci\u00f3n"
+    actual val settings_logout_button: String = "Cerrar Sesi\u00f3n"
+
+    actual val message_error_title: String = "Error"
+    actual val message_error_retry: String = "Reintentar"
+    actual val message_error_dismiss: String = "Cerrar"
+    actual val message_success_title: String = "\u00c9xito"
+    actual val message_success_ok: String = "Aceptar"
+    actual val message_warning_title: String = "Advertencia"
+    actual val message_warning_understood: String = "Entendido"
+    actual val message_info_title: String = "Informaci\u00f3n"
+    actual val message_info_ok: String = "Aceptar"
+
+    actual val app_name: String = "EduGo"
+    actual val back_button: String = "Volver"
+    actual val error_unknown: String = "Ocurri\u00f3 un error inesperado"
+}
+
+@Composable
+actual fun stringResource(key: String): String = key
+
+@Composable
+actual fun InitStringsForPreview() { /* No-op: strings hardcoded */ }

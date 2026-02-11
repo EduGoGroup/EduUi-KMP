@@ -1,0 +1,354 @@
+[
+  {
+    "label": "Build: All Modules",
+    "command": "./gradlew",
+    "args": [
+      "build"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Build: Clean + Build",
+    "command": "./gradlew",
+    "args": [
+      "clean",
+      "build"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Build: Assemble All",
+    "command": "./gradlew",
+    "args": [
+      "assemble"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Android: Launch Emulator (Pixel_8_API_35)",
+    "command": "$HOME/Library/Android/sdk/emulator/emulator",
+    "args": [
+      "-avd",
+      "Pixel_8_API_35"
+    ],
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus"
+  },
+  {
+    "label": "Android: Assemble Debug",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:mobile:app:assembleDebug"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Android: Install Debug",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:mobile:app:installDebug"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Android: Install & Launch",
+    "command": "sh",
+    "args": [
+      "-c",
+      "./gradlew :platforms:mobile:app:installDebug && adb shell am start -n com.edugo.app/.MainActivity"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Android: Uninstall App",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:mobile:app:uninstallDebug"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Android: Logcat (EduGo)",
+    "command": "sh",
+    "args": [
+      "-c",
+      "adb logcat -v color --pid $(adb shell pidof -s com.edugo.app)"
+    ],
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Android: Logcat (All)",
+    "command": "adb",
+    "args": [
+      "logcat",
+      "-v",
+      "color"
+    ],
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Desktop: Run App",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:desktop:app:run"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Desktop: Run & Wait for Debugger (port 5005)",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:desktop:app:run",
+      "--args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "env": {
+      "JAVA_OPTS": "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
+    }
+  },
+  {
+    "label": "Desktop: Package App",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:desktop:app:package"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Web: Run Dev Server",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:web:app:wasmJsBrowserDevelopmentRun"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Web: Production Build",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:web:app:wasmJsBrowserProductionWebpack"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Web: Upgrade Yarn Lock",
+    "command": "./gradlew",
+    "args": [
+      "kotlinWasmUpgradeYarnLock"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "iOS: Boot Simulator (iPhone 16 Pro)",
+    "command": "xcrun",
+    "args": [
+      "simctl",
+      "boot",
+      "iPhone 16 Pro"
+    ],
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "iOS: Open Simulator App",
+    "command": "open",
+    "args": [
+      "-a",
+      "Simulator"
+    ],
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus"
+  },
+  {
+    "label": "iOS: Generate Xcode Project (xcodegen)",
+    "command": "xcodegen",
+    "args": [
+      "generate"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT/iosApp",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "iOS: Build Framework",
+    "command": "./gradlew",
+    "args": [
+      ":platforms:mobile:app:embedAndSignAppleFrameworkForXcode"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": {
+      "CONFIGURATION": "Debug",
+      "SDK_NAME": "iphonesimulator",
+      "ARCHS": "arm64",
+      "EXPANDED_CODE_SIGN_IDENTITY": "-",
+      "TARGET_BUILD_DIR": "$ZED_WORKTREE_ROOT/iosApp/build",
+      "FRAMEWORKS_FOLDER_PATH": "iosApp.app/Frameworks"
+    },
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "iOS: Build & Run on Simulator",
+    "command": "sh",
+    "args": [
+      "-c",
+      "cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -configuration Debug build && xcrun simctl install booted build/Debug-iphonesimulator/iosApp.app && xcrun simctl launch booted com.edugo.app.ios"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "iOS: Open in Xcode",
+    "command": "open",
+    "args": [
+      "iosApp/iosApp.xcodeproj"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus"
+  },
+  {
+    "label": "Test: All Platforms",
+    "command": "./gradlew",
+    "args": [
+      "test"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Test: Desktop Only",
+    "command": "./gradlew",
+    "args": [
+      "desktopTest"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Test: Android Unit Tests",
+    "command": "./gradlew",
+    "args": [
+      "testDebugUnitTest"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Test: WasmJs Tests",
+    "command": "./gradlew",
+    "args": [
+      "wasmJsTest"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Test: Current Module (Desktop)",
+    "command": "sh",
+    "args": [
+      "-c",
+      "MODULE=$(echo $ZED_RELATIVE_FILE | sed 's|/.*||; s|^|:|') && ./gradlew ${MODULE}:desktopTest --info"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Coverage: Kover HTML Report",
+    "command": "./gradlew",
+    "args": [
+      "koverHtmlReport"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Coverage: Open Report",
+    "command": "open",
+    "args": [
+      "build/reports/kover/html/index.html"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "Gradle: Stop Daemons",
+    "command": "./gradlew",
+    "args": [
+      "--stop"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always"
+  },
+  {
+    "label": "Gradle: List Tasks",
+    "command": "./gradlew",
+    "args": [
+      "tasks",
+      "--all"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always"
+  },
+  {
+    "label": "Gradle: Dependencies",
+    "command": "./gradlew",
+    "args": [
+      "dependencies"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always"
+  },
+  {
+    "label": "Gradle: Sync (Configuration)",
+    "command": "./gradlew",
+    "args": [
+      "prepareKotlinIdeaImport"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  }
+]

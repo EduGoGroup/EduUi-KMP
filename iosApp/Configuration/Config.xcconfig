@@ -1,0 +1,8 @@
+// Kotlin framework search paths
+FRAMEWORK_SEARCH_PATHS = $(inherited) $(SRCROOT)/../platforms/mobile/app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+
+// Link the KMP framework
+OTHER_LINKER_FLAGS = $(inherited) -framework EduGoApp
+
+// Disable sandboxing for Gradle script phase
+ENABLE_USER_SCRIPT_SANDBOXING = NO

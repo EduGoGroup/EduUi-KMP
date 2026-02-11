@@ -39,5 +39,14 @@ kotlin {
                 implementation(libs.ktor.client.js)
             }
         }
+
+        val enableIos = findProperty("enableIos")?.toString()?.toBoolean() ?: false
+        if (enableIos) {
+            val iosMain by getting {
+                dependencies {
+                    implementation(libs.ktor.client.darwin)
+                }
+            }
+        }
     }
 }

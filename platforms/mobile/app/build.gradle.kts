@@ -31,31 +31,41 @@ kotlin {
     }
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
-            implementation(libs.koin.android)
+        val commonMain by getting {
+            dependencies {
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.components.resources)
+
+                implementation(project(":kmp-screens"))
+                implementation(project(":kmp-design"))
+                implementation(project(":kmp-resources"))
+                implementation(project(":modules:di"))
+
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+            }
         }
 
-        commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-
-            implementation(project(":kmp-screens"))
-            implementation(project(":kmp-design"))
-            implementation(project(":kmp-resources"))
-            implementation(project(":modules:di"))
-
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
+        val androidMain by getting {
+            dependencies {
+                implementation(compose.preview)
+                implementation(libs.androidx.activity.compose)
+                implementation(libs.koin.android)
+            }
         }
 
         if (enableIos) {
-            iosMain.dependencies {
-                // iOS-specific si es necesario
+            val iosX64Main by getting
+            val iosArm64Main by getting
+            val iosSimulatorArm64Main by getting
+            val iosMain by creating {
+                dependsOn(commonMain)
+                iosX64Main.dependsOn(this)
+                iosArm64Main.dependsOn(this)
+                iosSimulatorArm64Main.dependsOn(this)
             }
         }
     }

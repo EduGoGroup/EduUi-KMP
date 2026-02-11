@@ -1,0 +1,9 @@
+{
+  "languages": {
+    "Kotlin": {
+      "tab_size": 4,
+      "hard_tabs": false,
+      "format_on_save": "off",
+    },
+  },
+}
