@@ -1,11 +1,5 @@
 {
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "MCPEco"
-  ],
   "permissions": {
-    "allow": [
-      "Bash(./gradlew:*)"
-    ]
+    "allow": ["Bash(./gradlew:*)"]
   }
 }
