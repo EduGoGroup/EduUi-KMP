@@ -16,27 +16,27 @@ import org.koin.dsl.KoinAppDeclaration
 /**
  * Inicializador centralizado de Koin para el ecosistema EduGo KMP.
  *
- * Provee funciones para obtener los modulos por grupos y para
- * inicializar Koin con la configuracion completa.
+ * Provee funciones para obtener los módulos por grupos y para
+ * inicializar Koin con la configuración completa.
  *
- * ## Uso basico
+ * ## Uso básico
  * ```kotlin
- * // Inicializar con todos los modulos
+ * // Inicializar con todos los módulos
  * KoinInitializer.initKoin()
  *
- * // Inicializar con configuracion adicional
+ * // Inicializar con configuración adicional
  * KoinInitializer.initKoin {
- *     // Configuracion adicional de Koin
+ *     // Configuración adicional de Koin
  * }
  *
- * // Solo modulos core (sin auth ni network)
+ * // Solo módulos core (sin auth ni network)
  * KoinInitializer.initKoin(modules = KoinInitializer.coreModules())
  * ```
  */
 public object KoinInitializer {
 
     /**
-     * Modulos core: foundation + core + logger + validation.
+     * Módulos core: foundation + core + logger + validation.
      * Son las dependencias base sin efectos secundarios de I/O.
      */
     public fun coreModules(): List<Module> = listOf(
@@ -47,7 +47,7 @@ public object KoinInitializer {
     )
 
     /**
-     * Modulos de infraestructura: storage + config + network.
+     * Módulos de infraestructura: storage + config + network.
      * Requieren acceso a plataforma (Settings, filesystem, HTTP engine).
      */
     public fun infrastructureModules(): List<Module> = listOf(
@@ -57,22 +57,22 @@ public object KoinInitializer {
     )
 
     /**
-     * Modulos de dominio: auth.
+     * Módulos de dominio: auth.
      */
     public fun domainModules(): List<Module> = listOf(
         authModule
     )
 
     /**
-     * Todos los modulos del ecosistema EduGo KMP.
+     * Todos los módulos del ecosistema EduGo KMP.
      */
     public fun allModules(): List<Module> =
         coreModules() + infrastructureModules() + domainModules()
 
     /**
-     * Inicializa Koin con todos los modulos.
+     * Inicializa Koin con todos los módulos.
      *
-     * @param appDeclaration Configuracion adicional de Koin (opcional).
+     * @param appDeclaration Configuración adicional de Koin (opcional).
      * @return KoinApplication configurada.
      */
     public fun initKoin(
@@ -85,10 +85,10 @@ public object KoinInitializer {
     }
 
     /**
-     * Inicializa Koin con un subconjunto de modulos.
+     * Inicializa Koin con un subconjunto de módulos.
      *
-     * @param modules Lista de modulos a cargar.
-     * @param appDeclaration Configuracion adicional de Koin (opcional).
+     * @param modules Lista de módulos a cargar.
+     * @param appDeclaration Configuración adicional de Koin (opcional).
      * @return KoinApplication configurada.
      */
     public fun initKoin(

@@ -64,5 +64,5 @@ public data class AppConfigImpl(
     override val debugMode: Boolean
 ) : AppConfig {
     override val environment: Environment
-        get() = Environment.fromString(environmentName)
+        get() = Environment.fromStringOrDefault(environmentName, Environment.DEV)
 }

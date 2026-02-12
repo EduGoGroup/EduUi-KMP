@@ -1,7 +1,6 @@
 package com.edugo.kmp.di.module
 
 import com.edugo.kmp.network.EduGoHttpClient
-import com.edugo.kmp.network.EduGoHttpClientBuilder
 import org.koin.dsl.module
 
 /**

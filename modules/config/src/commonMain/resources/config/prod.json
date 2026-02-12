@@ -1,0 +1,8 @@
+{
+  "environmentName": "PROD",
+  "apiUrl": "https://api.example.com",
+  "apiPort": 443,
+  "webPort": 80,
+  "timeout": 60000,
+  "debugMode": false
+}

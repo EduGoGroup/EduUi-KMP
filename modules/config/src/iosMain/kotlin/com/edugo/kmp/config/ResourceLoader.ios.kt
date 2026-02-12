@@ -1,41 +1,42 @@
 package com.edugo.kmp.config
 
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.Foundation.NSBundle
+import platform.Foundation.NSString
+import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.stringWithContentsOfFile
+
 /**
- * Implementacion iOS para cargar recursos de configuracion.
- * Usa configuraciones hardcodeadas (igual que Desktop y WasmJs).
+ * iOS implementation: loads from Bundle resources, falls back to DefaultConfigs.
  */
+@OptIn(ExperimentalForeignApi::class)
 internal actual fun loadResourceAsString(path: String): String? {
-    return when (path) {
-        "config/dev.json" -> """
-            {
-              "environmentName": "DEV",
-              "apiUrl": "http://localhost",
-              "apiPort": 8080,
-              "webPort": 8080,
-              "timeout": 30000,
-              "debugMode": true
+    try {
+        val parts = path.split("/")
+        val fileName = parts.lastOrNull()?.substringBeforeLast(".")
+        val fileExt = parts.lastOrNull()?.substringAfterLast(".")
+        val directory = parts.dropLast(1).joinToString("/").takeIf { it.isNotEmpty() }
+
+        if (fileName != null && fileExt != null) {
+            val resourcePath = NSBundle.mainBundle.pathForResource(
+                name = fileName,
+                ofType = fileExt,
+                inDirectory = directory
+            )
+
+            if (resourcePath != null) {
+                val content = NSString.stringWithContentsOfFile(
+                    path = resourcePath,
+                    encoding = NSUTF8StringEncoding,
+                    error = null
+                ) as? String
+
+                if (content != null) return content
             }
-        """.trimIndent()
-        "config/staging.json" -> """
-            {
-              "environmentName": "STAGING",
-              "apiUrl": "https://api-staging.example.com",
-              "apiPort": 443,
-              "webPort": 8080,
-              "timeout": 60000,
-              "debugMode": true
-            }
-        """.trimIndent()
-        "config/prod.json" -> """
-            {
-              "environmentName": "PROD",
-              "apiUrl": "https://api.example.com",
-              "apiPort": 443,
-              "webPort": 80,
-              "timeout": 60000,
-              "debugMode": false
-            }
-        """.trimIndent()
-        else -> null
+        }
+    } catch (_: Exception) {
+        // Bundle resource not found, fall through to fallback
     }
+
+    return DefaultConfigs.get(path)
 }

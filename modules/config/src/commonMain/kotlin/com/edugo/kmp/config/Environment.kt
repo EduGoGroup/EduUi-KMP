@@ -36,17 +36,26 @@ public enum class Environment {
 
     public companion object {
         /**
-         * Obtiene el ambiente desde un string, con fallback a DEV.
+         * Obtiene el ambiente desde un string.
+         * Retorna null si el string no corresponde a ningún ambiente válido.
+         *
          * @param value String del ambiente (case-insensitive)
-         * @return Environment correspondiente o DEV si no se encuentra
+         * @return Environment correspondiente o null si no se encuentra
          */
-        public fun fromString(value: String?): Environment {
-            return when (value?.uppercase()) {
-                "DEV" -> DEV
-                "STAGING" -> STAGING
-                "PROD" -> PROD
-                else -> DEV
-            }
+        public fun fromString(value: String?): Environment? {
+            if (value == null) return null
+            return entries.find { it.name.equals(value, ignoreCase = true) }
+        }
+
+        /**
+         * Obtiene el ambiente desde un string con un fallback.
+         *
+         * @param value String del ambiente (case-insensitive)
+         * @param default Ambiente a retornar si value no es válido (por defecto DEV)
+         * @return Environment correspondiente o el default
+         */
+        public fun fromStringOrDefault(value: String?, default: Environment = DEV): Environment {
+            return fromString(value) ?: default
         }
     }
 }

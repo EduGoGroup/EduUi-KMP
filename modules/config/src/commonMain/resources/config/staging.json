@@ -1,0 +1,8 @@
+{
+  "environmentName": "STAGING",
+  "apiUrl": "https://api-staging.example.com",
+  "apiPort": 443,
+  "webPort": 8080,
+  "timeout": 60000,
+  "debugMode": true
+}

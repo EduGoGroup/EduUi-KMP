@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
@@ -122,15 +121,11 @@ public class AuthServiceImpl(
                 return LoginResult.Error(AuthError.InvalidCredentials)
             }
 
-            val loginResult = if (loginRateLimiter != null) {
-                loginRateLimiter.execute { repository.login(credentials) }
-            } else {
-                repository.login(credentials)
-            }
+            val loginResult = loginRateLimiter?.execute { repository.login(credentials) } ?: repository.login(credentials)
 
-            when (val result = loginResult) {
+            when (loginResult) {
                 is Result.Success -> {
-                    val loginResponse = result.data
+                    val loginResponse = loginResult.data
                     val authToken = loginResponse.toAuthToken()
 
                     saveAuthData(authToken, loginResponse.user)
@@ -147,8 +142,8 @@ public class AuthServiceImpl(
                 }
                 is Result.Failure -> {
                     _authState.value = AuthState.Unauthenticated
-                    val authError = mapErrorToAuthError(result.error)
-                    authLogger?.logLoginFailure(credentials.email, result.error)
+                    val authError = mapErrorToAuthError(loginResult.error)
+                    authLogger?.logLoginFailure(credentials.email, loginResult.error)
                     LoginResult.Error(authError)
                 }
                 is Result.Loading -> {

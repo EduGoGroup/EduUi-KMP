@@ -8,23 +8,23 @@ import com.edugo.kmp.foundation.result.Result
 import kotlinx.coroutines.delay
 
 /**
- * Implementacion stub del repositorio de autenticacion para testing.
+ * Implementación stub del repositorio de autenticación para testing.
  *
- * Esta implementacion simula las respuestas del backend sin realizar llamadas
+ * Esta implementación simula las respuestas del backend sin realizar llamadas
  * de red reales. Es util para:
  * - Tests unitarios que no requieren red
  * - Desarrollo offline
- * - Prototipado rapido de UI
- * - Tests de integracion con comportamiento controlado
+ * - Prototipado rápido de UI
+ * - Tests de integración con comportamiento controlado
  *
  * ## Comportamiento por Defecto
  *
  * - **Login exitoso**: `test@edugo.com` / `password123`
- * - **Login fallido**: Cualquier otra combinacion
+ * - **Login fallido**: Cualquier otra combinación
  * - **Logout**: Siempre exitoso
  * - **Refresh**: Siempre exitoso con tokens nuevos
  *
- * ## Configuracion de Comportamiento
+ * ## Configuración de Comportamiento
  *
  * Puedes controlar el comportamiento del stub mediante propiedades:
  *
@@ -80,7 +80,7 @@ public class StubAuthRepository : AuthRepository {
     public var validEmail: String = "test@edugo.com"
 
     /**
-     * Password valido para login exitoso.
+     * Password válido para login exitoso.
      * Cualquier otro password fallara.
      */
     public var validPassword: String = "password123"
@@ -117,7 +117,7 @@ public class StubAuthRepository : AuthRepository {
                 )
             )
         } else {
-            // Credenciales invalidas
+            // Credenciales inválidas
             Result.Failure(ErrorCode.AUTH_INVALID_CREDENTIALS.description)
         }
     }
@@ -148,7 +148,7 @@ public class StubAuthRepository : AuthRepository {
             return Result.Failure(ErrorCode.NETWORK_TIMEOUT.description)
         }
 
-        // Validar que el refresh token no este vacio
+        // Validar que el refresh token no este vacío
         return if (refreshToken.isNotBlank()) {
             // Refresh exitoso con nuevo access token
             Result.Success(RefreshResponse.createTestResponse())
@@ -159,7 +159,7 @@ public class StubAuthRepository : AuthRepository {
     }
 
     /**
-     * Configuracion para tests de verifyToken.
+     * Configuración para tests de verifyToken.
      */
     public var verifyTokenShouldSucceed: Boolean = true
 
@@ -179,12 +179,12 @@ public class StubAuthRepository : AuthRepository {
             return Result.Failure(ErrorCode.NETWORK_TIMEOUT.description)
         }
 
-        // Si no se debe tener exito, retornar error
+        // Si no se debe tener éxito, retornar error
         if (!verifyTokenShouldSucceed) {
             return Result.Failure("Verification failed")
         }
 
-        // Respuesta por defecto si no se configura una especifica
+        // Respuesta por defecto si no se configura una específica
         val response = verifyTokenResponse ?: TokenVerificationResponse(
             valid = true,
             userId = "test-user-id",
@@ -228,7 +228,7 @@ public class StubAuthRepository : AuthRepository {
 
     companion object {
         /**
-         * Credenciales validas por defecto.
+         * Credenciales válidas por defecto.
          */
         public val VALID_CREDENTIALS: LoginCredentials = LoginCredentials(
             email = "test@edugo.com",
@@ -236,7 +236,7 @@ public class StubAuthRepository : AuthRepository {
         )
 
         /**
-         * Credenciales invalidas para testing.
+         * Credenciales inválidas para testing.
          */
         public val INVALID_CREDENTIALS: LoginCredentials = LoginCredentials(
             email = "invalid@edugo.com",
@@ -259,7 +259,7 @@ public class StubAuthRepository : AuthRepository {
         public const val VALID_ACCESS_TOKEN: String = "valid_access_token_123"
 
         /**
-         * Crea instancia con configuracion por defecto.
+         * Crea instancia con configuración por defecto.
          */
         public fun create(): StubAuthRepository = StubAuthRepository()
 
@@ -275,7 +275,7 @@ public class StubAuthRepository : AuthRepository {
         }
 
         /**
-         * Crea instancia con delay especifico.
+         * Crea instancia con delay específico.
          *
          * Util para tests de timeout o loading states.
          */
@@ -288,7 +288,7 @@ public class StubAuthRepository : AuthRepository {
         /**
          * Crea instancia con usuario personalizado.
          *
-         * Util para tests que necesitan datos especificos del usuario.
+         * Util para tests que necesitan datos específicos del usuario.
          */
         public fun createWithUser(user: AuthUserInfo): StubAuthRepository {
             return StubAuthRepository().apply {

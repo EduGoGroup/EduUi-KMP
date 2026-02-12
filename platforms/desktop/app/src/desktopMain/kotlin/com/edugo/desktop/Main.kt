@@ -9,6 +9,8 @@ import com.edugo.kmp.screens.App
  * Punto de entrada de la aplicación Desktop.
  */
 fun main() {
+    val appName = "EduGo Desktop"
+    println("Iniciando $appName...")
     application {
         Window(
             onCloseRequest = ::exitApplication,
