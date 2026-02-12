@@ -6,6 +6,7 @@ import com.edugo.kmp.auth.interceptor.AuthInterceptor
 import com.edugo.kmp.auth.logging.AuthLogger
 import com.edugo.kmp.auth.repository.AuthRepository
 import com.edugo.kmp.auth.repository.AuthRepositoryImpl
+import com.edugo.kmp.auth.repository.MockAuthRepository
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.auth.service.AuthServiceImpl
 import com.edugo.kmp.auth.throttle.RateLimiter
@@ -25,7 +26,7 @@ import org.koin.dsl.module
  * Modulo Koin para dependencias del modulo auth.
  *
  * Provee AuthRepository, AuthService, y AuthInterceptor.
- * AuthService tambien se registra como TokenProvider para la integracion con network.
+ * AuthService también se registra como TokenProvider para la integracion con network.
  */
 public val authModule = module {
     single<CoroutineScope>(named("authScope")) {
@@ -47,13 +48,18 @@ public val authModule = module {
     }
     single { AuthLogger(get<Logger>()) }
     single<AuthRepository> {
-        val authConfig = get<AuthConfig>()
-        AuthRepositoryImpl(
-            httpClient = get<EduGoHttpClient>(),
-            baseUrl = get<AppConfig>().getFullApiUrl(),
-            circuitBreaker = get(),
-            retryPolicy = authConfig.retryPolicy
-        )
+        val appConfig = get<AppConfig>()
+        if (appConfig.mockMode) {
+            MockAuthRepository()
+        } else {
+            val authConfig = get<AuthConfig>()
+            AuthRepositoryImpl(
+                httpClient = get<EduGoHttpClient>(),
+                baseUrl = appConfig.getFullApiUrl(),
+                circuitBreaker = get(),
+                retryPolicy = authConfig.retryPolicy
+            )
+        }
     }
     single<AuthService> {
         val authConfig = get<AuthConfig>()

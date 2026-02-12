@@ -4,5 +4,6 @@
   "apiPort": 443,
   "webPort": 80,
   "timeout": 60000,
-  "debugMode": false
+  "debugMode": false,
+  "mockMode": false
 }

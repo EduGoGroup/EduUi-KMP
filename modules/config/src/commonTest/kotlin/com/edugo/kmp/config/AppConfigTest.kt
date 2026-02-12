@@ -106,4 +106,61 @@ class AppConfigTest {
         val config = AppConfigImpl("PROD", "https://api.example.com", 443, 80, 60000L, false)
         assertFalse(config.debugMode)
     }
+
+    @Test
+    fun mockMode_default_is_false() {
+        val config = AppConfigImpl("DEV", "http://localhost", 8080, 3000, 30000L, true)
+        assertFalse(config.mockMode)
+    }
+
+    @Test
+    fun mockMode_can_be_enabled_for_dev() {
+        val config = AppConfigImpl("DEV", "http://localhost", 8080, 3000, 30000L, true, mockModeValue = true)
+        assertTrue(config.mockMode)
+    }
+
+    @Test
+    fun mockMode_forced_false_in_prod() {
+        val config = AppConfigImpl("PROD", "https://api.example.com", 443, 80, 60000L, false, mockModeValue = true)
+        assertFalse(config.mockMode)
+    }
+
+    @Test
+    fun mockMode_allowed_in_staging() {
+        val config = AppConfigImpl("STAGING", "https://api-staging.example.com", 443, 8080, 60000L, true, mockModeValue = true)
+        assertTrue(config.mockMode)
+    }
+
+    @Test
+    fun mockMode_deserializes_from_json() {
+        val jsonStr = """
+            {
+                "environmentName": "DEV",
+                "apiUrl": "http://localhost",
+                "apiPort": 8080,
+                "webPort": 3000,
+                "timeout": 30000,
+                "debugMode": true,
+                "mockMode": true
+            }
+        """
+        val config = json.decodeFromString(AppConfigImpl.serializer(), jsonStr)
+        assertTrue(config.mockMode)
+    }
+
+    @Test
+    fun mockMode_missing_in_json_defaults_to_false() {
+        val jsonStr = """
+            {
+                "environmentName": "DEV",
+                "apiUrl": "http://localhost",
+                "apiPort": 8080,
+                "webPort": 3000,
+                "timeout": 30000,
+                "debugMode": true
+            }
+        """
+        val config = json.decodeFromString(AppConfigImpl.serializer(), jsonStr)
+        assertFalse(config.mockMode)
+    }
 }

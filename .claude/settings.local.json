@@ -6,5 +6,9 @@
       "mcp__acp__Bash",
       "mcp__acp__Edit"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "jetbrains"
+  ],
+  "enableAllProjectMcpServers": true
 }

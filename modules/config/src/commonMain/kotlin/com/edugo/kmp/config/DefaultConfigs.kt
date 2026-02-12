@@ -20,7 +20,8 @@ internal object DefaultConfigs {
               "apiPort": 8080,
               "webPort": 8080,
               "timeout": 30000,
-              "debugMode": true
+              "debugMode": true,
+              "mockMode": false
             }
         """.trimIndent(),
 
@@ -31,7 +32,8 @@ internal object DefaultConfigs {
               "apiPort": 443,
               "webPort": 8080,
               "timeout": 60000,
-              "debugMode": true
+              "debugMode": true,
+              "mockMode": false
             }
         """.trimIndent(),
 
@@ -42,7 +44,8 @@ internal object DefaultConfigs {
               "apiPort": 443,
               "webPort": 80,
               "timeout": 60000,
-              "debugMode": false
+              "debugMode": false,
+              "mockMode": false
             }
         """.trimIndent()
     )

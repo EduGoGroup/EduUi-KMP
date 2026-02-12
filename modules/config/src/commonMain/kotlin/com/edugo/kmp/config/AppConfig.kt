@@ -1,5 +1,6 @@
 package com.edugo.kmp.config
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -42,6 +43,15 @@ public interface AppConfig {
     public val debugMode: Boolean
 
     /**
+     * Indica si el modo mock está activo.
+     *
+     * Cuando es true, los repositorios de red se reemplazan por mocks
+     * que devuelven datos coherentes sin necesidad de backend.
+     * Siempre es false en PROD por seguridad.
+     */
+    public val mockMode: Boolean
+
+    /**
      * Construye la URL completa del API.
      * @return URL completa en formato "http://localhost:8080"
      */
@@ -61,8 +71,13 @@ public data class AppConfigImpl(
     override val apiPort: Int,
     override val webPort: Int,
     override val timeout: Long,
-    override val debugMode: Boolean
+    override val debugMode: Boolean,
+    @SerialName("mockMode")
+    private val mockModeValue: Boolean = false
 ) : AppConfig {
     override val environment: Environment
         get() = Environment.fromStringOrDefault(environmentName, Environment.DEV)
+
+    override val mockMode: Boolean
+        get() = if (environment == Environment.PROD) false else mockModeValue
 }
