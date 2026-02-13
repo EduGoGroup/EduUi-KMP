@@ -191,8 +191,8 @@ class KoinModulesTest : KoinTest {
     @Test
     fun allModulesReturnCorrectCount() {
         val modules = KoinInitializer.allModules()
-        // core(4) + infrastructure(3) + domain(1) = 8
-        assertEquals(8, modules.size)
+        // core(4) + infrastructure(3) + domain(2) = 9
+        assertEquals(9, modules.size)
     }
 
     @Test
@@ -204,7 +204,7 @@ class KoinModulesTest : KoinTest {
     @Test
     fun domainModulesReturnCorrectCount() {
         val modules = KoinInitializer.domainModules()
-        assertEquals(1, modules.size)
+        assertEquals(2, modules.size)
     }
 
     // ==================== Module Override Pattern ====================

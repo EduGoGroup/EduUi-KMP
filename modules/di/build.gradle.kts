@@ -19,6 +19,7 @@ kotlin {
                 implementation(project(":modules:storage"))
                 implementation(project(":modules:config"))
                 implementation(project(":modules:auth"))
+                implementation(project(":modules:settings"))
                 implementation(libs.multiplatform.settings)
                 implementation(libs.multiplatform.settings.no.arg)
             }

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.edugo.kmp.screens.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -7,13 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,13 +26,14 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResult
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.design.EduGoTheme
-import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
+import com.edugo.kmp.design.components.buttons.DSFilledButton
+import com.edugo.kmp.design.components.inputs.DSOutlinedTextField
+import com.edugo.kmp.design.components.inputs.DSPasswordField
 import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
 import kotlinx.coroutines.launch
@@ -44,8 +43,7 @@ import org.koin.compose.koinInject
 /**
  * Pantalla de login con campos de email y password.
  *
- * Implementación simplificada sin ViewModel.
- * Válida que los campos no estén vacíos y navega a Home.
+ * Usa componentes DS: DSOutlinedTextField, DSPasswordField, DSFilledButton.
  */
 @Composable
 fun LoginScreen(
@@ -87,20 +85,20 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(Spacing.l),
+                .padding(Spacing.spacing6),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = Strings.login_title,
                 style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(bottom = Spacing.xl)
+                modifier = Modifier.padding(bottom = Spacing.spacing8)
             )
 
-            OutlinedTextField(
+            DSOutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text(Strings.login_email_label) },
+                label = Strings.login_email_label,
                 enabled = !isLoading,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
@@ -109,17 +107,15 @@ fun LoginScreen(
                 keyboardActions = KeyboardActions(
                     onNext = { passwordFocusRequester.requestFocus() }
                 ),
-                singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = Spacing.m)
+                    .padding(bottom = Spacing.spacing4)
             )
 
-            OutlinedTextField(
+            DSPasswordField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text(Strings.login_password_label) },
-                visualTransformation = PasswordVisualTransformation(),
+                label = Strings.login_password_label,
                 enabled = !isLoading,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
@@ -128,30 +124,22 @@ fun LoginScreen(
                 keyboardActions = KeyboardActions(
                     onDone = { if (!isLoading) doLogin() }
                 ),
-                singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = Spacing.l)
+                    .padding(bottom = Spacing.spacing6)
                     .focusRequester(passwordFocusRequester)
             )
 
-            Button(
+            DSFilledButton(
+                text = Strings.login_button,
                 onClick = { doLogin() },
                 enabled = !isLoading,
+                loading = isLoading,
                 modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(Sizes.progressSmall),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text(Strings.login_button)
-                }
-            }
+            )
 
             errorMessage?.let { error ->
-                Spacer(modifier = Modifier.height(Spacing.m))
+                Spacer(modifier = Modifier.height(Spacing.spacing4))
                 Text(
                     text = error,
                     color = MaterialTheme.colorScheme.error,

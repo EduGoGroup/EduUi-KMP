@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.edugo.kmp.screens.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -15,13 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import com.edugo.kmp.auth.service.AuthService
-import com.edugo.kmp.design.Alpha
-import com.edugo.kmp.design.Durations
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
+import com.edugo.kmp.design.tokens.ScreenDuration
+import com.edugo.kmp.design.tokens.SurfaceOpacity
 import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
 import kotlinx.coroutines.delay
@@ -38,7 +39,7 @@ fun SplashScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToHome: () -> Unit,
     modifier: Modifier = Modifier,
-    delayMs: Long = Durations.splash,
+    delayMs: Long = ScreenDuration.splash,
 ) {
     val authService = koinInject<AuthService>()
 
@@ -63,23 +64,22 @@ fun SplashScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(Spacing.xl),
+                .padding(Spacing.spacing8),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = Strings.splash_title,
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = Spacing.m)
+                modifier = Modifier.padding(bottom = Spacing.spacing4)
             )
 
             Text(
                 text = Strings.splash_subtitle,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.subtle),
-                modifier = Modifier.padding(bottom = Spacing.xxl)
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = SurfaceOpacity.high),
+                modifier = Modifier.padding(bottom = Spacing.spacing12)
             )
 
             CircularProgressIndicator(
@@ -87,12 +87,12 @@ fun SplashScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(Spacing.m))
+            Spacer(modifier = Modifier.height(Spacing.spacing4))
 
             Text(
                 text = Strings.splash_loading,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.muted)
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = SurfaceOpacity.high)
             )
         }
     }

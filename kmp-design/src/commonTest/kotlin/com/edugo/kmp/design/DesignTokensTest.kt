@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.edugo.kmp.design
 
 import androidx.compose.ui.unit.dp
@@ -8,24 +10,48 @@ import kotlin.test.assertTrue
 class DesignTokensTest {
 
     @Test
-    fun spacingValuesAreOrdered() {
-        assertTrue(Spacing.xxs < Spacing.xs)
-        assertTrue(Spacing.xs < Spacing.s)
-        assertTrue(Spacing.s < Spacing.m)
-        assertTrue(Spacing.m < Spacing.l)
-        assertTrue(Spacing.l < Spacing.xl)
-        assertTrue(Spacing.xl < Spacing.xxl)
+    fun spacingNewScaleIsOrdered() {
+        assertTrue(Spacing.spacing0 < Spacing.spacing1)
+        assertTrue(Spacing.spacing1 < Spacing.spacing2)
+        assertTrue(Spacing.spacing2 < Spacing.spacing3)
+        assertTrue(Spacing.spacing3 < Spacing.spacing4)
+        assertTrue(Spacing.spacing4 < Spacing.spacing5)
+        assertTrue(Spacing.spacing5 < Spacing.spacing6)
+        assertTrue(Spacing.spacing6 < Spacing.spacing7)
+        assertTrue(Spacing.spacing7 < Spacing.spacing8)
+        assertTrue(Spacing.spacing8 < Spacing.spacing9)
+        assertTrue(Spacing.spacing9 < Spacing.spacing10)
+        assertTrue(Spacing.spacing10 < Spacing.spacing11)
+        assertTrue(Spacing.spacing11 < Spacing.spacing12)
+        assertTrue(Spacing.spacing12 < Spacing.spacing13)
+        assertTrue(Spacing.spacing13 < Spacing.spacing14)
+        assertTrue(Spacing.spacing14 < Spacing.spacing15)
+        assertTrue(Spacing.spacing15 < Spacing.spacing16)
     }
 
     @Test
-    fun spacingValuesMatchExpected() {
-        assertEquals(4.dp, Spacing.xxs)
-        assertEquals(8.dp, Spacing.xs)
-        assertEquals(12.dp, Spacing.s)
-        assertEquals(16.dp, Spacing.m)
-        assertEquals(24.dp, Spacing.l)
-        assertEquals(32.dp, Spacing.xl)
-        assertEquals(48.dp, Spacing.xxl)
+    fun spacingNewScaleMatchesExpected() {
+        assertEquals(0.dp, Spacing.spacing0)
+        assertEquals(4.dp, Spacing.spacing1)
+        assertEquals(8.dp, Spacing.spacing2)
+        assertEquals(12.dp, Spacing.spacing3)
+        assertEquals(16.dp, Spacing.spacing4)
+        assertEquals(20.dp, Spacing.spacing5)
+        assertEquals(24.dp, Spacing.spacing6)
+        assertEquals(32.dp, Spacing.spacing8)
+        assertEquals(48.dp, Spacing.spacing12)
+        assertEquals(64.dp, Spacing.spacing16)
+    }
+
+    @Test
+    fun spacingDeprecatedAliasesResolveCorrectly() {
+        assertEquals(Spacing.spacing1, Spacing.xxs)
+        assertEquals(Spacing.spacing2, Spacing.xs)
+        assertEquals(Spacing.spacing3, Spacing.s)
+        assertEquals(Spacing.spacing4, Spacing.m)
+        assertEquals(Spacing.spacing6, Spacing.l)
+        assertEquals(Spacing.spacing8, Spacing.xl)
+        assertEquals(Spacing.spacing12, Spacing.xxl)
     }
 
     @Test
@@ -48,6 +74,12 @@ class DesignTokensTest {
     @Test
     fun sizesTouchTargetMinimumMeetsGuidelines() {
         assertTrue(Sizes.TouchTarget.minimum >= 48.dp)
+    }
+
+    @Test
+    fun sizesTouchTargetGenerousIsLargest() {
+        assertTrue(Sizes.TouchTarget.generous > Sizes.TouchTarget.comfortable)
+        assertTrue(Sizes.TouchTarget.comfortable > Sizes.TouchTarget.minimum)
     }
 
     @Test
@@ -102,6 +134,16 @@ class DesignTokensTest {
         assertEquals(Elevation.level2, Elevation.floatingButton)
         assertEquals(Elevation.level3, Elevation.modal)
         assertEquals(Elevation.level4, Elevation.drawer)
+    }
+
+    @Test
+    fun elevationComponentMappingsAreValid() {
+        assertEquals(Elevation.level3, Elevation.fab)
+        assertEquals(Elevation.level1, Elevation.fabPressed)
+        assertEquals(Elevation.level3, Elevation.dialog)
+        assertEquals(Elevation.level0, Elevation.topAppBar)
+        assertEquals(Elevation.level2, Elevation.bottomAppBar)
+        assertEquals(Elevation.level3, Elevation.snackbar)
     }
 
     @Test

@@ -3,36 +3,37 @@ package com.edugo.kmp.design
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.edugo.kmp.design.tokens.LocalExtendedColorScheme
 
 /**
  * Colores semánticos para mensajes y estados.
- * Usa MaterialTheme.colorScheme como base para mantener consistencia con el tema.
+ * Usa ExtendedColorScheme para success/warning/info y MaterialTheme para error.
  */
 object SemanticColors {
 
     @Composable
-    fun success(): Color = MaterialTheme.colorScheme.tertiary
+    fun success(): Color = LocalExtendedColorScheme.current.success
 
     @Composable
-    fun onSuccess(): Color = MaterialTheme.colorScheme.onTertiary
+    fun onSuccess(): Color = LocalExtendedColorScheme.current.onSuccess
 
     @Composable
-    fun successContainer(): Color = MaterialTheme.colorScheme.tertiaryContainer
+    fun successContainer(): Color = LocalExtendedColorScheme.current.successContainer
 
     @Composable
-    fun onSuccessContainer(): Color = MaterialTheme.colorScheme.onTertiaryContainer
+    fun onSuccessContainer(): Color = LocalExtendedColorScheme.current.onSuccessContainer
 
     @Composable
-    fun warning(): Color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f)
+    fun warning(): Color = LocalExtendedColorScheme.current.warning
 
     @Composable
-    fun onWarning(): Color = MaterialTheme.colorScheme.onSecondary
+    fun onWarning(): Color = LocalExtendedColorScheme.current.onWarning
 
     @Composable
-    fun warningContainer(): Color = MaterialTheme.colorScheme.secondaryContainer
+    fun warningContainer(): Color = LocalExtendedColorScheme.current.warningContainer
 
     @Composable
-    fun onWarningContainer(): Color = MaterialTheme.colorScheme.onSecondaryContainer
+    fun onWarningContainer(): Color = LocalExtendedColorScheme.current.onWarningContainer
 
     @Composable
     fun error(): Color = MaterialTheme.colorScheme.error
@@ -47,14 +48,14 @@ object SemanticColors {
     fun onErrorContainer(): Color = MaterialTheme.colorScheme.onErrorContainer
 
     @Composable
-    fun info(): Color = MaterialTheme.colorScheme.primary
+    fun info(): Color = LocalExtendedColorScheme.current.info
 
     @Composable
-    fun onInfo(): Color = MaterialTheme.colorScheme.onPrimary
+    fun onInfo(): Color = LocalExtendedColorScheme.current.onInfo
 
     @Composable
-    fun infoContainer(): Color = MaterialTheme.colorScheme.primaryContainer
+    fun infoContainer(): Color = LocalExtendedColorScheme.current.infoContainer
 
     @Composable
-    fun onInfoContainer(): Color = MaterialTheme.colorScheme.onPrimaryContainer
+    fun onInfoContainer(): Color = LocalExtendedColorScheme.current.onInfoContainer
 }

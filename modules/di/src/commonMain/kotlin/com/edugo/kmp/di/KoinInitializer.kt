@@ -6,6 +6,7 @@ import com.edugo.kmp.di.module.coreModule
 import com.edugo.kmp.di.module.foundationModule
 import com.edugo.kmp.di.module.loggerModule
 import com.edugo.kmp.di.module.networkModule
+import com.edugo.kmp.di.module.settingsModule
 import com.edugo.kmp.di.module.storageModule
 import com.edugo.kmp.di.module.validationModule
 import org.koin.core.KoinApplication
@@ -57,10 +58,11 @@ public object KoinInitializer {
     )
 
     /**
-     * Módulos de dominio: auth.
+     * Módulos de dominio: auth + settings.
      */
     public fun domainModules(): List<Module> = listOf(
-        authModule
+        authModule,
+        settingsModule
     )
 
     /**

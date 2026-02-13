@@ -5,69 +5,92 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.CompositionLocalProvider
+import com.edugo.kmp.design.tokens.ColorTokens
+import com.edugo.kmp.design.tokens.ExtendedColorScheme
+import com.edugo.kmp.design.tokens.LocalExtendedColorScheme
 
-private val EduGoLightColors = lightColorScheme(
-    primary = Color(0xFF1976D2),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFBBDEFB),
-    onPrimaryContainer = Color(0xFF0D47A1),
-
-    secondary = Color(0xFFFFA726),
-    onSecondary = Color.Black,
-    secondaryContainer = Color(0xFFFFE0B2),
-    onSecondaryContainer = Color(0xFFE65100),
-
-    tertiary = Color(0xFF66BB6A),
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFC8E6C9),
-    onTertiaryContainer = Color(0xFF2E7D32),
-
-    error = Color(0xFFE53935),
-    onError = Color.White,
-    errorContainer = Color(0xFFFFCDD2),
-    onErrorContainer = Color(0xFFC62828),
-
-    background = Color(0xFFFAFAFA),
-    onBackground = Color(0xFF212121),
-    surface = Color.White,
-    onSurface = Color(0xFF212121),
-    surfaceVariant = Color(0xFFF5F5F5),
-    onSurfaceVariant = Color(0xFF757575),
+private val MD3LightColors = lightColorScheme(
+    primary = ColorTokens.Light.primary,
+    onPrimary = ColorTokens.Light.onPrimary,
+    primaryContainer = ColorTokens.Light.primaryContainer,
+    onPrimaryContainer = ColorTokens.Light.onPrimaryContainer,
+    secondary = ColorTokens.Light.secondary,
+    onSecondary = ColorTokens.Light.onSecondary,
+    secondaryContainer = ColorTokens.Light.secondaryContainer,
+    onSecondaryContainer = ColorTokens.Light.onSecondaryContainer,
+    tertiary = ColorTokens.Light.tertiary,
+    onTertiary = ColorTokens.Light.onTertiary,
+    tertiaryContainer = ColorTokens.Light.tertiaryContainer,
+    onTertiaryContainer = ColorTokens.Light.onTertiaryContainer,
+    error = ColorTokens.Light.error,
+    onError = ColorTokens.Light.onError,
+    errorContainer = ColorTokens.Light.errorContainer,
+    onErrorContainer = ColorTokens.Light.onErrorContainer,
+    background = ColorTokens.Light.background,
+    onBackground = ColorTokens.Light.onBackground,
+    surface = ColorTokens.Light.surface,
+    onSurface = ColorTokens.Light.onSurface,
+    surfaceVariant = ColorTokens.Light.surfaceVariant,
+    onSurfaceVariant = ColorTokens.Light.onSurfaceVariant,
+    surfaceTint = ColorTokens.Light.surfaceTint,
+    inverseSurface = ColorTokens.Light.inverseSurface,
+    inverseOnSurface = ColorTokens.Light.inverseOnSurface,
+    inversePrimary = ColorTokens.Light.inversePrimary,
+    outline = ColorTokens.Light.outline,
+    outlineVariant = ColorTokens.Light.outlineVariant,
+    scrim = ColorTokens.Light.scrim,
+    surfaceBright = ColorTokens.Light.surfaceBright,
+    surfaceDim = ColorTokens.Light.surfaceDim,
+    surfaceContainer = ColorTokens.Light.surfaceContainer,
+    surfaceContainerHigh = ColorTokens.Light.surfaceContainerHigh,
+    surfaceContainerHighest = ColorTokens.Light.surfaceContainerHighest,
+    surfaceContainerLow = ColorTokens.Light.surfaceContainerLow,
+    surfaceContainerLowest = ColorTokens.Light.surfaceContainerLowest,
 )
 
-private val EduGoDarkColors = darkColorScheme(
-    primary = Color(0xFF64B5F6),
-    onPrimary = Color(0xFF0D47A1),
-    primaryContainer = Color(0xFF1565C0),
-    onPrimaryContainer = Color(0xFFBBDEFB),
-
-    secondary = Color(0xFFFFB74D),
-    onSecondary = Color(0xFFE65100),
-    secondaryContainer = Color(0xFFF57C00),
-    onSecondaryContainer = Color(0xFFFFE0B2),
-
-    tertiary = Color(0xFF81C784),
-    onTertiary = Color(0xFF1B5E20),
-    tertiaryContainer = Color(0xFF388E3C),
-    onTertiaryContainer = Color(0xFFC8E6C9),
-
-    error = Color(0xFFEF5350),
-    onError = Color(0xFFFFEBEE),
-    errorContainer = Color(0xFFC62828),
-    onErrorContainer = Color(0xFFFFCDD2),
-
-    background = Color(0xFF121212),
-    onBackground = Color(0xFFE0E0E0),
-    surface = Color(0xFF1E1E1E),
-    onSurface = Color(0xFFE0E0E0),
-    surfaceVariant = Color(0xFF2C2C2C),
-    onSurfaceVariant = Color(0xFFBDBDBD),
+private val MD3DarkColors = darkColorScheme(
+    primary = ColorTokens.Dark.primary,
+    onPrimary = ColorTokens.Dark.onPrimary,
+    primaryContainer = ColorTokens.Dark.primaryContainer,
+    onPrimaryContainer = ColorTokens.Dark.onPrimaryContainer,
+    secondary = ColorTokens.Dark.secondary,
+    onSecondary = ColorTokens.Dark.onSecondary,
+    secondaryContainer = ColorTokens.Dark.secondaryContainer,
+    onSecondaryContainer = ColorTokens.Dark.onSecondaryContainer,
+    tertiary = ColorTokens.Dark.tertiary,
+    onTertiary = ColorTokens.Dark.onTertiary,
+    tertiaryContainer = ColorTokens.Dark.tertiaryContainer,
+    onTertiaryContainer = ColorTokens.Dark.onTertiaryContainer,
+    error = ColorTokens.Dark.error,
+    onError = ColorTokens.Dark.onError,
+    errorContainer = ColorTokens.Dark.errorContainer,
+    onErrorContainer = ColorTokens.Dark.onErrorContainer,
+    background = ColorTokens.Dark.background,
+    onBackground = ColorTokens.Dark.onBackground,
+    surface = ColorTokens.Dark.surface,
+    onSurface = ColorTokens.Dark.onSurface,
+    surfaceVariant = ColorTokens.Dark.surfaceVariant,
+    onSurfaceVariant = ColorTokens.Dark.onSurfaceVariant,
+    surfaceTint = ColorTokens.Dark.surfaceTint,
+    inverseSurface = ColorTokens.Dark.inverseSurface,
+    inverseOnSurface = ColorTokens.Dark.inverseOnSurface,
+    inversePrimary = ColorTokens.Dark.inversePrimary,
+    outline = ColorTokens.Dark.outline,
+    outlineVariant = ColorTokens.Dark.outlineVariant,
+    scrim = ColorTokens.Dark.scrim,
+    surfaceBright = ColorTokens.Dark.surfaceBright,
+    surfaceDim = ColorTokens.Dark.surfaceDim,
+    surfaceContainer = ColorTokens.Dark.surfaceContainer,
+    surfaceContainerHigh = ColorTokens.Dark.surfaceContainerHigh,
+    surfaceContainerHighest = ColorTokens.Dark.surfaceContainerHighest,
+    surfaceContainerLow = ColorTokens.Dark.surfaceContainerLow,
+    surfaceContainerLowest = ColorTokens.Dark.surfaceContainerLowest,
 )
 
 /**
  * Theme principal de EduGo.
- * Aplica Material 3 con colores personalizados y tipografía.
+ * Aplica Material 3 con paleta MD3 por defecto y extended color scheme.
  * Soporta modo oscuro automático.
  */
 @Composable
@@ -75,15 +98,23 @@ fun EduGoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
-        EduGoDarkColors
-    } else {
-        EduGoLightColors
-    }
+    val colorScheme = if (darkTheme) MD3DarkColors else MD3LightColors
+    val extendedColors = if (darkTheme) ExtendedColorScheme.dark() else ExtendedColorScheme.light()
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = EduGoTypography,
-        content = content
-    )
+    CompositionLocalProvider(LocalExtendedColorScheme provides extendedColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = EduGoTypography,
+            content = content
+        )
+    }
+}
+
+/**
+ * Acceso al extended color scheme desde cualquier composable dentro de EduGoTheme.
+ */
+object EduGoThemeExtensions {
+    val extendedColors: ExtendedColorScheme
+        @Composable
+        get() = LocalExtendedColorScheme.current
 }

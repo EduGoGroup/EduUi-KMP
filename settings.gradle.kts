@@ -29,6 +29,7 @@ include(":modules:network")
 
 // Sprint 3 modules
 include(":modules:auth")
+include(":modules:settings")
 include(":modules:di")
 
 // Sprint 4 modules (UI Layer)

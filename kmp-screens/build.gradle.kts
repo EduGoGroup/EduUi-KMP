@@ -14,6 +14,7 @@ kotlin {
                 implementation(project(":kmp-resources"))
                 implementation(project(":modules:di"))
                 implementation(project(":modules:auth"))
+                implementation(project(":modules:settings"))
                 implementation(project(":modules:network"))
             }
         }

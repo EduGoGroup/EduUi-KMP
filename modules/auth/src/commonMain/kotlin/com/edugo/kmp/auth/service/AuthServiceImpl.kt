@@ -302,7 +302,7 @@ public class AuthServiceImpl(
                 }
             } else if (token.hasRefreshToken()) {
                 // forceRefresh FUERA del mutex para evitar deadlock
-                // (onRefreshSuccess collector tambien necesita el mutex)
+                // (onRefreshSuccess collector también necesita el mutex)
                 val refreshResult = tokenRefreshManager.forceRefresh()
                 stateMutex.withLock {
                     if (refreshResult is Result.Success) {

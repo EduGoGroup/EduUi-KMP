@@ -21,7 +21,7 @@ internal object DefaultConfigs {
               "webPort": 8080,
               "timeout": 30000,
               "debugMode": true,
-              "mockMode": false
+              "mockMode": true
             }
         """.trimIndent(),
 
