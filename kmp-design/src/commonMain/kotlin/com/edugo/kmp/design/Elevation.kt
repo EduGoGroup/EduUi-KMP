@@ -36,4 +36,5 @@ object Elevation {
     val navigationRail: Dp = level0
     val menu: Dp = level2
     val snackbar: Dp = level3
+    val tooltip: Dp = level2
 }

@@ -49,6 +49,23 @@ fun SettingsScreen(
     val themeService = koinInject<ThemeService>()
     val selectedTheme by themeService.themePreference.collectAsState()
 
+    SettingsScreenContent(
+        selectedTheme = selectedTheme,
+        onThemeSelected = { themeService.setThemePreference(it) },
+        onBack = onBack,
+        onLogout = onLogout,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun SettingsScreenContent(
+    selectedTheme: ThemeOption,
+    onThemeSelected: (ThemeOption) -> Unit,
+    onBack: () -> Unit,
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -81,19 +98,19 @@ fun SettingsScreen(
                 DSRadioButton(
                     label = Strings.settings_theme_light,
                     selected = selectedTheme == ThemeOption.LIGHT,
-                    onClick = { themeService.setThemePreference(ThemeOption.LIGHT) },
+                    onClick = { onThemeSelected(ThemeOption.LIGHT) },
                 )
 
                 DSRadioButton(
                     label = Strings.settings_theme_dark,
                     selected = selectedTheme == ThemeOption.DARK,
-                    onClick = { themeService.setThemePreference(ThemeOption.DARK) },
+                    onClick = { onThemeSelected(ThemeOption.DARK) },
                 )
 
                 DSRadioButton(
                     label = Strings.settings_theme_system,
                     selected = selectedTheme == ThemeOption.SYSTEM,
-                    onClick = { themeService.setThemePreference(ThemeOption.SYSTEM) },
+                    onClick = { onThemeSelected(ThemeOption.SYSTEM) },
                 )
             }
 
@@ -114,7 +131,9 @@ fun SettingsScreen(
 private fun SettingsScreenPreview() {
     InitStringsForPreview()
     EduGoTheme {
-        SettingsScreen(
+        SettingsScreenContent(
+            selectedTheme = ThemeOption.SYSTEM,
+            onThemeSelected = {},
             onBack = {},
             onLogout = {},
         )
@@ -126,7 +145,9 @@ private fun SettingsScreenPreview() {
 private fun SettingsScreenDarkPreview() {
     InitStringsForPreview()
     EduGoTheme(darkTheme = true) {
-        SettingsScreen(
+        SettingsScreenContent(
+            selectedTheme = ThemeOption.DARK,
+            onThemeSelected = {},
             onBack = {},
             onLogout = {},
         )

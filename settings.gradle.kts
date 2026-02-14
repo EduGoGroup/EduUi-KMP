@@ -37,6 +37,9 @@ include(":kmp-design")
 include(":kmp-resources")
 include(":kmp-screens")
 
+// Sprint 5 modules (Design System Samples)
+include(":kmp-samples")
+
 // Sprint 4 platform apps
 include(":platforms:mobile:app")
 include(":platforms:desktop:app")

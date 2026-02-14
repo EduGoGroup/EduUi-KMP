@@ -58,8 +58,6 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val passwordFocusRequester = remember { FocusRequester() }
-
     fun doLogin() {
         if (email.isBlank() || password.isBlank()) {
             errorMessage = Strings.login_error_empty_fields
@@ -77,6 +75,31 @@ fun LoginScreen(
             }
         }
     }
+
+    LoginScreenContent(
+        email = email,
+        onEmailChange = { email = it },
+        password = password,
+        onPasswordChange = { password = it },
+        isLoading = isLoading,
+        errorMessage = errorMessage,
+        onLogin = { doLogin() },
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun LoginScreenContent(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onLogin: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val passwordFocusRequester = remember { FocusRequester() }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -97,7 +120,7 @@ fun LoginScreen(
 
             DSOutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = onEmailChange,
                 label = Strings.login_email_label,
                 enabled = !isLoading,
                 keyboardOptions = KeyboardOptions(
@@ -114,7 +137,7 @@ fun LoginScreen(
 
             DSPasswordField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = onPasswordChange,
                 label = Strings.login_password_label,
                 enabled = !isLoading,
                 keyboardOptions = KeyboardOptions(
@@ -122,7 +145,7 @@ fun LoginScreen(
                     imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { if (!isLoading) doLogin() }
+                    onDone = { if (!isLoading) onLogin() }
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -132,7 +155,7 @@ fun LoginScreen(
 
             DSFilledButton(
                 text = Strings.login_button,
-                onClick = { doLogin() },
+                onClick = onLogin,
                 enabled = !isLoading,
                 loading = isLoading,
                 modifier = Modifier.fillMaxWidth()
@@ -155,8 +178,14 @@ fun LoginScreen(
 private fun LoginScreenPreview() {
     InitStringsForPreview()
     EduGoTheme {
-        LoginScreen(
-            onLoginSuccess = {},
+        LoginScreenContent(
+            email = "",
+            onEmailChange = {},
+            password = "",
+            onPasswordChange = {},
+            isLoading = false,
+            errorMessage = null,
+            onLogin = {},
         )
     }
 }
@@ -166,8 +195,14 @@ private fun LoginScreenPreview() {
 private fun LoginScreenDarkPreview() {
     InitStringsForPreview()
     EduGoTheme(darkTheme = true) {
-        LoginScreen(
-            onLoginSuccess = {},
+        LoginScreenContent(
+            email = "usuario@ejemplo.com",
+            onEmailChange = {},
+            password = "password",
+            onPasswordChange = {},
+            isLoading = false,
+            errorMessage = null,
+            onLogin = {},
         )
     }
 }

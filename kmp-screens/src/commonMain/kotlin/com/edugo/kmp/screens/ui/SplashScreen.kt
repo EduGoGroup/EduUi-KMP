@@ -57,6 +57,11 @@ fun SplashScreen(
         }
     }
 
+    SplashScreenContent(modifier = modifier)
+}
+
+@Composable
+private fun SplashScreenContent(modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -103,10 +108,7 @@ fun SplashScreen(
 private fun SplashScreenPreview() {
     InitStringsForPreview()
     EduGoTheme {
-        SplashScreen(
-            onNavigateToLogin = {},
-            onNavigateToHome = {},
-        )
+        SplashScreenContent()
     }
 }
 
@@ -115,9 +117,6 @@ private fun SplashScreenPreview() {
 private fun SplashScreenDarkPreview() {
     InitStringsForPreview()
     EduGoTheme(darkTheme = true) {
-        SplashScreen(
-            onNavigateToLogin = {},
-            onNavigateToHome = {},
-        )
+        SplashScreenContent()
     }
 }
