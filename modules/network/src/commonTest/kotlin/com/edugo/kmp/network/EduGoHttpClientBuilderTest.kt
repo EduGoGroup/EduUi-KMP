@@ -418,7 +418,7 @@ class EduGoHttpClientBuilderConfigurationTest {
     }
 
     @Test
-    fun `builder supports zero retry (no retry plugin installed)`() {
+    fun `builder supports zero retry - no retry plugin installed`() {
         val client = EduGoHttpClientBuilder()
             .retry(RetryConfig.NoRetry)
             .build()
@@ -427,7 +427,7 @@ class EduGoHttpClientBuilderConfigurationTest {
     }
 
     @Test
-    fun `builder supports LogLevel NONE (no logging plugin installed)`() {
+    fun `builder supports LogLevel NONE - no logging plugin installed`() {
         val client = EduGoHttpClientBuilder()
             .logging(LogLevel.NONE)
             .build()

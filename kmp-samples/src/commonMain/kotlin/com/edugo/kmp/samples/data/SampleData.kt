@@ -104,6 +104,27 @@ object SampleData {
         "Programacion",
     )
 
+    // Profile
+    val profileName = "Juan Perez"
+    val profileEmail = "juan.perez@edugo.com"
+    val profileInitials = "JP"
+    val profileBio = "Estudiante de Ingenieria de Sistemas. Apasionado por la tecnologia y el aprendizaje continuo."
+    val profileStats = listOf(
+        Metric("Cursos", "12", "completados"),
+        Metric("Certificados", "8", "obtenidos"),
+        Metric("Horas", "156", "de estudio"),
+        Metric("Racha", "15", "dias"),
+    )
+
+    // Notifications
+    val notifications = listOf(
+        Triple("Nuevo curso disponible", "Matematicas Avanzadas ya esta disponible en tu catalogo", "hace 5 min"),
+        Triple("Certificado obtenido", "Felicidades! Completaste Algebra Lineal", "hace 1h"),
+        Triple("Recordatorio", "Tu clase de Fisica comienza en 30 minutos", "hace 2h"),
+        Triple("Actualizacion", "Se actualizo el contenido del curso de Programacion", "hace 1d"),
+        Triple("Logro desbloqueado", "Completaste 7 dias consecutivos de estudio", "hace 2d"),
+    )
+
     // Settings
     val settingsGroups = listOf(
         SettingsGroup(

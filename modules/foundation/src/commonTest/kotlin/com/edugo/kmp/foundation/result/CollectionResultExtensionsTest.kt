@@ -154,7 +154,7 @@ class CollectionResultExtensionsTest {
     }
 
     @Test
-    fun `traverse falla en el primer error (fail-fast)`() {
+    fun `traverse falla en el primer error - fail-fast`() {
         val strings = listOf("1", "2", "invalid", "4", "5")
 
         val result = strings.traverse { str ->

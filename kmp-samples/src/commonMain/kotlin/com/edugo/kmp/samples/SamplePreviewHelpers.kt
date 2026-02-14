@@ -1,6 +1,7 @@
 package com.edugo.kmp.samples
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ enum class DeviceSize(val widthDp: Int, val heightDp: Int, val label: String) {
     TABLET(800, 1280, "Tablet"),
     TABLET_LANDSCAPE(1280, 800, "Tablet Landscape"),
     DESKTOP(1400, 900, "Desktop"),
+    DESKTOP_WIDE(1920, 1080, "Desktop Wide"),
 }
 
 /**
@@ -60,6 +62,46 @@ fun SampleDevicePreview(
                 .height(device.heightDp.dp),
         ) {
             content()
+        }
+    }
+}
+
+/**
+ * Breakpoints responsivos para layouts adaptativos.
+ * Sigue las guias de Material Design 3:
+ * - Compact: < 600dp (phones)
+ * - Medium: 600dp - 840dp (tablets, foldables)
+ * - Expanded: > 840dp (desktops, large tablets)
+ */
+object ResponsiveBreakpoints {
+    val COMPACT = 600.dp
+    val MEDIUM = 840.dp
+}
+
+/**
+ * Layout adaptativo que cambia el contenido segun el ancho disponible.
+ * Usa breakpoints de Material Design 3 para decidir que layout mostrar.
+ *
+ * Ejemplo:
+ * ```
+ * AdaptiveLayout(
+ *     compact = { MobileLayout() },
+ *     medium = { TabletLayout() },
+ *     expanded = { DesktopLayout() },
+ * )
+ * ```
+ */
+@Composable
+fun AdaptiveLayout(
+    compact: @Composable () -> Unit,
+    medium: @Composable () -> Unit = compact,
+    expanded: @Composable () -> Unit = medium,
+) {
+    BoxWithConstraints {
+        when {
+            maxWidth < ResponsiveBreakpoints.COMPACT -> compact()
+            maxWidth < ResponsiveBreakpoints.MEDIUM -> medium()
+            else -> expanded()
         }
     }
 }

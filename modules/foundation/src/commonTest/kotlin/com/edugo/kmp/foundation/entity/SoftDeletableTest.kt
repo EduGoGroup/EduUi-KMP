@@ -633,7 +633,7 @@ class SoftDeletableTest {
     }
 
     @Test
-    fun `vista de papelera de reciclaje (solo eliminados)`() {
+    fun `vista de papelera de reciclaje - solo eliminados`() {
         val allRecords = listOf(
             SimpleSoftDeletable(name = "Active 1", deletedAt = null),
             SimpleSoftDeletable(name = "Deleted 1", deletedAt = Clock.System.now()),
