@@ -7,11 +7,16 @@
       "mcp__acp__Edit"
     ],
     "additionalDirectories": [
-      "/Users/jhoanmedina/source/Documentation/GuideDesign/Design"
+      "/Users/jhoanmedina/source/Documentation/GuideDesign/Design",
+      "/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-administracion",
+      "/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile",
+      "/Users/jhoanmedina/source/EduGo/repos-separados/edugo-worker",
+      "/Users/jhoanmedina/source/EduGo/repos-separados/edugo-shared",
+      "/Users/jhoanmedina/source/EduGo/repos-separados/edugo-dev-environment",
+      "/Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure",
+      "/Users/jhoanmedina/source/EduGo/repos-separados/edugo-dev-environment"
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "jetbrains"
-  ]
+  "enabledMcpjsonServers": ["jetbrains"]
 }
