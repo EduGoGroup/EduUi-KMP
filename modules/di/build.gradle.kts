@@ -20,6 +20,7 @@ kotlin {
                 implementation(project(":modules:config"))
                 implementation(project(":modules:auth"))
                 implementation(project(":modules:settings"))
+                implementation(project(":modules:dynamic-ui"))
                 implementation(libs.multiplatform.settings)
                 implementation(libs.multiplatform.settings.no.arg)
             }
