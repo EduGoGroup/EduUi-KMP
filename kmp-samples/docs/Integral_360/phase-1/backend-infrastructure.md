@@ -1,27 +1,35 @@
 # Fase 1: Cambios de Infraestructura (edugo-infrastructure)
 
-## Descripcion General
+## Descripción General
 
-Agregar el schema PostgreSQL `ui_config` y todos los archivos de migracion relacionados al proyecto de infraestructura.
+Agregar el schema PostgreSQL `ui_config` y todos los archivos de migración relacionados al proyecto de infraestructura. También actualizar el migrador en `edugo-dev-environment` para manejar el nuevo schema.
 
 ## Proyecto: `edugo-infrastructure`
 
-### 1. Nuevos Archivos de Migracion
+### Estructura de Migraciones
 
-Ubicacion: `postgres/migrations/`
+El proyecto usa 4 capas de migración embebidas en Go (no up/down):
 
-#### Migracion 0018: Crear Schema
-```sql
--- 0018_create_ui_config_schema.up.sql
-CREATE SCHEMA IF NOT EXISTS ui_config;
-
--- 0018_create_ui_config_schema.down.sql
-DROP SCHEMA IF EXISTS ui_config CASCADE;
+```
+postgres/migrations/
+├── structure/    → CREATE TABLE sin FK (embebido, ejecutado por ApplyStructure)
+├── constraints/  → FK, índices, triggers (embebido, ejecutado por ApplyConstraints)
+├── seeds/        → Datos del sistema: roles, permisos (embebido, ejecutado por ApplySeeds)
+└── testing/      → Datos demo para desarrollo (embebido, ejecutado por ApplyMockData)
 ```
 
-#### Migracion 0019: Tabla de Templates de Pantalla
+Las migraciones existentes van de 000 a 015 en structure/constraints, 001-004 en seeds, y 001-005 en testing.
+
+---
+
+### 1. Capa Structure (CREATE TABLE sin FK)
+
+#### `structure/016_create_screen_templates.sql`
 ```sql
--- 0019_create_screen_templates.up.sql
+-- Schema para configuración de UI
+CREATE SCHEMA IF NOT EXISTS ui_config;
+
+-- Templates de pantalla
 CREATE TABLE ui_config.screen_templates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pattern VARCHAR(50) NOT NULL,
@@ -30,24 +38,19 @@ CREATE TABLE ui_config.screen_templates (
     version INT NOT NULL DEFAULT 1,
     definition JSONB NOT NULL,
     is_active BOOLEAN DEFAULT true,
-    created_by UUID REFERENCES public.users(id),
+    created_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(name, version)
 );
-
-CREATE INDEX idx_screen_templates_pattern ON ui_config.screen_templates(pattern);
-CREATE INDEX idx_screen_templates_active ON ui_config.screen_templates(is_active) WHERE is_active = true;
-CREATE INDEX idx_screen_templates_definition ON ui_config.screen_templates USING GIN (definition);
 ```
 
-#### Migracion 0020: Tabla de Instancias de Pantalla
+#### `structure/017_create_screen_instances.sql`
 ```sql
--- 0020_create_screen_instances.up.sql
 CREATE TABLE ui_config.screen_instances (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     screen_key VARCHAR(100) NOT NULL UNIQUE,
-    template_id UUID NOT NULL REFERENCES ui_config.screen_templates(id),
+    template_id UUID NOT NULL,
     name VARCHAR(200) NOT NULL,
     description TEXT,
     slot_data JSONB NOT NULL DEFAULT '{}',
@@ -57,24 +60,18 @@ CREATE TABLE ui_config.screen_instances (
     scope VARCHAR(20) DEFAULT 'school',
     required_permission VARCHAR(100),
     is_active BOOLEAN DEFAULT true,
-    created_by UUID REFERENCES public.users(id),
+    created_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-CREATE INDEX idx_screen_instances_template ON ui_config.screen_instances(template_id);
-CREATE INDEX idx_screen_instances_scope ON ui_config.screen_instances(scope);
-CREATE INDEX idx_screen_instances_active ON ui_config.screen_instances(is_active) WHERE is_active = true;
-CREATE INDEX idx_screen_instances_slot_data ON ui_config.screen_instances USING GIN (slot_data);
 ```
 
-#### Migracion 0021: Tabla de Asociacion Recurso-Pantalla
+#### `structure/018_create_resource_screens.sql`
 ```sql
--- 0021_create_resource_screens.up.sql
 CREATE TABLE ui_config.resource_screens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    resource_id UUID NOT NULL REFERENCES public.resources(id),
-    screen_instance_id UUID NOT NULL REFERENCES ui_config.screen_instances(id),
+    resource_id UUID NOT NULL,
+    screen_instance_id UUID NOT NULL,
     screen_type VARCHAR(50) NOT NULL,
     is_default BOOLEAN DEFAULT false,
     sort_order INT DEFAULT 0,
@@ -83,76 +80,214 @@ CREATE TABLE ui_config.resource_screens (
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(resource_id, screen_type)
 );
-
-CREATE INDEX idx_resource_screens_resource ON ui_config.resource_screens(resource_id);
 ```
 
-#### Migracion 0022: Tabla de Preferencias de Usuario
+#### `structure/019_create_screen_user_preferences.sql`
 ```sql
--- 0022_create_screen_user_preferences.up.sql
 CREATE TABLE ui_config.screen_user_preferences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    screen_instance_id UUID NOT NULL REFERENCES ui_config.screen_instances(id),
-    user_id UUID NOT NULL REFERENCES public.users(id),
+    screen_instance_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     preferences JSONB NOT NULL DEFAULT '{}',
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(screen_instance_id, user_id)
 );
+```
 
+---
+
+### 2. Capa Constraints (FK, índices, triggers)
+
+#### `constraints/016_screen_templates_constraints.sql`
+```sql
+-- FK
+ALTER TABLE ui_config.screen_templates
+    ADD CONSTRAINT fk_screen_templates_created_by
+    FOREIGN KEY (created_by) REFERENCES public.users(id);
+
+-- Índices
+CREATE INDEX idx_screen_templates_pattern ON ui_config.screen_templates(pattern);
+CREATE INDEX idx_screen_templates_active ON ui_config.screen_templates(is_active) WHERE is_active = true;
+CREATE INDEX idx_screen_templates_definition ON ui_config.screen_templates USING GIN (definition);
+
+-- Trigger updated_at
+CREATE TRIGGER update_screen_templates_updated_at
+    BEFORE UPDATE ON ui_config.screen_templates
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+#### `constraints/017_screen_instances_constraints.sql`
+```sql
+-- FK
+ALTER TABLE ui_config.screen_instances
+    ADD CONSTRAINT fk_screen_instances_template
+    FOREIGN KEY (template_id) REFERENCES ui_config.screen_templates(id);
+
+ALTER TABLE ui_config.screen_instances
+    ADD CONSTRAINT fk_screen_instances_created_by
+    FOREIGN KEY (created_by) REFERENCES public.users(id);
+
+-- Índices
+CREATE INDEX idx_screen_instances_template ON ui_config.screen_instances(template_id);
+CREATE INDEX idx_screen_instances_scope ON ui_config.screen_instances(scope);
+CREATE INDEX idx_screen_instances_active ON ui_config.screen_instances(is_active) WHERE is_active = true;
+CREATE INDEX idx_screen_instances_slot_data ON ui_config.screen_instances USING GIN (slot_data);
+
+-- Trigger updated_at
+CREATE TRIGGER update_screen_instances_updated_at
+    BEFORE UPDATE ON ui_config.screen_instances
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+#### `constraints/018_resource_screens_constraints.sql`
+```sql
+-- FK
+ALTER TABLE ui_config.resource_screens
+    ADD CONSTRAINT fk_resource_screens_resource
+    FOREIGN KEY (resource_id) REFERENCES public.resources(id);
+
+ALTER TABLE ui_config.resource_screens
+    ADD CONSTRAINT fk_resource_screens_instance
+    FOREIGN KEY (screen_instance_id) REFERENCES ui_config.screen_instances(id);
+
+-- Índices
+CREATE INDEX idx_resource_screens_resource ON ui_config.resource_screens(resource_id);
+CREATE INDEX idx_resource_screens_instance ON ui_config.resource_screens(screen_instance_id);
+
+-- Trigger updated_at
+CREATE TRIGGER update_resource_screens_updated_at
+    BEFORE UPDATE ON ui_config.resource_screens
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+#### `constraints/019_screen_user_preferences_constraints.sql`
+```sql
+-- FK
+ALTER TABLE ui_config.screen_user_preferences
+    ADD CONSTRAINT fk_screen_user_prefs_instance
+    FOREIGN KEY (screen_instance_id) REFERENCES ui_config.screen_instances(id);
+
+ALTER TABLE ui_config.screen_user_preferences
+    ADD CONSTRAINT fk_screen_user_prefs_user
+    FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+-- Índices
 CREATE INDEX idx_screen_user_prefs_user ON ui_config.screen_user_preferences(user_id);
 CREATE INDEX idx_screen_user_prefs_screen ON ui_config.screen_user_preferences(screen_instance_id);
+
+-- Trigger updated_at
+CREATE TRIGGER update_screen_user_prefs_updated_at
+    BEFORE UPDATE ON ui_config.screen_user_preferences
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 ```
 
-### 2. Datos Semilla
+---
 
-#### Migracion 0023: Templates Base de Pantalla
-Templates semilla para cada pattern usado en la Fase 1:
-- `list-basic-v1` - Lista basica con busqueda, estado vacio, elementos
-- `detail-basic-v1` - Detalle con hero, secciones de contenido, acciones
-- `dashboard-basic-v1` - Dashboard con saludo, KPIs, actividad, acciones rapidas
-- `settings-basic-v1` - Configuracion con secciones agrupadas
-- `login-basic-v1` - Login con marca, formulario, autenticacion social
+### 3. Capa Seeds (datos del sistema)
 
-#### Migracion 0024: Instancias de Pantalla para Pantallas Principales
-Instancias semilla para las pantallas de la Fase 1:
-- `materials-list` → vinculada a `list-basic-v1`
-- `material-detail` → vinculada a `detail-basic-v1`
-- `dashboard-teacher` → vinculada a `dashboard-basic-v1`
-- `dashboard-student` → vinculada a `dashboard-basic-v1`
-- `app-settings` → vinculada a `settings-basic-v1`
-- `app-login` → vinculada a `login-basic-v1`
+#### `seeds/005_seed_screen_config_permissions.sql`
+```sql
+-- Recurso para configuración de pantalla
+INSERT INTO public.resources (id, key, display_name, icon, is_menu_visible, scope)
+VALUES ('20000000-0000-0000-0000-000000000020', 'screen_config', 'Configuración de Pantallas', 'settings_applications', false, 'system');
 
-### 3. Datos de Prueba
+-- Permisos de configuración de pantalla
+INSERT INTO public.permissions (name, display_name, resource_id, resource_key, action, scope) VALUES
+('screen_templates:read', 'Ver Templates de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'read', 'system'),
+('screen_templates:create', 'Crear Templates de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'create', 'system'),
+('screen_templates:update', 'Actualizar Templates de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'update', 'system'),
+('screen_templates:delete', 'Eliminar Templates de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'delete', 'system'),
+('screen_instances:read', 'Ver Instancias de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'read', 'system'),
+('screen_instances:create', 'Crear Instancias de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'create', 'system'),
+('screen_instances:update', 'Actualizar Instancias de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'update', 'system'),
+('screen_instances:delete', 'Eliminar Instancias de Pantalla', '20000000-0000-0000-0000-000000000020', 'screen_config', 'delete', 'system'),
+('screens:read', 'Leer Pantallas (Mobile)', '20000000-0000-0000-0000-000000000020', 'screen_config', 'read', 'system');
 
-Ubicacion: `postgres/testing/`
+-- Asignar todos los permisos de screen_config al rol super_admin
+INSERT INTO public.role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM public.roles r, public.permissions p
+WHERE r.name = 'super_admin' AND p.resource_key = 'screen_config';
+```
 
-Agregar datos de prueba para configuraciones de pantalla que se puedan cargar en desarrollo:
+#### `seeds/006_seed_screen_templates.sql`
+5 templates base para los patterns de la Fase 1:
+
+| Template | Pattern | Descripción |
+|----------|---------|-------------|
+| `login-basic-v1` | login | Login con marca, formulario, autenticación social |
+| `dashboard-basic-v1` | dashboard | Dashboard con saludo, KPIs, actividad, acciones rápidas |
+| `list-basic-v1` | list | Lista con búsqueda, filtros, estado vacío, elementos |
+| `detail-basic-v1` | detail | Detalle con hero, secciones de contenido, acciones |
+| `settings-basic-v1` | settings | Configuración con secciones agrupadas |
+
+Cada template contiene el JSON de `definition` completo con las zones, slots, y controlTypes definidos en [main-screens.md](./main-screens.md).
+
+#### `seeds/007_seed_screen_instances.sql`
+6 instancias para las pantallas de la Fase 1:
+
+| Instancia | Screen Key | Template | Data Endpoint |
+|-----------|-----------|----------|---------------|
+| Login | `app-login` | login-basic-v1 | null |
+| Dashboard Profesor | `dashboard-teacher` | dashboard-basic-v1 | `/v1/stats/global` |
+| Dashboard Estudiante | `dashboard-student` | dashboard-basic-v1 | personalizado |
+| Lista de Materiales | `materials-list` | list-basic-v1 | `/v1/materials` |
+| Detalle de Material | `material-detail` | detail-basic-v1 | `/v1/materials/{id}` |
+| Configuración | `app-settings` | settings-basic-v1 | null |
+
+Cada instancia incluye `slot_data`, `actions`, `data_config` y `required_permission` completos.
+
+#### `seeds/008_seed_resource_screens.sql`
+Mapeos recurso-pantalla que vinculan los recursos RBAC existentes con las instancias de pantalla:
+
+| Recurso | Screen Key | Screen Type |
+|---------|-----------|-------------|
+| materials | materials-list | list |
+| materials | material-detail | detail |
+| dashboard | dashboard-teacher | dashboard |
+| settings | app-settings | settings |
+
+---
+
+### 4. Capa Testing (datos demo)
+
+#### `testing/006_demo_screen_config.sql`
+Datos adicionales de prueba para desarrollo:
 - Templates de ejemplo con todos los tipos de control soportados
-- Instancias de ejemplo con datos de slot realistas
-- Mapeos de ejemplo recurso-pantalla
+- Instancias adicionales para probar variantes
+- Preferencias de usuario de ejemplo
 
-### 4. Docker Compose
+---
 
-No se necesitan cambios - el contenedor PostgreSQL existente soporta multiples schemas.
+### 5. Actualización del Migrador (edugo-dev-environment)
 
-### 5. Actualizaciones del Makefile
+El migrador en `edugo-dev-environment/migrator/cmd/main.go` necesita actualizarse para manejar el schema `ui_config` en el modo FORCE_MIGRATION:
 
-Agregar targets:
-```makefile
-# Ejecutar migraciones de UI config especificamente
-migrate-ui-config:
-	@$(POSTGRES_CLI) up --schema ui_config
-
-# Cargar datos semilla de UI config
-seed-ui-config:
-	@$(POSTGRES_CLI) seed --schema ui_config
+```go
+// En dropPostgresSchema(), agregar antes de DROP public:
+_, err := db.Exec("DROP SCHEMA IF EXISTS ui_config CASCADE")
+if err != nil {
+    return fmt.Errorf("error eliminando schema ui_config: %w", err)
+}
 ```
 
-## Criterios de Aceptacion
+Esto garantiza que `FORCE_MIGRATION=true` recree limpiamente todas las tablas incluyendo el nuevo schema.
+
+**Nota**: Para desarrollo local, agregar `./edugo-dev-environment/migrator` al `go.work` para que use la versión local de `edugo-infrastructure/postgres` sin necesidad de releases.
+
+---
+
+## Criterios de Aceptación
 
 - [ ] Schema `ui_config` creado exitosamente
-- [ ] Las 4 tablas creadas con restricciones e indices apropiados
-- [ ] Los datos semilla se cargan sin errores
-- [ ] Las migraciones up/down funcionan correctamente
-- [ ] Datos de prueba disponibles para desarrollo
-- [ ] Indices GIN en columnas JSONB para rendimiento de consultas
+- [ ] Las 4 tablas creadas con constraints e índices apropiados
+- [ ] Los datos semilla se cargan sin errores (ApplySeeds)
+- [ ] Los datos de testing se cargan sin errores (ApplyMockData)
+- [ ] Índices GIN en columnas JSONB para rendimiento de consultas
+- [ ] Triggers de `updated_at` funcionando en todas las tablas
+- [ ] FK referencian correctamente a `public.users` y `public.resources`
+- [ ] El migrador con FORCE_MIGRATION=true elimina y recrea el schema `ui_config`
+- [ ] La compilación del módulo `postgres` de infrastructure pasa sin errores
