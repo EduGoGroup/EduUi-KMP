@@ -20,24 +20,28 @@ import org.koin.dsl.module
 val dynamicUiModule = module {
     single<ScreenLoader> {
         val appConfig = get<AppConfig>()
+        // screen-config endpoints están en API Admin
         CachedScreenLoader(
-            remote = RemoteScreenLoader(get<EduGoHttpClient>(), appConfig.getFullApiUrl()),
+            remote = RemoteScreenLoader(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl),
             storage = get<SafeEduGoStorage>()
         )
     }
     single<DataLoader> {
         val appConfig = get<AppConfig>()
-        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.getFullApiUrl())
+        // TODO: DataLoader necesitará enrutamiento inteligente cuando cargue desde /v1/materials (API Mobile)
+        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
     }
     single { NavigateHandler() }
     single {
         val appConfig = get<AppConfig>()
-        ApiCallHandler(get<EduGoHttpClient>(), appConfig.getFullApiUrl())
+        // TODO: ApiCallHandler necesitará enrutamiento inteligente para decidir entre adminApi y mobileApi
+        ApiCallHandler(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
     }
     single { RefreshHandler() }
     single {
         val appConfig = get<AppConfig>()
-        SubmitFormHandler(get<EduGoHttpClient>(), appConfig.getFullApiUrl())
+        // TODO: SubmitFormHandler necesitará enrutamiento inteligente para decidir entre adminApi y mobileApi
+        SubmitFormHandler(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
     }
     single { ConfirmHandler() }
     single { ActionRegistry(get(), get(), get(), get(), get()) }
