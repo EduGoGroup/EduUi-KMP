@@ -8,6 +8,8 @@ import com.edugo.kmp.dynamicui.loader.ScreenLoader
 import com.edugo.kmp.dynamicui.model.ActionDefinition
 import com.edugo.kmp.dynamicui.model.DataConfig
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
+import com.edugo.kmp.dynamicui.resolver.PlaceholderResolver
+import com.edugo.kmp.dynamicui.resolver.SlotBindingResolver
 import com.edugo.kmp.foundation.result.Result
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,13 +47,19 @@ class DynamicScreenViewModel(
         data class Error(val message: String) : DataState()
     }
 
-    suspend fun loadScreen(screenKey: String, platform: String? = null) {
+    suspend fun loadScreen(
+        screenKey: String,
+        platform: String? = null,
+        placeholders: Map<String, String> = emptyMap()
+    ) {
         _screenState.value = ScreenState.Loading
         when (val result = screenLoader.loadScreen(screenKey, platform)) {
             is Result.Success -> {
-                _screenState.value = ScreenState.Ready(result.data)
-                result.data.dataEndpoint?.let { endpoint ->
-                    result.data.dataConfig?.let { config ->
+                val slotResolved = SlotBindingResolver.resolve(result.data)
+                val resolved = PlaceholderResolver.resolve(slotResolved, placeholders)
+                _screenState.value = ScreenState.Ready(resolved)
+                resolved.dataEndpoint?.let { endpoint ->
+                    resolved.dataConfig?.let { config ->
                         loadData(endpoint, config)
                     }
                 }
