@@ -7,6 +7,7 @@ import com.edugo.kmp.auth.model.AuthUserInfo
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResult
 import com.edugo.kmp.auth.model.LogoutResult
+import com.edugo.kmp.auth.model.UserContext
 import com.edugo.kmp.auth.repository.AuthRepository
 import com.edugo.kmp.auth.throttle.RateLimiter
 import com.edugo.kmp.auth.token.RefreshFailureReason
@@ -107,6 +108,7 @@ public class AuthServiceImpl(
     public companion object {
         private const val AUTH_TOKEN_KEY = "auth_token"
         private const val AUTH_USER_KEY = "auth_user"
+        private const val AUTH_CONTEXT_KEY = "auth_context"
     }
 
     override suspend fun login(credentials: LoginCredentials): LoginResult {
@@ -128,11 +130,12 @@ public class AuthServiceImpl(
                     val loginResponse = loginResult.data
                     val authToken = loginResponse.toAuthToken()
 
-                    saveAuthData(authToken, loginResponse.user)
+                    saveAuthData(authToken, loginResponse.user, loginResponse.activeContext)
 
                     _authState.value = AuthState.Authenticated(
                         user = loginResponse.user,
-                        token = authToken
+                        token = authToken,
+                        activeContext = loginResponse.activeContext
                     )
 
                     tokenRefreshManager.startAutomaticRefresh(authToken)
@@ -283,20 +286,23 @@ public class AuthServiceImpl(
         // Leer datos del storage con mutex
         val tokenJson: String
         val userJson: String
+        val contextJson: String
         stateMutex.withLock {
             tokenJson = storage.getStringSafe(AUTH_TOKEN_KEY, "")
             userJson = storage.getStringSafe(AUTH_USER_KEY, "")
+            contextJson = storage.getStringSafe(AUTH_CONTEXT_KEY, "")
         }
 
-        if (tokenJson.isBlank() || userJson.isBlank()) return
+        if (tokenJson.isBlank() || userJson.isBlank() || contextJson.isBlank()) return
 
         try {
             val token = json.decodeFromString<AuthToken>(tokenJson)
             val user = json.decodeFromString<AuthUserInfo>(userJson)
+            val context = json.decodeFromString<UserContext>(contextJson)
 
             if (!token.isExpired()) {
                 stateMutex.withLock {
-                    _authState.value = AuthState.Authenticated(user, token)
+                    _authState.value = AuthState.Authenticated(user, token, context)
                     tokenRefreshManager.startAutomaticRefresh(token)
                     authLogger?.logSessionRestored(user.id)
                 }
@@ -307,7 +313,7 @@ public class AuthServiceImpl(
                 stateMutex.withLock {
                     if (refreshResult is Result.Success) {
                         val newToken = refreshResult.data
-                        _authState.value = AuthState.Authenticated(user, newToken)
+                        _authState.value = AuthState.Authenticated(user, newToken, context)
                         tokenRefreshManager.startAutomaticRefresh(newToken)
                     } else {
                         clearAuthData()
@@ -328,9 +334,10 @@ public class AuthServiceImpl(
         }
     }
 
-    private fun saveAuthData(token: AuthToken, user: AuthUserInfo) {
+    private fun saveAuthData(token: AuthToken, user: AuthUserInfo, context: UserContext) {
         saveToken(token)
         saveUser(user)
+        saveContext(context)
     }
 
     private fun saveToken(token: AuthToken) {
@@ -343,9 +350,15 @@ public class AuthServiceImpl(
         storage.putStringSafe(AUTH_USER_KEY, userJson)
     }
 
+    private fun saveContext(context: UserContext) {
+        val contextJson = json.encodeToString(context)
+        storage.putStringSafe(AUTH_CONTEXT_KEY, contextJson)
+    }
+
     private fun clearAuthData() {
         storage.removeSafe(AUTH_TOKEN_KEY)
         storage.removeSafe(AUTH_USER_KEY)
+        storage.removeSafe(AUTH_CONTEXT_KEY)
     }
 
     private fun mapErrorToAuthError(error: String): AuthError {
