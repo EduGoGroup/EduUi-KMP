@@ -1,6 +1,7 @@
 package com.edugo.kmp.design
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -105,8 +106,12 @@ fun EduGoTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = EduGoTypography,
-            content = content
-        )
+        ) {
+            CompositionLocalProvider(
+                LocalContentColor provides colorScheme.onBackground,
+                content = content
+            )
+        }
     }
 }
 

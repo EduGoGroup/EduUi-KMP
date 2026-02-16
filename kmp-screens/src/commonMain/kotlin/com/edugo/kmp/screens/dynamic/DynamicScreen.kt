@@ -28,6 +28,7 @@ fun DynamicScreen(
     viewModel: DynamicScreenViewModel,
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
+    placeholders: Map<String, String> = emptyMap(),
 ) {
     val screenState by viewModel.screenState.collectAsState()
     val dataState by viewModel.dataState.collectAsState()
@@ -35,8 +36,8 @@ fun DynamicScreen(
     val fieldErrors by viewModel.fieldErrors.collectAsState()
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(screenKey) {
-        viewModel.loadScreen(screenKey)
+    LaunchedEffect(screenKey, placeholders) {
+        viewModel.loadScreen(screenKey, placeholders = placeholders)
     }
 
     when (val state = screenState) {

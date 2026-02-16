@@ -49,6 +49,7 @@ fun SlotRenderer(
             Text(
                 text = displayValue,
                 style = mapTextStyle(slot.style),
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = modifier,
             )
         }
@@ -154,6 +155,7 @@ fun SlotRenderer(
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = displayValue,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = modifier,
             )
         }
@@ -200,6 +202,7 @@ fun SlotRenderer(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 onClick = { action?.let { onAction(it, itemData) } },
@@ -217,6 +220,7 @@ fun SlotRenderer(
                 Text(
                     text = displayValue,
                     style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -242,6 +246,7 @@ fun SlotRenderer(
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = displayValue,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = modifier,
             )
         }
@@ -250,6 +255,7 @@ fun SlotRenderer(
             Text(
                 text = displayValue,
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = modifier,
             )
         }
@@ -292,8 +298,8 @@ private fun resolveSlotValue(
         return fieldValues[fieldBinding] ?: ""
     }
 
-    // 3. Static value
-    return slot.value ?: slot.label ?: ""
+    // 3. Static value (no fallback to label to avoid duplication)
+    return slot.value ?: ""
 }
 
 private fun resolveFieldFromJson(field: String, data: JsonObject): String? {

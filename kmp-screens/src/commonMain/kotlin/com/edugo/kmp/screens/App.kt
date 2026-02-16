@@ -14,6 +14,7 @@ import com.edugo.kmp.screens.dynamic.screens.DynamicMaterialDetailScreen
 import com.edugo.kmp.screens.dynamic.screens.MainScreen
 import com.edugo.kmp.screens.navigation.NavigationState
 import com.edugo.kmp.screens.navigation.Route
+import com.edugo.kmp.screens.ui.LoginScreen
 import com.edugo.kmp.screens.ui.SplashScreen
 import com.edugo.kmp.settings.model.ThemeOption
 import com.edugo.kmp.settings.theme.ThemeService
@@ -71,10 +72,15 @@ fun App() {
                     onNavigateToHome = { navState.replaceAll(Route.Dashboard) }
                 )
 
-                Route.Login -> DynamicLoginScreen(
-                    onLoginSuccess = { navState.replaceAll(Route.Dashboard) },
-                    onNavigate = handleDynamicNavigate,
+                Route.Login -> LoginScreen(
+                    onLoginSuccess = { navState.replaceAll(Route.Dashboard) }
                 )
+
+                // TODO: Cambiar a DynamicLoginScreen cuando el endpoint /v1/screens/app-login sea público
+                // Route.Login -> DynamicLoginScreen(
+                //     onLoginSuccess = { navState.replaceAll(Route.Dashboard) },
+                //     onNavigate = handleDynamicNavigate,
+                // )
 
                 Route.Dashboard -> MainScreen(
                     onNavigate = handleDynamicNavigate,
