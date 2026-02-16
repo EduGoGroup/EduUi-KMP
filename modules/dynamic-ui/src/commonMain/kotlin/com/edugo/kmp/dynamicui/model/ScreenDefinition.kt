@@ -12,6 +12,7 @@ data class ScreenDefinition(
     val pattern: ScreenPattern,
     val version: Int,
     val template: ScreenTemplate,
+    val slotData: JsonObject? = null,
     val dataEndpoint: String? = null,
     val dataConfig: DataConfig? = null,
     val actions: List<ActionDefinition> = emptyList(),

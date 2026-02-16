@@ -18,14 +18,15 @@ class RemoteScreenLoader(
         val configBuilder = HttpRequestConfig.builder()
         platform?.let { configBuilder.queryParam("platform", it) }
         return httpClient.getSafe(
-            url = "$baseUrl/v1/screens/$screenKey",
+            url = "$baseUrl/v1/screen-config/resolve/key/$screenKey",
             config = configBuilder.build()
         )
     }
 
     override suspend fun loadNavigation(): Result<NavigationDefinition> {
+        // TODO: Backend aún no tiene endpoint de navegación
         return httpClient.getSafe(
-            url = "$baseUrl/v1/screens/navigation"
+            url = "$baseUrl/v1/screen-config/navigation"
         )
     }
 }

@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 data class Slot(
     val id: String,
     val controlType: ControlType,
+    val bind: String? = null,
     val style: String? = null,
     val value: String? = null,
     val field: String? = null,
@@ -43,5 +44,18 @@ enum class ControlType {
     @SerialName("list-item-navigation") LIST_ITEM_NAVIGATION,
     @SerialName("metric-card") METRIC_CARD,
     @SerialName("chip") CHIP,
-    @SerialName("rating") RATING
+    @SerialName("rating") RATING;
+
+    /**
+     * Indica si este control usa el campo `label` como texto principal
+     * al resolver bindings. Los controles que NO usan label (LABEL, buttons)
+     * resuelven el binding al campo `value`.
+     */
+    val usesLabel: Boolean
+        get() = when (this) {
+            SWITCH, CHECKBOX, LIST_ITEM, LIST_ITEM_NAVIGATION,
+            METRIC_CARD, TEXT_INPUT, EMAIL_INPUT, PASSWORD_INPUT,
+            NUMBER_INPUT, SEARCH_BAR -> true
+            else -> false
+        }
 }
