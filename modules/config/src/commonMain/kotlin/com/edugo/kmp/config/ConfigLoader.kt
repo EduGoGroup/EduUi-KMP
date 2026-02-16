@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
  * Uso:
  * ```kotlin
  * val config = ConfigLoader.load(Environment.DEV)
- * println(config.apiUrl) // "http://localhost"
+ * println(config.adminApiBaseUrl) // "http://localhost:8081"
  * ```
  */
 public object ConfigLoader {

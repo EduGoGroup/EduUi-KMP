@@ -1,9 +1,9 @@
 {
   "environmentName": "DEV",
-  "apiUrl": "http://localhost",
-  "apiPort": 8080,
+  "adminApiBaseUrl": "http://localhost:8081",
+  "mobileApiBaseUrl": "http://localhost:9091",
   "webPort": 8080,
   "timeout": 30000,
   "debugMode": true,
-  "mockMode": true
+  "mockMode": false
 }
