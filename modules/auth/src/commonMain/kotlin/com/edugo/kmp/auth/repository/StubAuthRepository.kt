@@ -93,8 +93,7 @@ public class StubAuthRepository : AuthRepository {
         id = "stub-user-123",
         email = "test@edugo.com",
         firstName = "Test",
-        lastName = "User",
-        role = "student"
+        lastName = "User"
     )
 
     override suspend fun login(credentials: LoginCredentials): Result<LoginResponse> {
@@ -219,8 +218,7 @@ public class StubAuthRepository : AuthRepository {
             id = "stub-user-123",
             email = "test@edugo.com",
             firstName = "Test",
-            lastName = "User",
-            role = "student"
+            lastName = "User"
         )
         verifyTokenShouldSucceed = true
         verifyTokenResponse = null

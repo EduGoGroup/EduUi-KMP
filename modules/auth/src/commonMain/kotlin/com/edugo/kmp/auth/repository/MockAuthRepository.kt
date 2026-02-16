@@ -43,7 +43,6 @@ public class MockAuthRepository : AuthRepository {
         val seed = email.hashCode().absoluteValue
         val firstName = firstNames[seed % firstNames.size]
         val lastName = lastNames[(seed / firstNames.size) % lastNames.size]
-        val role = roles[seed % roles.size]
         val userId = "mock-user-${seed}"
         val schoolId = "mock-school-${(seed % 5) + 1}"
 
@@ -52,7 +51,6 @@ public class MockAuthRepository : AuthRepository {
             email = email,
             firstName = firstName,
             lastName = lastName,
-            role = role,
             schoolId = schoolId
         )
     }
@@ -63,11 +61,23 @@ public class MockAuthRepository : AuthRepository {
         val user = generateUserFromEmail(credentials.email)
         val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
 
+        // Generar rol basado en el seed del email
+        val seed = credentials.email.hashCode().absoluteValue
+        val roleName = roles[seed % roles.size]
+
+        val activeContext = com.edugo.kmp.auth.model.UserContext.createTestContext(
+            roleId = "mock-role-${seed % roles.size}",
+            roleName = roleName,
+            schoolId = user.schoolId,
+            schoolName = "Mock School ${(seed % 5) + 1}"
+        )
+
         return Result.Success(
             LoginResponse.createTestResponse(
                 accessToken = "access_mock_$timestamp",
                 refreshToken = "refresh_mock_$timestamp",
-                user = user
+                user = user,
+                activeContext = activeContext
             )
         )
     }
