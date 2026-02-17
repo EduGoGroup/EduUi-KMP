@@ -16,9 +16,11 @@ import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
 import com.edugo.kmp.design.components.progress.DSLinearProgress
+import com.edugo.kmp.dynamicui.action.ActionResult
 import com.edugo.kmp.dynamicui.model.ActionDefinition
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
 import com.edugo.kmp.screens.dynamic.renderer.PatternRouter
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 
@@ -29,6 +31,8 @@ fun DynamicScreen(
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
     placeholders: Map<String, String> = emptyMap(),
+    onAction: ((ActionDefinition, JsonObject?, CoroutineScope) -> Unit)? = null,
+    onFieldChanged: ((String, String) -> Unit)? = null,
 ) {
     val screenState by viewModel.screenState.collectAsState()
     val dataState by viewModel.dataState.collectAsState()
@@ -56,12 +60,16 @@ fun DynamicScreen(
                 dataState = dataState,
                 fieldValues = fieldValues,
                 fieldErrors = fieldErrors,
-                onFieldChanged = viewModel::onFieldChanged,
+                onFieldChanged = onFieldChanged ?: viewModel::onFieldChanged,
                 onAction = { action: ActionDefinition, item: JsonObject? ->
-                    scope.launch {
-                        val result = viewModel.executeAction(action, item)
-                        if (result is com.edugo.kmp.dynamicui.action.ActionResult.NavigateTo) {
-                            onNavigate(result.screenKey, result.params)
+                    if (onAction != null) {
+                        onAction(action, item, scope)
+                    } else {
+                        scope.launch {
+                            val result = viewModel.executeAction(action, item)
+                            if (result is ActionResult.NavigateTo) {
+                                onNavigate(result.screenKey, result.params)
+                            }
                         }
                     }
                 },

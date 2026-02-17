@@ -17,8 +17,8 @@ import org.koin.compose.koinInject
 fun DynamicMaterialsListScreen(
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: DynamicScreenViewModel = koinInject(),
 ) {
-    val viewModel = koinInject<DynamicScreenViewModel>()
 
     DynamicScreen(
         screenKey = "materials-list",

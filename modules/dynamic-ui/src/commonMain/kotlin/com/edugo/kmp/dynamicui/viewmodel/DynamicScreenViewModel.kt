@@ -43,7 +43,11 @@ class DynamicScreenViewModel(
     sealed class DataState {
         data object Idle : DataState()
         data object Loading : DataState()
-        data class Success(val items: List<JsonObject>, val hasMore: Boolean) : DataState()
+        data class Success(
+            val items: List<JsonObject>,
+            val hasMore: Boolean,
+            val loadingMore: Boolean = false
+        ) : DataState()
         data class Error(val message: String) : DataState()
     }
 
@@ -92,6 +96,34 @@ class DynamicScreenViewModel(
             is Result.Loading -> {
                 // Already in loading state
             }
+        }
+    }
+
+    suspend fun loadMore() {
+        val currentState = _dataState.value
+        if (currentState !is DataState.Success || !currentState.hasMore || currentState.loadingMore) return
+
+        val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
+        val endpoint = screen.dataEndpoint ?: return
+        val config = screen.dataConfig ?: return
+        val pagination = config.pagination ?: return
+
+        _dataState.value = currentState.copy(loadingMore = true)
+
+        val offset = currentState.items.size
+        val extraParams = mapOf(pagination.offsetParam to offset.toString())
+
+        when (val result = dataLoader.loadData(endpoint, config, extraParams)) {
+            is Result.Success -> {
+                _dataState.value = DataState.Success(
+                    items = currentState.items + result.data.items,
+                    hasMore = result.data.hasMore
+                )
+            }
+            is Result.Failure -> {
+                _dataState.value = currentState.copy(loadingMore = false)
+            }
+            is Result.Loading -> { /* no-op */ }
         }
     }
 

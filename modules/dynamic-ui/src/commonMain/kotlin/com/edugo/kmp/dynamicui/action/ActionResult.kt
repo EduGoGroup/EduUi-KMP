@@ -18,5 +18,7 @@ sealed class ActionResult {
         val retry: Boolean = false
     ) : ActionResult()
 
+    data object Logout : ActionResult()
+
     data object Cancelled : ActionResult()
 }

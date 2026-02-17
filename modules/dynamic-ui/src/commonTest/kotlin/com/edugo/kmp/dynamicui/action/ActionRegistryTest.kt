@@ -2,6 +2,7 @@ package com.edugo.kmp.dynamicui.action
 
 import com.edugo.kmp.dynamicui.action.handlers.ApiCallHandler
 import com.edugo.kmp.dynamicui.action.handlers.ConfirmHandler
+import com.edugo.kmp.dynamicui.action.handlers.LogoutHandler
 import com.edugo.kmp.dynamicui.action.handlers.NavigateHandler
 import com.edugo.kmp.dynamicui.action.handlers.RefreshHandler
 import com.edugo.kmp.dynamicui.action.handlers.SubmitFormHandler
@@ -20,7 +21,8 @@ class ActionRegistryTest {
             apiCallHandler = ApiCallHandler(httpClient, "http://localhost"),
             refreshHandler = RefreshHandler(),
             submitFormHandler = SubmitFormHandler(httpClient, "http://localhost"),
-            confirmHandler = ConfirmHandler()
+            confirmHandler = ConfirmHandler(),
+            logoutHandler = LogoutHandler()
         )
     }
 
@@ -67,10 +69,10 @@ class ActionRegistryTest {
     }
 
     @Test
-    fun resolve_returns_NavigateHandler_for_LOGOUT() {
+    fun resolve_returns_LogoutHandler_for_LOGOUT() {
         val registry = createRegistry()
         val handler = registry.resolve(ActionType.LOGOUT)
-        assertIs<NavigateHandler>(handler)
+        assertIs<LogoutHandler>(handler)
     }
 
     @Test

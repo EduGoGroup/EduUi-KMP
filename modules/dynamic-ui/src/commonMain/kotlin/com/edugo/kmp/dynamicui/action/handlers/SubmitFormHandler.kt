@@ -19,6 +19,10 @@ class SubmitFormHandler(
         val endpoint = context.config["endpoint"]?.jsonPrimitive?.contentOrNull
             ?: return ActionResult.Error("Missing endpoint in submit_form config")
 
+        if (!isValidEndpoint(endpoint)) {
+            return ActionResult.Error("Invalid endpoint: must start with / and not contain path traversal")
+        }
+
         val body = JsonObject(
             context.fieldValues.mapValues { (_, value) -> JsonPrimitive(value) }
         )
@@ -36,5 +40,9 @@ class SubmitFormHandler(
             is Result.Failure -> ActionResult.Error(result.error, retry = true)
             is Result.Loading -> ActionResult.Error("Unexpected loading state")
         }
+    }
+
+    private fun isValidEndpoint(endpoint: String): Boolean {
+        return endpoint.startsWith("/") && !endpoint.contains("..") && !endpoint.contains("://")
     }
 }

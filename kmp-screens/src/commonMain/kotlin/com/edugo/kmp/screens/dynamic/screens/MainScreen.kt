@@ -17,6 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.components.navigation.DSBottomNavigationBar
 import com.edugo.kmp.design.components.navigation.DSNavigationBarItem
+import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import org.koin.compose.koinInject
 
 /**
  * Pantalla principal con navegacion inferior (3 tabs).
@@ -34,6 +36,11 @@ fun MainScreen(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // ViewModels hoisted: sobreviven cambios de tab al estar en el scope de MainScreen
+    val dashboardViewModel = koinInject<DynamicScreenViewModel>()
+    val materialsViewModel = koinInject<DynamicScreenViewModel>()
+    val settingsViewModel = koinInject<DynamicScreenViewModel>()
+
     var selectedTab by remember { mutableIntStateOf(0) }
 
     val navItems = remember {
@@ -70,16 +77,19 @@ fun MainScreen(
             0 -> DynamicDashboardScreen(
                 onNavigate = onNavigate,
                 modifier = Modifier.padding(paddingValues),
+                viewModel = dashboardViewModel,
             )
             1 -> DynamicMaterialsListScreen(
                 onNavigate = onNavigate,
                 modifier = Modifier.padding(paddingValues),
+                viewModel = materialsViewModel,
             )
             2 -> DynamicSettingsScreen(
                 onBack = { selectedTab = 0 },
                 onLogout = onLogout,
                 onNavigate = onNavigate,
                 modifier = Modifier.padding(paddingValues),
+                viewModel = settingsViewModel,
             )
         }
     }

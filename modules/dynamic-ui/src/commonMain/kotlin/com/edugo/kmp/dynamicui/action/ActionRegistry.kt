@@ -2,6 +2,7 @@ package com.edugo.kmp.dynamicui.action
 
 import com.edugo.kmp.dynamicui.action.handlers.ApiCallHandler
 import com.edugo.kmp.dynamicui.action.handlers.ConfirmHandler
+import com.edugo.kmp.dynamicui.action.handlers.LogoutHandler
 import com.edugo.kmp.dynamicui.action.handlers.NavigateHandler
 import com.edugo.kmp.dynamicui.action.handlers.RefreshHandler
 import com.edugo.kmp.dynamicui.action.handlers.SubmitFormHandler
@@ -12,7 +13,8 @@ class ActionRegistry(
     private val apiCallHandler: ApiCallHandler,
     private val refreshHandler: RefreshHandler,
     private val submitFormHandler: SubmitFormHandler,
-    private val confirmHandler: ConfirmHandler
+    private val confirmHandler: ConfirmHandler,
+    private val logoutHandler: LogoutHandler
 ) {
     fun resolve(actionType: ActionType): ActionHandler = when (actionType) {
         ActionType.NAVIGATE -> navigateHandler
@@ -21,6 +23,6 @@ class ActionRegistry(
         ActionType.SUBMIT_FORM -> submitFormHandler
         ActionType.REFRESH -> refreshHandler
         ActionType.CONFIRM -> confirmHandler
-        ActionType.LOGOUT -> navigateHandler
+        ActionType.LOGOUT -> logoutHandler
     }
 }

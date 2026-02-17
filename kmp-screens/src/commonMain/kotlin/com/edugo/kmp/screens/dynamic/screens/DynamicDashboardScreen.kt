@@ -1,6 +1,8 @@
 package com.edugo.kmp.screens.dynamic.screens
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.auth.service.AuthService
@@ -26,11 +28,11 @@ import org.koin.compose.koinInject
 fun DynamicDashboardScreen(
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: DynamicScreenViewModel = koinInject(),
 ) {
     val authService = koinInject<AuthService>()
-    val viewModel = koinInject<DynamicScreenViewModel>()
 
-    val authState = authService.authState.value
+    val authState by authService.authState.collectAsState()
     val context = authState.activeContext
     val user = authState.currentUser
 

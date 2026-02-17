@@ -19,6 +19,10 @@ class ApiCallHandler(
         val endpoint = context.config["endpoint"]?.jsonPrimitive?.contentOrNull
             ?: return ActionResult.Error("Missing endpoint in api_call config")
 
+        if (!isValidEndpoint(endpoint)) {
+            return ActionResult.Error("Invalid endpoint: must start with / and not contain path traversal")
+        }
+
         val method = context.config["method"]?.jsonPrimitive?.contentOrNull ?: "GET"
 
         val configBuilder = HttpRequestConfig.builder()
@@ -40,5 +44,9 @@ class ApiCallHandler(
             }
             else -> ActionResult.Error("HTTP method $method not yet supported")
         }
+    }
+
+    private fun isValidEndpoint(endpoint: String): Boolean {
+        return endpoint.startsWith("/") && !endpoint.contains("..") && !endpoint.contains("://")
     }
 }

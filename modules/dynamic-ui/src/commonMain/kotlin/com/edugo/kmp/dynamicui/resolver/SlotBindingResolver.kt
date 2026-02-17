@@ -27,27 +27,28 @@ object SlotBindingResolver {
     fun resolve(screen: ScreenDefinition): ScreenDefinition {
         val slotData = screen.slotData ?: return screen
         val resolvedTemplate = resolveTemplate(screen.template, slotData)
+        if (resolvedTemplate === screen.template) return screen
         return screen.copy(template = resolvedTemplate)
     }
 
     private fun resolveTemplate(template: ScreenTemplate, slotData: JsonObject): ScreenTemplate {
-        return template.copy(
-            zones = template.zones.map { resolveZone(it, slotData) }
-        )
+        val newZones = template.zones.mapIfChanged { resolveZone(it, slotData) }
+        if (newZones === template.zones) return template
+        return template.copy(zones = newZones)
     }
 
     private fun resolveZone(zone: Zone, slotData: JsonObject): Zone {
-        return zone.copy(
-            slots = zone.slots.map { resolveSlot(it, slotData) },
-            zones = zone.zones.map { resolveZone(it, slotData) },
-            itemLayout = zone.itemLayout?.let { resolveItemLayout(it, slotData) }
-        )
+        val newSlots = zone.slots.mapIfChanged { resolveSlot(it, slotData) }
+        val newZones = zone.zones.mapIfChanged { resolveZone(it, slotData) }
+        val newItemLayout = zone.itemLayout?.let { resolveItemLayout(it, slotData) }
+        if (newSlots === zone.slots && newZones === zone.zones && newItemLayout === zone.itemLayout) return zone
+        return zone.copy(slots = newSlots, zones = newZones, itemLayout = newItemLayout)
     }
 
     private fun resolveItemLayout(itemLayout: ItemLayout, slotData: JsonObject): ItemLayout {
-        return itemLayout.copy(
-            slots = itemLayout.slots.map { resolveSlot(it, slotData) }
-        )
+        val newSlots = itemLayout.slots.mapIfChanged { resolveSlot(it, slotData) }
+        if (newSlots === itemLayout.slots) return itemLayout
+        return itemLayout.copy(slots = newSlots)
     }
 
     private fun resolveSlot(slot: Slot, slotData: JsonObject): Slot {
@@ -73,5 +74,15 @@ object SlotBindingResolver {
             is JsonPrimitive -> element.contentOrNull ?: element.toString()
             else -> element.toString()
         }
+    }
+
+    private inline fun <T> List<T>.mapIfChanged(transform: (T) -> T): List<T> {
+        var changed = false
+        val result = map { item ->
+            val newItem = transform(item)
+            if (newItem !== item) changed = true
+            newItem
+        }
+        return if (changed) result else this
     }
 }

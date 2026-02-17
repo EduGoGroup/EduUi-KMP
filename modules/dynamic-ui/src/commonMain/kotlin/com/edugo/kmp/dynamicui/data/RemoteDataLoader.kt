@@ -15,6 +15,9 @@ class RemoteDataLoader(
         config: DataConfig,
         params: Map<String, String>
     ): Result<DataPage> {
+        if (!endpoint.startsWith("/") || endpoint.contains("..") || endpoint.contains("://")) {
+            return Result.Failure("Invalid data endpoint")
+        }
         val configBuilder = HttpRequestConfig.builder()
         config.defaultParams.forEach { (key, value) ->
             configBuilder.queryParam(key, value)

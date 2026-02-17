@@ -31,27 +31,28 @@ object PlaceholderResolver {
     fun resolve(screen: ScreenDefinition, placeholders: Map<String, String>): ScreenDefinition {
         if (placeholders.isEmpty()) return screen
         val resolvedTemplate = resolveTemplate(screen.template, placeholders)
+        if (resolvedTemplate === screen.template) return screen
         return screen.copy(template = resolvedTemplate)
     }
 
     private fun resolveTemplate(template: ScreenTemplate, placeholders: Map<String, String>): ScreenTemplate {
-        return template.copy(
-            zones = template.zones.map { resolveZone(it, placeholders) }
-        )
+        val newZones = template.zones.mapIfChanged { resolveZone(it, placeholders) }
+        if (newZones === template.zones) return template
+        return template.copy(zones = newZones)
     }
 
     private fun resolveZone(zone: Zone, placeholders: Map<String, String>): Zone {
-        return zone.copy(
-            slots = zone.slots.map { resolveSlot(it, placeholders) },
-            zones = zone.zones.map { resolveZone(it, placeholders) },
-            itemLayout = zone.itemLayout?.let { resolveItemLayout(it, placeholders) }
-        )
+        val newSlots = zone.slots.mapIfChanged { resolveSlot(it, placeholders) }
+        val newZones = zone.zones.mapIfChanged { resolveZone(it, placeholders) }
+        val newItemLayout = zone.itemLayout?.let { resolveItemLayout(it, placeholders) }
+        if (newSlots === zone.slots && newZones === zone.zones && newItemLayout === zone.itemLayout) return zone
+        return zone.copy(slots = newSlots, zones = newZones, itemLayout = newItemLayout)
     }
 
     private fun resolveItemLayout(itemLayout: ItemLayout, placeholders: Map<String, String>): ItemLayout {
-        return itemLayout.copy(
-            slots = itemLayout.slots.map { resolveSlot(it, placeholders) }
-        )
+        val newSlots = itemLayout.slots.mapIfChanged { resolveSlot(it, placeholders) }
+        if (newSlots === itemLayout.slots) return itemLayout
+        return itemLayout.copy(slots = newSlots)
     }
 
     private fun resolveSlot(slot: Slot, placeholders: Map<String, String>): Slot {
@@ -68,5 +69,15 @@ object PlaceholderResolver {
             val key = match.groupValues[1]
             placeholders[key] ?: match.value
         }
+    }
+
+    private inline fun <T> List<T>.mapIfChanged(transform: (T) -> T): List<T> {
+        var changed = false
+        val result = map { item ->
+            val newItem = transform(item)
+            if (newItem !== item) changed = true
+            newItem
+        }
+        return if (changed) result else this
     }
 }
