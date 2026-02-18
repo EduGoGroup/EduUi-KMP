@@ -4,11 +4,18 @@ import com.edugo.kmp.dynamicui.model.DataConfig
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.network.EduGoHttpClient
 import com.edugo.kmp.network.HttpRequestConfig
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 
 class RemoteDataLoader(
     private val httpClient: EduGoHttpClient,
     private val baseUrl: String
 ) : DataLoader {
+
+    private val json = Json { ignoreUnknownKeys = true }
 
     override suspend fun loadData(
         endpoint: String,
@@ -28,9 +35,54 @@ class RemoteDataLoader(
         config.pagination?.let {
             configBuilder.queryParam(it.limitParam, it.pageSize.toString())
         }
-        return httpClient.getSafe(
-            url = "$baseUrl$endpoint",
+
+        val url = "$baseUrl$endpoint"
+        println("[DataLoader] GET $url")
+
+        val result = httpClient.getSafe<String>(
+            url = url,
             config = configBuilder.build()
         )
+
+        return when (result) {
+            is Result.Success -> parseResponse(result.data, config)
+            is Result.Failure -> Result.Failure(result.error)
+            is Result.Loading -> Result.Loading
+        }
+    }
+
+    private fun parseResponse(body: String, config: DataConfig): Result<DataPage> {
+        return try {
+            val element = json.parseToJsonElement(body)
+            val pageSize = config.pagination?.pageSize ?: 20
+
+            when (element) {
+                // API returns array directly: [{...}, {...}]
+                is JsonArray -> {
+                    val items = element.jsonArray.map { it.jsonObject }
+                    DataPage(
+                        items = items,
+                        total = items.size,
+                        hasMore = items.size >= pageSize
+                    ).let { Result.Success(it) }
+                }
+                // API returns paginated object: {items: [...], total: N} or {data: [...]}
+                is JsonObject -> {
+                    val obj = element.jsonObject
+                    val items = (obj["items"] ?: obj["data"])
+                        ?.jsonArray?.map { it.jsonObject }
+                        ?: emptyList()
+                    val total = obj["total"]?.toString()?.toIntOrNull()
+                    DataPage(
+                        items = items,
+                        total = total,
+                        hasMore = total?.let { items.size < it } ?: (items.size >= pageSize)
+                    ).let { Result.Success(it) }
+                }
+                else -> Result.Failure("Unexpected response format")
+            }
+        } catch (e: Exception) {
+            Result.Failure("Failed to parse data: ${e.message}")
+        }
     }
 }

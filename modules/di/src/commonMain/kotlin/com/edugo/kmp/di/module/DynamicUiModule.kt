@@ -10,6 +10,7 @@ import com.edugo.kmp.dynamicui.action.handlers.RefreshHandler
 import com.edugo.kmp.dynamicui.action.handlers.SubmitFormHandler
 import com.edugo.kmp.dynamicui.data.DataLoader
 import com.edugo.kmp.dynamicui.data.RemoteDataLoader
+import com.edugo.kmp.dynamicui.handler.ScreenHandlerRegistry
 import com.edugo.kmp.dynamicui.loader.CachedScreenLoader
 import com.edugo.kmp.dynamicui.loader.RemoteScreenLoader
 import com.edugo.kmp.dynamicui.loader.ScreenLoader
@@ -29,8 +30,7 @@ val dynamicUiModule = module {
     }
     single<DataLoader> {
         val appConfig = get<AppConfig>()
-        // TODO: DataLoader necesitará enrutamiento inteligente cuando cargue desde /v1/materials (API Mobile)
-        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
+        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl)
     }
     single { NavigateHandler() }
     single {
@@ -47,5 +47,10 @@ val dynamicUiModule = module {
     single { ConfirmHandler() }
     single { LogoutHandler() }
     single { ActionRegistry(get(), get(), get(), get(), get(), get()) }
-    factory { DynamicScreenViewModel(get(), get(), get()) }
+
+    // Registry auto-descubre todos los ScreenActionHandler de screenHandlersModule
+    single { ScreenHandlerRegistry(getAll()) }
+
+    // ViewModel with handler registry
+    factory { DynamicScreenViewModel(get(), get(), get(), get()) }
 }

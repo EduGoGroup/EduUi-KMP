@@ -4,6 +4,7 @@ import com.edugo.kmp.dynamicui.action.ActionContext
 import com.edugo.kmp.dynamicui.action.ActionRegistry
 import com.edugo.kmp.dynamicui.action.ActionResult
 import com.edugo.kmp.dynamicui.data.DataLoader
+import com.edugo.kmp.dynamicui.handler.ScreenHandlerRegistry
 import com.edugo.kmp.dynamicui.loader.ScreenLoader
 import com.edugo.kmp.dynamicui.model.ActionDefinition
 import com.edugo.kmp.dynamicui.model.DataConfig
@@ -20,7 +21,8 @@ import kotlinx.serialization.json.JsonObject
 class DynamicScreenViewModel(
     private val screenLoader: ScreenLoader,
     private val dataLoader: DataLoader,
-    private val actionRegistry: ActionRegistry
+    private val actionRegistry: ActionRegistry,
+    private val screenHandlerRegistry: ScreenHandlerRegistry = ScreenHandlerRegistry()
 ) {
     private val _screenState = MutableStateFlow<ScreenState>(ScreenState.Loading)
     val screenState: StateFlow<ScreenState> = _screenState.asStateFlow()
@@ -131,9 +133,26 @@ class DynamicScreenViewModel(
         actionDef: ActionDefinition,
         itemData: JsonObject? = null
     ): ActionResult {
+        val currentScreen = (screenState.value as? ScreenState.Ready)?.screen
+        val screenKey = currentScreen?.screenKey ?: ""
+
+        // 1. Check for screen-specific custom handler
+        val customHandler = screenHandlerRegistry.findHandler(screenKey, actionDef)
+        if (customHandler != null) {
+            val context = ActionContext(
+                screenKey = screenKey,
+                actionId = actionDef.id,
+                config = actionDef.config,
+                fieldValues = _fieldValues.value,
+                selectedItem = itemData
+            )
+            return customHandler.handle(actionDef, context)
+        }
+
+        // 2. Fall back to generic action registry
         val handler = actionRegistry.resolve(actionDef.type)
         val context = ActionContext(
-            screenKey = (screenState.value as? ScreenState.Ready)?.screen?.screenKey ?: "",
+            screenKey = screenKey,
             actionId = actionDef.id,
             config = actionDef.config,
             fieldValues = _fieldValues.value,

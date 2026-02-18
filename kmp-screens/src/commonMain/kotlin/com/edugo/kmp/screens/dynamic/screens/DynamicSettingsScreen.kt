@@ -1,28 +1,22 @@
 package com.edugo.kmp.screens.dynamic.screens
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.dynamicui.action.ActionResult
-import com.edugo.kmp.dynamicui.model.ActionType
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
 import com.edugo.kmp.screens.dynamic.DynamicScreen
 import com.edugo.kmp.settings.model.ThemeOption
 import com.edugo.kmp.settings.theme.ThemeService
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
 import org.koin.compose.koinInject
 
 /**
- * Settings screen integrada con ThemeService y AuthService.
+ * Settings screen integrada con ThemeService y AuthService via SettingsActionHandler.
  *
- * Renderiza la pantalla de configuracion desde el backend (DynamicScreen),
- * pero intercepta acciones especiales:
- * - dark_mode toggle -> ThemeService.setThemePreference()
- * - logout -> AuthService.logout()
- * - NAVIGATE_BACK -> onBack()
+ * El SettingsActionHandler registrado en ScreenHandlerRegistry maneja
+ * LOGOUT, NAVIGATE_BACK y theme_toggle CONFIRM automaticamente.
+ * Este wrapper maneja dark_mode field changes via ThemeService
+ * y callbacks de navegacion (onBack, onLogout).
  */
 @Composable
 fun DynamicSettingsScreen(
@@ -32,7 +26,6 @@ fun DynamicSettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: DynamicScreenViewModel = koinInject(),
 ) {
-    val authService = koinInject<AuthService>()
     val themeService = koinInject<ThemeService>()
 
     DynamicScreen(
@@ -50,36 +43,18 @@ fun DynamicSettingsScreen(
             }
         },
         onAction = { action, item, scope ->
-            when (action.type) {
-                ActionType.NAVIGATE_BACK -> onBack()
-                ActionType.CONFIRM -> {
-                    val handler = action.config["handler"]?.jsonPrimitive?.contentOrNull
-                    if (handler == "theme_toggle") {
-                        val current = themeService.getCurrentTheme()
-                        themeService.setThemePreference(
-                            if (current == ThemeOption.DARK) ThemeOption.LIGHT else ThemeOption.DARK
-                        )
-                    } else {
-                        scope.launch {
-                            val result = viewModel.executeAction(action, item)
-                            if (result is ActionResult.NavigateTo) {
-                                onNavigate(result.screenKey, result.params)
-                            }
+            scope.launch {
+                val result = viewModel.executeAction(action, item)
+                when (result) {
+                    is ActionResult.NavigateTo -> {
+                        if (result.screenKey == "back") {
+                            onBack()
+                        } else {
+                            onNavigate(result.screenKey, result.params)
                         }
                     }
-                }
-                else -> {
-                    scope.launch {
-                        val result = viewModel.executeAction(action, item)
-                        when (result) {
-                            is ActionResult.NavigateTo -> onNavigate(result.screenKey, result.params)
-                            is ActionResult.Logout -> {
-                                authService.logout()
-                                onLogout()
-                            }
-                            else -> { /* handled by viewModel */ }
-                        }
-                    }
+                    is ActionResult.Logout -> onLogout()
+                    else -> { /* handled by viewModel */ }
                 }
             }
         },
