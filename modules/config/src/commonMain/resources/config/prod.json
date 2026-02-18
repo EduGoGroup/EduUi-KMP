@@ -1,7 +1,7 @@
 {
   "environmentName": "PROD",
-  "apiUrl": "https://api.example.com",
-  "apiPort": 443,
+  "adminApiBaseUrl": "https://api.example.com",
+  "mobileApiBaseUrl": "https://api-mobile.example.com",
   "webPort": 80,
   "timeout": 60000,
   "debugMode": false,

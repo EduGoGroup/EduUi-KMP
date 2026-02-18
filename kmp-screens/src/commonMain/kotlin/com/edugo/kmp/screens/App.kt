@@ -9,11 +9,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.di.KoinInitializer
+import com.edugo.kmp.screens.dynamic.screens.DynamicLoginScreen
+import com.edugo.kmp.screens.dynamic.screens.DynamicMaterialDetailScreen
+import com.edugo.kmp.screens.dynamic.screens.MainScreen
 import com.edugo.kmp.screens.navigation.NavigationState
 import com.edugo.kmp.screens.navigation.Route
-import com.edugo.kmp.screens.ui.HomeScreen
 import com.edugo.kmp.screens.ui.LoginScreen
-import com.edugo.kmp.screens.ui.SettingsScreen
 import com.edugo.kmp.screens.ui.SplashScreen
 import com.edugo.kmp.settings.model.ThemeOption
 import com.edugo.kmp.settings.theme.ThemeService
@@ -22,14 +23,14 @@ import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 
 /**
- * Componente principal de la aplicación compartido entre plataformas.
+ * Componente principal de la aplicacion compartido entre plataformas.
  *
  * Inicializa:
- * - Koin con módulos de DI
+ * - Koin con modulos de DI
  * - EduGoTheme (Material 3) con tema reactivo desde ThemeService
- * - Navegación entre pantallas
+ * - Navegacion entre pantallas
  *
- * Flujo: Splash -> Login -> Home -> Settings
+ * Flujo: Splash -> Login -> Dashboard(MainScreen con BottomNav) -> MaterialDetail
  */
 @Composable
 fun App() {
@@ -55,28 +56,57 @@ fun App() {
                 scope.launch {
                     authService.logout()
                 }
-                navState.popTo(Route.Splash)
-                navState.navigateTo(Route.Login)
+                navState.replaceAll(Route.Login)
             }
 
-            when (navState.currentRoute) {
+            val handleDynamicNavigate: (String, Map<String, String>) -> Unit = { screenKey, params ->
+                val route = Route.fromScreenKey(screenKey, params)
+                if (route != null) {
+                    navState.navigateTo(route)
+                }
+            }
+
+            when (val currentRoute = navState.currentRoute) {
                 Route.Splash -> SplashScreen(
-                    onNavigateToLogin = { navState.navigateTo(Route.Login) },
-                    onNavigateToHome = { navState.navigateTo(Route.Home) }
+                    onNavigateToLogin = { navState.replaceAll(Route.Login) },
+                    onNavigateToHome = { navState.replaceAll(Route.Dashboard) }
                 )
 
                 Route.Login -> LoginScreen(
-                    onLoginSuccess = { navState.navigateTo(Route.Home) }
+                    onLoginSuccess = { navState.replaceAll(Route.Dashboard) }
                 )
 
-                Route.Home -> HomeScreen(
-                    onNavigateToSettings = { navState.navigateTo(Route.Settings) },
-                    onLogout = handleLogout
+                // TODO: Cambiar a DynamicLoginScreen cuando el endpoint /v1/screens/app-login sea público
+                // Route.Login -> DynamicLoginScreen(
+                //     onLoginSuccess = { navState.replaceAll(Route.Dashboard) },
+                //     onNavigate = handleDynamicNavigate,
+                // )
+
+                Route.Dashboard -> MainScreen(
+                    onNavigate = handleDynamicNavigate,
+                    onLogout = handleLogout,
                 )
 
-                Route.Settings -> SettingsScreen(
+                Route.MaterialsList -> MainScreen(
+                    onNavigate = handleDynamicNavigate,
+                    onLogout = handleLogout,
+                )
+
+                is Route.MaterialDetail -> DynamicMaterialDetailScreen(
+                    materialId = currentRoute.materialId,
+                    onNavigate = handleDynamicNavigate,
                     onBack = { navState.back() },
-                    onLogout = handleLogout
+                )
+
+                Route.Settings -> MainScreen(
+                    onNavigate = handleDynamicNavigate,
+                    onLogout = handleLogout,
+                )
+
+                // Legacy routes - redirect to new flow
+                Route.Home -> MainScreen(
+                    onNavigate = handleDynamicNavigate,
+                    onLogout = handleLogout,
                 )
             }
         }

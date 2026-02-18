@@ -146,8 +146,7 @@ class StubAuthRepositoryTest {
         val customUser = AuthUserInfo.createTestUser(
             id = "custom-id",
             email = "custom@test.com",
-            firstName = "Custom",
-            role = "teacher"
+            firstName = "Custom"
         )
         repository.testUser = customUser
         repository.validEmail = "custom@test.com"
@@ -159,7 +158,9 @@ class StubAuthRepositoryTest {
         val response = (result as Result.Success).data
         assertEquals("custom-id", response.user.id)
         assertEquals("Custom", response.user.firstName)
-        assertEquals("teacher", response.user.role)
+        // Verificar que el activeContext contiene información de rol
+        assertNotNull(response.activeContext)
+        assertNotNull(response.activeContext.roleName)
     }
 
     @Test

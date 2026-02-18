@@ -54,8 +54,8 @@ public val authModule = module {
         } else {
             val authConfig = get<AuthConfig>()
             AuthRepositoryImpl(
-                httpClient = get<EduGoHttpClient>(),
-                baseUrl = appConfig.getFullApiUrl(),
+                httpClient = get<EduGoHttpClient>(named("plainHttp")),
+                baseUrl = appConfig.adminApiBaseUrl,
                 circuitBreaker = get(),
                 retryPolicy = authConfig.retryPolicy
             )

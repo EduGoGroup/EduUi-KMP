@@ -31,6 +31,7 @@ include(":modules:network")
 include(":modules:auth")
 include(":modules:settings")
 include(":modules:di")
+include(":modules:dynamic-ui")
 
 // Sprint 4 modules (UI Layer)
 include(":kmp-design")

@@ -4,15 +4,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Modelo que representa la información del usuario autenticado.
+ * Modelo que representa la información básica del usuario autenticado.
+ *
+ * **Importante:** Este modelo NO contiene información de roles o permisos.
+ * Para acceder al rol y permisos del usuario, usa el campo `activeContext`
+ * del `LoginResponse` o del `AuthState`.
  *
  * @property id Identificador único del usuario en el sistema
  * @property email Correo electrónico del usuario
  * @property firstName Nombre del usuario
  * @property lastName Apellido del usuario
  * @property fullName Nombre completo del usuario
- * @property role Rol del usuario en el sistema
- * @property schoolId Identificador de la escuela (nullable)
+ * @property schoolId Identificador de la escuela principal del usuario (nullable)
  */
 @Serializable
 public data class AuthUserInfo(
@@ -31,22 +34,9 @@ public data class AuthUserInfo(
     @SerialName("full_name")
     val fullName: String,
 
-    @SerialName("role")
-    val role: String,
-
     @SerialName("school_id")
     val schoolId: String? = null
 ) {
-
-    /**
-     * Verifica si el usuario tiene un rol específico.
-     *
-     * @param roleName Nombre del rol a verificar
-     * @return true si el usuario tiene ese rol
-     */
-    public fun hasRole(roleName: String): Boolean {
-        return role.equals(roleName, ignoreCase = true)
-    }
 
     /**
      * Verifica si el usuario está asociado a una escuela.
@@ -83,7 +73,7 @@ public data class AuthUserInfo(
      * Obtiene una representación segura para logging.
      */
     public fun toLogString(): String {
-        return "AuthUserInfo(id=$id, email=$email, role=$role, hasSchool=${hasSchool()})"
+        return "AuthUserInfo(id=$id, email=$email, hasSchool=${hasSchool()})"
     }
 
     companion object {
@@ -95,7 +85,6 @@ public data class AuthUserInfo(
             email: String = "test@edugo.com",
             firstName: String = "Test",
             lastName: String = "User",
-            role: String = "student",
             schoolId: String? = "test-school-456"
         ): AuthUserInfo {
             return AuthUserInfo(
@@ -104,7 +93,6 @@ public data class AuthUserInfo(
                 firstName = firstName,
                 lastName = lastName,
                 fullName = "$firstName $lastName",
-                role = role,
                 schoolId = schoolId
             )
         }

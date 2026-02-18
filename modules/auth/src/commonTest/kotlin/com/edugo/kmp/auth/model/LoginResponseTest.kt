@@ -28,8 +28,14 @@ class LoginResponseTest {
                 "first_name": "Test",
                 "last_name": "User",
                 "full_name": "Test User",
-                "role": "student",
                 "school_id": "school-456"
+              },
+              "active_context": {
+                "role_id": "role-1",
+                "role_name": "student",
+                "school_id": "school-456",
+                "school_name": "Test School",
+                "permissions": ["materials.read", "progress.write"]
               }
             }
         """.trimIndent()
@@ -42,7 +48,7 @@ class LoginResponseTest {
         assertEquals("Bearer", response.tokenType)
         assertEquals("user-123", response.user.id)
         assertEquals("test@edugo.com", response.user.email)
-        assertEquals("student", response.user.role)
+        assertEquals("student", response.activeContext.roleName)
     }
 
     @Test
@@ -58,14 +64,19 @@ class LoginResponseTest {
                 "email": "test@edugo.com",
                 "first_name": "Test",
                 "last_name": "User",
-                "full_name": "Test User",
-                "role": "admin"
+                "full_name": "Test User"
+              },
+              "active_context": {
+                "role_id": "role-2",
+                "role_name": "admin",
+                "permissions": ["materials.read", "materials.write", "users.manage"]
               }
             }
         """.trimIndent()
 
         val response = kotlinx.serialization.json.Json.decodeFromString(LoginResponse.serializer(), json)
         assertEquals(null, response.user.schoolId)
+        assertEquals(null, response.activeContext.schoolId)
     }
 
     // ==================== TESTS DE CONVERSIÓN A AUTHTOKEN ====================
@@ -73,12 +84,10 @@ class LoginResponseTest {
     @Test
     fun `toAuthToken creates valid AuthToken`() {
         val now = Clock.System.now()
-        val response = LoginResponse(
+        val response = LoginResponse.createTestResponse(
             accessToken = "test_token",
             expiresIn = 3600,
-            refreshToken = "refresh_token",
-            tokenType = "Bearer",
-            user = AuthUserInfo.createTestUser()
+            refreshToken = "refresh_token"
         )
 
         val authToken = response.toAuthToken()
@@ -134,8 +143,14 @@ class LoginResponseTest {
                 firstName = "Test",
                 lastName = "User",
                 fullName = "Test User",
-                role = "student",
                 schoolId = "school-456"
+            ),
+            activeContext = UserContext(
+                roleId = "role-1",
+                roleName = "student",
+                schoolId = "school-456",
+                schoolName = "Test School",
+                permissions = listOf("materials.read", "progress.write")
             )
         )
 
@@ -148,7 +163,8 @@ class LoginResponseTest {
         assertEquals(original.tokenType, deserialized.tokenType)
         assertEquals(original.user.id, deserialized.user.id)
         assertEquals(original.user.email, deserialized.user.email)
-        assertEquals(original.user.role, deserialized.user.role)
+        assertEquals(original.activeContext.roleName, deserialized.activeContext.roleName)
+        assertEquals(original.activeContext.permissions, deserialized.activeContext.permissions)
     }
 
     // ==================== TESTS DE MÉTODOS UTILITARIOS ====================
@@ -163,38 +179,24 @@ class LoginResponseTest {
     fun `isBearerToken is case insensitive`() {
         val testCases = listOf("Bearer", "bearer", "BEARER", "BeArEr")
         testCases.forEach { tokenType ->
-            val response = LoginResponse(
+            val response = LoginResponse.createTestResponse(
                 accessToken = "token",
                 expiresIn = 3600,
-                refreshToken = "refresh",
-                tokenType = tokenType,
-                user = AuthUserInfo.createTestUser()
-            )
+                refreshToken = "refresh"
+            ).copy(tokenType = tokenType)
             assertTrue(response.isBearerToken(), "isBearerToken should return true for '$tokenType'")
         }
     }
 
     @Test
     fun `isBearerToken returns false for non-Bearer token`() {
-        val response = LoginResponse(
-            accessToken = "token",
-            expiresIn = 3600,
-            refreshToken = "refresh",
-            tokenType = "Basic",
-            user = AuthUserInfo.createTestUser()
-        )
+        val response = LoginResponse.createTestResponse().copy(tokenType = "Basic")
         assertFalse(response.isBearerToken())
     }
 
     @Test
     fun `getAuthorizationHeader returns correctly formatted header`() {
-        val response = LoginResponse(
-            accessToken = "abc123xyz",
-            expiresIn = 3600,
-            refreshToken = "refresh",
-            tokenType = "Bearer",
-            user = AuthUserInfo.createTestUser()
-        )
+        val response = LoginResponse.createTestResponse(accessToken = "abc123xyz")
         val header = response.getAuthorizationHeader()
         assertEquals("Bearer abc123xyz", header)
     }
@@ -223,12 +225,8 @@ class LoginResponseTest {
 
     @Test
     fun `toLogString does not expose full token`() {
-        val response = LoginResponse(
-            accessToken = "very_long_secret_access_token_that_should_not_be_logged",
-            expiresIn = 3600,
-            refreshToken = "refresh_token",
-            tokenType = "Bearer",
-            user = AuthUserInfo.createTestUser()
+        val response = LoginResponse.createTestResponse(
+            accessToken = "very_long_secret_access_token_that_should_not_be_logged"
         )
         val logString = response.toLogString()
         assertFalse(logString.contains("very_long_secret_access_token_that_should_not_be_logged"), "Log string should not contain full token")
@@ -247,13 +245,7 @@ class LoginResponseTest {
 
     @Test
     fun `toLogString handles short tokens`() {
-        val response = LoginResponse(
-            accessToken = "short",
-            expiresIn = 3600,
-            refreshToken = "refresh",
-            tokenType = "Bearer",
-            user = AuthUserInfo.createTestUser()
-        )
+        val response = LoginResponse.createTestResponse(accessToken = "short")
         val logString = response.toLogString()
         assertTrue(logString.contains("***"), "Short tokens should be fully masked")
         assertFalse(logString.contains("short"), "Short token should not be exposed")
