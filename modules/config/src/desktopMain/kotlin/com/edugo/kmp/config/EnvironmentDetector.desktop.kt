@@ -23,6 +23,7 @@ internal actual fun detectPlatformEnvironment(): Environment {
         return Environment.DEV
     }
 
-    // Strategy 4: Default to PROD
-    return Environment.PROD
+    // Strategy 4: Default to DEV for local development
+    // TODO: Change to Environment.PROD for production builds
+    return Environment.DEV
 }

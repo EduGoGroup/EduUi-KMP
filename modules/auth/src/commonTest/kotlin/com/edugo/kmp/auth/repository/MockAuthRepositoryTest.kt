@@ -41,7 +41,7 @@ class MockAuthRepositoryTest {
         assertTrue(result2 is Result.Success)
         assertEquals(result1.data.user.firstName, result2.data.user.firstName)
         assertEquals(result1.data.user.lastName, result2.data.user.lastName)
-        assertEquals(result1.data.user.role, result2.data.user.role)
+        assertEquals(result1.data.activeContext.roleName, result2.data.activeContext.roleName)
     }
 
     @Test

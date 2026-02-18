@@ -16,20 +16,20 @@ internal object DefaultConfigs {
         "config/dev.json" to """
             {
               "environmentName": "DEV",
-              "apiUrl": "http://localhost",
-              "apiPort": 8080,
+              "adminApiBaseUrl": "http://localhost:8081",
+              "mobileApiBaseUrl": "http://localhost:9091",
               "webPort": 8080,
               "timeout": 30000,
               "debugMode": true,
-              "mockMode": true
+              "mockMode": false
             }
         """.trimIndent(),
 
         "config/staging.json" to """
             {
               "environmentName": "STAGING",
-              "apiUrl": "https://api-staging.example.com",
-              "apiPort": 443,
+              "adminApiBaseUrl": "https://api-staging.example.com",
+              "mobileApiBaseUrl": "https://api-mobile-staging.example.com",
               "webPort": 8080,
               "timeout": 60000,
               "debugMode": true,
@@ -40,8 +40,8 @@ internal object DefaultConfigs {
         "config/prod.json" to """
             {
               "environmentName": "PROD",
-              "apiUrl": "https://api.example.com",
-              "apiPort": 443,
+              "adminApiBaseUrl": "https://api.example.com",
+              "mobileApiBaseUrl": "https://api-mobile.example.com",
               "webPort": 80,
               "timeout": 60000,
               "debugMode": false,

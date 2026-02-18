@@ -59,6 +59,15 @@ class NavigationState(private val initialRoute: Route = Route.Splash) {
     }
 
     /**
+     * Reemplaza toda la pila de navegación con una nueva ruta como raíz.
+     * Útil para transiciones como login -> dashboard donde no queremos back al login.
+     */
+    fun replaceAll(route: Route) {
+        _backstack.value = listOf(route)
+        _currentRoute.value = route
+    }
+
+    /**
      * Navega hacia atrás hasta una ruta específica, eliminando todas las rutas
      * intermedias del backstack.
      *

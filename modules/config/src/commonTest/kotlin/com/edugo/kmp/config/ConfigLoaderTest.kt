@@ -17,8 +17,8 @@ class ConfigLoaderTest {
 
         assertNotNull(config)
         assertEquals(Environment.DEV, config.environment)
-        assertEquals("http://localhost", config.apiUrl)
-        assertEquals(8080, config.apiPort)
+        assertEquals("http://localhost:8081", config.adminApiBaseUrl)
+        assertEquals("http://localhost:9091", config.mobileApiBaseUrl)
         assertEquals(8080, config.webPort)
         assertEquals(30000L, config.timeout)
         assertTrue(config.debugMode)
@@ -30,8 +30,8 @@ class ConfigLoaderTest {
 
         assertNotNull(config)
         assertEquals(Environment.STAGING, config.environment)
-        assertEquals("https://api-staging.example.com", config.apiUrl)
-        assertEquals(443, config.apiPort)
+        assertEquals("https://api-staging.example.com", config.adminApiBaseUrl)
+        assertEquals("https://api-mobile-staging.example.com", config.mobileApiBaseUrl)
         assertEquals(8080, config.webPort)
         assertEquals(60000L, config.timeout)
         assertTrue(config.debugMode)
@@ -43,23 +43,11 @@ class ConfigLoaderTest {
 
         assertNotNull(config)
         assertEquals(Environment.PROD, config.environment)
-        assertEquals("https://api.example.com", config.apiUrl)
-        assertEquals(443, config.apiPort)
+        assertEquals("https://api.example.com", config.adminApiBaseUrl)
+        assertEquals("https://api-mobile.example.com", config.mobileApiBaseUrl)
         assertEquals(80, config.webPort)
         assertEquals(60000L, config.timeout)
         assertFalse(config.debugMode)
-    }
-
-    @Test
-    fun getFullApiUrl_concatenates_url_and_port() {
-        val config = ConfigLoader.load(Environment.DEV)
-        assertEquals("http://localhost:8080", config.getFullApiUrl())
-    }
-
-    @Test
-    fun getFullApiUrl_works_for_prod() {
-        val config = ConfigLoader.load(Environment.PROD)
-        assertEquals("https://api.example.com:443", config.getFullApiUrl())
     }
 
     @Test
@@ -67,8 +55,8 @@ class ConfigLoaderTest {
         val jsonString = """
             {
               "environmentName": "DEV",
-              "apiUrl": "http://test.com",
-              "apiPort": 9000,
+              "adminApiBaseUrl": "http://test.com:8081",
+              "mobileApiBaseUrl": "http://test.com:9091",
               "webPort": 3000,
               "timeout": 15000,
               "debugMode": true
@@ -79,8 +67,8 @@ class ConfigLoaderTest {
 
         assertNotNull(config)
         assertEquals(Environment.DEV, config.environment)
-        assertEquals("http://test.com", config.apiUrl)
-        assertEquals(9000, config.apiPort)
+        assertEquals("http://test.com:8081", config.adminApiBaseUrl)
+        assertEquals("http://test.com:9091", config.mobileApiBaseUrl)
         assertEquals(3000, config.webPort)
         assertEquals(15000L, config.timeout)
         assertTrue(config.debugMode)
@@ -91,8 +79,8 @@ class ConfigLoaderTest {
         val jsonString = """
             {
               "environmentName": "DEV",
-              "apiUrl": "http://test.com",
-              "apiPort": 9000,
+              "adminApiBaseUrl": "http://test.com:8081",
+              "mobileApiBaseUrl": "http://test.com:9091",
               "webPort": 3000,
               "timeout": 15000,
               "debugMode": true,
@@ -102,6 +90,6 @@ class ConfigLoaderTest {
 
         val config = ConfigLoader.loadFromString(jsonString)
         assertNotNull(config)
-        assertEquals("http://test.com", config.apiUrl)
+        assertEquals("http://test.com:8081", config.adminApiBaseUrl)
     }
 }

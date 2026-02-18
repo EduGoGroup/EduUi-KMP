@@ -1,7 +1,7 @@
 {
   "environmentName": "STAGING",
-  "apiUrl": "https://api-staging.example.com",
-  "apiPort": 443,
+  "adminApiBaseUrl": "https://api-staging.example.com",
+  "mobileApiBaseUrl": "https://api-mobile-staging.example.com",
   "webPort": 8080,
   "timeout": 60000,
   "debugMode": true,

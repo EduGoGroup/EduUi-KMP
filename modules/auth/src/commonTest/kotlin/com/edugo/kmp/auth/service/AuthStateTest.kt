@@ -2,6 +2,7 @@ package com.edugo.kmp.auth.service
 
 import com.edugo.kmp.auth.model.AuthToken
 import com.edugo.kmp.auth.model.AuthUserInfo
+import com.edugo.kmp.auth.model.UserContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -12,6 +13,7 @@ class AuthStateTest {
 
     private val testUser = AuthUserInfo.createTestUser()
     private val testToken = AuthToken.createTestToken()
+    private val testContext = UserContext.createTestContext()
 
     @Test
     fun testUnauthenticatedState() {
@@ -26,7 +28,7 @@ class AuthStateTest {
 
     @Test
     fun testAuthenticatedState() {
-        val state = AuthState.Authenticated(testUser, testToken)
+        val state = AuthState.Authenticated(testUser, testToken, testContext)
 
         assertTrue(state.isAuthenticated)
         assertFalse(state.isUnauthenticated)
@@ -48,13 +50,14 @@ class AuthStateTest {
 
     @Test
     fun testIfAuthenticatedExtensionExecutes() {
-        val authenticatedState = AuthState.Authenticated(testUser, testToken)
+        val authenticatedState = AuthState.Authenticated(testUser, testToken, testContext)
         var called = false
 
-        authenticatedState.ifAuthenticated { user, token ->
+        authenticatedState.ifAuthenticated { user, token, context ->
             called = true
             assertEquals(testUser, user)
             assertEquals(testToken, token)
+            assertEquals(testContext, context)
         }
 
         assertTrue(called, "ifAuthenticated should execute for Authenticated state")
@@ -65,7 +68,7 @@ class AuthStateTest {
         val unauthenticatedState = AuthState.Unauthenticated
         var called = false
 
-        unauthenticatedState.ifAuthenticated { _, _ ->
+        unauthenticatedState.ifAuthenticated { _, _, _ ->
             called = true
         }
 
@@ -86,7 +89,7 @@ class AuthStateTest {
 
     @Test
     fun testIfUnauthenticatedExtensionDoesNotExecuteForAuthenticated() {
-        val authenticatedState = AuthState.Authenticated(testUser, testToken)
+        val authenticatedState = AuthState.Authenticated(testUser, testToken, testContext)
         var called = false
 
         authenticatedState.ifUnauthenticated {
@@ -98,10 +101,10 @@ class AuthStateTest {
 
     @Test
     fun testFoldPatternMatchingForAuthenticated() {
-        val authenticatedState = AuthState.Authenticated(testUser, testToken)
+        val authenticatedState = AuthState.Authenticated(testUser, testToken, testContext)
 
         val result = authenticatedState.fold(
-            onAuthenticated = { user, _ -> user.email },
+            onAuthenticated = { user, _, _ -> user.email },
             onUnauthenticated = { "not authenticated" },
             onLoading = { "loading" }
         )
@@ -114,7 +117,7 @@ class AuthStateTest {
         val unauthenticatedState = AuthState.Unauthenticated
 
         val result = unauthenticatedState.fold(
-            onAuthenticated = { _, _ -> "authenticated" },
+            onAuthenticated = { _, _, _ -> "authenticated" },
             onUnauthenticated = { "not authenticated" },
             onLoading = { "loading" }
         )
@@ -127,7 +130,7 @@ class AuthStateTest {
         val loadingState = AuthState.Loading
 
         val result = loadingState.fold(
-            onAuthenticated = { _, _ -> "authenticated" },
+            onAuthenticated = { _, _, _ -> "authenticated" },
             onUnauthenticated = { "not authenticated" },
             onLoading = { "loading" }
         )
@@ -137,7 +140,7 @@ class AuthStateTest {
 
     @Test
     fun testAuthenticatedStateCopy() {
-        val original = AuthState.Authenticated(testUser, testToken)
+        val original = AuthState.Authenticated(testUser, testToken, testContext)
         val newToken = AuthToken.createTestToken(durationSeconds = 7200)
 
         val copied = original.copy(token = newToken)

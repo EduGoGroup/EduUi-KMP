@@ -18,14 +18,16 @@ public interface AppConfig {
     public val environment: Environment
 
     /**
-     * URL base del API backend.
+     * URL base completa del API de administración (puerto 8081 en local).
+     * Maneja endpoints de auth y screen-config.
      */
-    public val apiUrl: String
+    public val adminApiBaseUrl: String
 
     /**
-     * Puerto del API backend.
+     * URL base completa del API mobile (puerto 9091 en local).
+     * Maneja endpoints de materials y progress.
      */
-    public val apiPort: Int
+    public val mobileApiBaseUrl: String
 
     /**
      * Puerto para la aplicación web (Wasm).
@@ -50,12 +52,6 @@ public interface AppConfig {
      * Siempre es false en PROD por seguridad.
      */
     public val mockMode: Boolean
-
-    /**
-     * Construye la URL completa del API.
-     * @return URL completa en formato "http://localhost:8080"
-     */
-    public fun getFullApiUrl(): String = "$apiUrl:$apiPort"
 }
 
 /**
@@ -67,8 +63,8 @@ public interface AppConfig {
 @Serializable
 public data class AppConfigImpl(
     private val environmentName: String,
-    override val apiUrl: String,
-    override val apiPort: Int,
+    override val adminApiBaseUrl: String,
+    override val mobileApiBaseUrl: String,
     override val webPort: Int,
     override val timeout: Long,
     override val debugMode: Boolean,

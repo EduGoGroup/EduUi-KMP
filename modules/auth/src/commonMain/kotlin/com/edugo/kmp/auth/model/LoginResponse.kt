@@ -12,7 +12,8 @@ import kotlin.time.Duration.Companion.seconds
  * @property expiresIn Tiempo de expiración en segundos desde ahora
  * @property refreshToken Token para renovar la sesión
  * @property tokenType Tipo de token (típicamente "Bearer")
- * @property user Información del usuario autenticado
+ * @property user Información básica del usuario autenticado
+ * @property activeContext Contexto RBAC activo (rol, permisos, escuela, etc.)
  */
 @Serializable
 public data class LoginResponse(
@@ -29,7 +30,10 @@ public data class LoginResponse(
     val tokenType: String,
 
     @SerialName("user")
-    val user: AuthUserInfo
+    val user: AuthUserInfo,
+
+    @SerialName("active_context")
+    val activeContext: UserContext
 ) {
 
     /**
@@ -77,7 +81,7 @@ public data class LoginResponse(
             "***"
         }
         return "LoginResponse(tokenType=$tokenType, expiresIn=$expiresIn, " +
-                "token=$tokenPreview, userId=${user.id}, userRole=${user.role})"
+                "token=$tokenPreview, userId=${user.id}, userRole=${activeContext.roleName})"
     }
 
     companion object {
@@ -88,14 +92,16 @@ public data class LoginResponse(
             accessToken: String = "test_access_token_${Clock.System.now().toEpochMilliseconds()}",
             expiresIn: Int = 3600,
             refreshToken: String = "test_refresh_token_${Clock.System.now().toEpochMilliseconds()}",
-            user: AuthUserInfo = AuthUserInfo.createTestUser()
+            user: AuthUserInfo = AuthUserInfo.createTestUser(),
+            activeContext: UserContext = UserContext.createTestContext()
         ): LoginResponse {
             return LoginResponse(
                 accessToken = accessToken,
                 expiresIn = expiresIn,
                 refreshToken = refreshToken,
                 tokenType = "Bearer",
-                user = user
+                user = user,
+                activeContext = activeContext
             )
         }
     }

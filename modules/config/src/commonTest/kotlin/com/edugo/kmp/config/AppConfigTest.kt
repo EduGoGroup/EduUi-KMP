@@ -17,8 +17,8 @@ class AppConfigTest {
     fun appConfigImpl_serializes_and_deserializes() {
         val config = AppConfigImpl(
             environmentName = "DEV",
-            apiUrl = "http://localhost",
-            apiPort = 8080,
+            adminApiBaseUrl = "http://localhost:8081",
+            mobileApiBaseUrl = "http://localhost:9091",
             webPort = 3000,
             timeout = 30000L,
             debugMode = true
@@ -34,8 +34,8 @@ class AppConfigTest {
     fun appConfigImpl_environment_maps_from_name() {
         val config = AppConfigImpl(
             environmentName = "PROD",
-            apiUrl = "https://api.example.com",
-            apiPort = 443,
+            adminApiBaseUrl = "https://api.example.com",
+            mobileApiBaseUrl = "https://api-mobile.example.com",
             webPort = 80,
             timeout = 60000L,
             debugMode = false
@@ -48,8 +48,8 @@ class AppConfigTest {
     fun appConfigImpl_environment_defaults_to_dev_for_unknown() {
         val config = AppConfigImpl(
             environmentName = "UNKNOWN",
-            apiUrl = "http://localhost",
-            apiPort = 8080,
+            adminApiBaseUrl = "http://localhost:8081",
+            mobileApiBaseUrl = "http://localhost:9091",
             webPort = 3000,
             timeout = 30000L,
             debugMode = true
@@ -59,37 +59,37 @@ class AppConfigTest {
     }
 
     @Test
-    fun getFullApiUrl_concatenates_correctly() {
+    fun adminApiBaseUrl_returns_correct_value() {
         val config = AppConfigImpl(
             environmentName = "DEV",
-            apiUrl = "http://localhost",
-            apiPort = 8080,
+            adminApiBaseUrl = "http://localhost:8081",
+            mobileApiBaseUrl = "http://localhost:9091",
             webPort = 3000,
             timeout = 30000L,
             debugMode = true
         )
 
-        assertEquals("http://localhost:8080", config.getFullApiUrl())
+        assertEquals("http://localhost:8081", config.adminApiBaseUrl)
     }
 
     @Test
-    fun getFullApiUrl_works_with_https_and_443() {
+    fun mobileApiBaseUrl_returns_correct_value() {
         val config = AppConfigImpl(
-            environmentName = "PROD",
-            apiUrl = "https://api.example.com",
-            apiPort = 443,
-            webPort = 80,
-            timeout = 60000L,
-            debugMode = false
+            environmentName = "DEV",
+            adminApiBaseUrl = "http://localhost:8081",
+            mobileApiBaseUrl = "http://localhost:9091",
+            webPort = 3000,
+            timeout = 30000L,
+            debugMode = true
         )
 
-        assertEquals("https://api.example.com:443", config.getFullApiUrl())
+        assertEquals("http://localhost:9091", config.mobileApiBaseUrl)
     }
 
     @Test
     fun appConfigImpl_data_class_equality() {
-        val config1 = AppConfigImpl("DEV", "http://localhost", 8080, 3000, 30000L, true)
-        val config2 = AppConfigImpl("DEV", "http://localhost", 8080, 3000, 30000L, true)
+        val config1 = AppConfigImpl("DEV", "http://localhost:8081", "http://localhost:9091", 3000, 30000L, true)
+        val config2 = AppConfigImpl("DEV", "http://localhost:8081", "http://localhost:9091", 3000, 30000L, true)
 
         assertEquals(config1, config2)
         assertEquals(config1.hashCode(), config2.hashCode())
@@ -97,37 +97,37 @@ class AppConfigTest {
 
     @Test
     fun debugMode_is_true_for_dev() {
-        val config = AppConfigImpl("DEV", "http://localhost", 8080, 3000, 30000L, true)
+        val config = AppConfigImpl("DEV", "http://localhost:8081", "http://localhost:9091", 3000, 30000L, true)
         assertTrue(config.debugMode)
     }
 
     @Test
     fun debugMode_is_false_for_prod() {
-        val config = AppConfigImpl("PROD", "https://api.example.com", 443, 80, 60000L, false)
+        val config = AppConfigImpl("PROD", "https://api.example.com", "https://api-mobile.example.com", 80, 60000L, false)
         assertFalse(config.debugMode)
     }
 
     @Test
     fun mockMode_default_is_false() {
-        val config = AppConfigImpl("DEV", "http://localhost", 8080, 3000, 30000L, true)
+        val config = AppConfigImpl("DEV", "http://localhost:8081", "http://localhost:9091", 3000, 30000L, true)
         assertFalse(config.mockMode)
     }
 
     @Test
     fun mockMode_can_be_enabled_for_dev() {
-        val config = AppConfigImpl("DEV", "http://localhost", 8080, 3000, 30000L, true, mockModeValue = true)
+        val config = AppConfigImpl("DEV", "http://localhost:8081", "http://localhost:9091", 3000, 30000L, true, mockModeValue = true)
         assertTrue(config.mockMode)
     }
 
     @Test
     fun mockMode_forced_false_in_prod() {
-        val config = AppConfigImpl("PROD", "https://api.example.com", 443, 80, 60000L, false, mockModeValue = true)
+        val config = AppConfigImpl("PROD", "https://api.example.com", "https://api-mobile.example.com", 80, 60000L, false, mockModeValue = true)
         assertFalse(config.mockMode)
     }
 
     @Test
     fun mockMode_allowed_in_staging() {
-        val config = AppConfigImpl("STAGING", "https://api-staging.example.com", 443, 8080, 60000L, true, mockModeValue = true)
+        val config = AppConfigImpl("STAGING", "https://api-staging.example.com", "https://api-mobile-staging.example.com", 8080, 60000L, true, mockModeValue = true)
         assertTrue(config.mockMode)
     }
 
@@ -136,8 +136,8 @@ class AppConfigTest {
         val jsonStr = """
             {
                 "environmentName": "DEV",
-                "apiUrl": "http://localhost",
-                "apiPort": 8080,
+                "adminApiBaseUrl": "http://localhost:8081",
+                "mobileApiBaseUrl": "http://localhost:9091",
                 "webPort": 3000,
                 "timeout": 30000,
                 "debugMode": true,
@@ -153,8 +153,8 @@ class AppConfigTest {
         val jsonStr = """
             {
                 "environmentName": "DEV",
-                "apiUrl": "http://localhost",
-                "apiPort": 8080,
+                "adminApiBaseUrl": "http://localhost:8081",
+                "mobileApiBaseUrl": "http://localhost:9091",
                 "webPort": 3000,
                 "timeout": 30000,
                 "debugMode": true
