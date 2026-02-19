@@ -3,8 +3,18 @@
 
 **Fecha**: 2026-02-18
 **Estado**: Listo para ejecucion
-**Prerequisito**: PRs de Phase 2 mergeados a dev (o trabajar sobre las ramas actuales)
+**Prerequisito**: PRs de Phase 2 mergeados a dev en todos los repos
 **Analisis completo**: ver `ANALISIS-FASE3-DYNAMIC-UI.md`
+
+### PRs de Phase 2 que deben estar mergeados antes de iniciar:
+| Repo | PR | Branch |
+|------|----|--------|
+| edugo-shared | #60 | feature/dynamic-ui-types → dev |
+| edugo-infrastructure | #61 | feature/screen-handler-key → dev |
+| edugo-api-administracion | #80 | feature/handler-key-crud → dev |
+| edugo-api-mobile | #108 | feature/dynamic-navigation → dev |
+| EduUI-KMP | #3 | feature/dynamic-ui-phase2 → dev |
+| edugo-dev-environment | ya en dev | (directo) |
 
 ---
 
@@ -380,25 +390,45 @@ Alternativa: usar form-basic-v1 con slots de tipo radio-group para las preguntas
 
 ## 9. REGLAS DE TRABAJO
 
-1. **Todo es LOCAL** - No commit, no push hasta validar
-2. **BD**: Modificar seeds existentes, NO crear scripts ALTER
-3. **Recrear BD**: `cd edugo-dev-environment && make neon-reset`
-4. **Dual API**: Usar prefijo `admin:` para endpoints del Admin API
-5. **Handlers**: Registrar en `ScreenHandlersModule.kt` con `bind ScreenActionHandler::class`
-6. **Templates**: UUIDs fijos con patron `a0000000-0000-0000-0000-00000000000X`
-7. **Screen instances**: UUIDs fijos con patron `b0000000-0000-0000-0000-0000000000XX`
-8. **Compilar**: `./gradlew :kmp-screens:compileKotlinDesktop`
+1. **Ramas desde dev** - TODOS los repos deben estar en dev actualizado (con Phase 2 mergeado). Cada agente crea su rama desde dev:
+   ```bash
+   cd <repo>
+   git checkout dev && git pull origin dev
+   git checkout -b feature/dynamic-ui-phase3
+   ```
+2. **NO hacer commit ni push** - Solo cambios locales en archivos. El commit/push se hace manualmente despues de validar
+3. **BD**: Modificar seeds existentes, NO crear scripts ALTER
+4. **Recrear BD**: `cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-dev-environment && make neon-reset`
+5. **go.work**: Ya existe en `/Users/jhoanmedina/source/EduGo/repos-separados/go.work` - los cambios locales entre modulos Go se ven automaticamente
+6. **Dual API**: Usar prefijo `admin:` en data_endpoint para endpoints del Admin API
+7. **Handlers**: Registrar en `ScreenHandlersModule.kt` con `bind ScreenActionHandler::class`
+8. **Templates**: UUIDs fijos con patron `a0000000-0000-0000-0000-00000000000X`
+9. **Screen instances**: UUIDs fijos con patron `b0000000-0000-0000-0000-0000000000XX`
+10. **Compilar KMP**: `./gradlew :kmp-screens:compileKotlinDesktop`
+11. **Compilar Go**: `cd <repo> && go build ./...`
+
+### Ramas a crear por repo:
+| Repo | Ruta | Branch de trabajo |
+|------|------|-------------------|
+| kmp_new (frontend) | `/Users/jhoanmedina/source/EduGo/EduUI/kmp_new` | `feature/dynamic-ui-phase3` |
+| edugo-infrastructure | `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure` | `feature/dynamic-ui-phase3-seeds` |
+| edugo-api-mobile | `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile` | (sin cambios en Fase 3A) |
+| edugo-api-administracion | `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-administracion` | (sin cambios en Fase 3A) |
+| edugo-dev-environment | `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-dev-environment` | dev (directo, solo make neon-reset) |
 
 ---
 
 ## 10. ORDEN DE EJECUCION RECOMENDADO
 
 ```
-1. Merge PRs de Phase 2 a dev (o trabajar sobre ramas actuales)
+PREREQUISITO: Todos los PRs de Phase 2 mergeados a dev
+
+1. Crear ramas feature/dynamic-ui-phase3 desde dev en repos que se tocan
 2. Ejecutar Fase 3A-1 en paralelo (A1 + A2 + A3)
-3. Ejecutar Fase 3A-2 en paralelo (A4 + A5) - depende de A1
-4. Ejecutar Fase 3A-3 (A6) - depende de A4/A5
-5. Validacion integral
-6. Commit + Push + PRs
-7. Si hay tiempo: Fase 3B (admin CRUD)
+3. Recrear BD Neon: make neon-reset (para que los nuevos seeds se apliquen)
+4. Ejecutar Fase 3A-2 en paralelo (A4 + A5) - depende de A1
+5. Ejecutar Fase 3A-3 (A6) - depende de A4/A5
+6. Validacion integral (compilar todo + probar en desktop)
+7. NO hacer commit - el usuario revisa y decide
+8. Si hay tiempo: Fase 3B (admin CRUD)
 ```
