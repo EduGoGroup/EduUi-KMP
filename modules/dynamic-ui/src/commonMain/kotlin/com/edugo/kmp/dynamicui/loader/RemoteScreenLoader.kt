@@ -31,9 +31,11 @@ class RemoteScreenLoader(
     }
 
     override suspend fun loadNavigation(): Result<NavigationDefinition> {
-        // TODO: Backend aún no tiene endpoint de navegación
         return httpClient.getSafe(
-            url = "$baseUrl/v1/screen-config/navigation"
+            url = "$baseUrl/v1/screens/navigation",
+            config = HttpRequestConfig.builder()
+                .queryParam("platform", "mobile")
+                .build()
         )
     }
 }

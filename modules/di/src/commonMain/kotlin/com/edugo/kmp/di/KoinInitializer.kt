@@ -9,6 +9,7 @@ import com.edugo.kmp.di.module.networkModule
 import com.edugo.kmp.di.module.settingsModule
 import com.edugo.kmp.di.module.storageModule
 import com.edugo.kmp.di.module.dynamicUiModule
+import com.edugo.kmp.di.module.screenHandlersModule
 import com.edugo.kmp.di.module.validationModule
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -64,6 +65,7 @@ public object KoinInitializer {
     public fun domainModules(): List<Module> = listOf(
         authModule,
         settingsModule,
+        screenHandlersModule,
         dynamicUiModule
     )
 
