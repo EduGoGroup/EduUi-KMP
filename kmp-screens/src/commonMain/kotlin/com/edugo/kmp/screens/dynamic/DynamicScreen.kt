@@ -67,13 +67,11 @@ fun DynamicScreen(
                     fieldErrors = fieldErrors,
                     onFieldChanged = onFieldChanged ?: viewModel::onFieldChanged,
                     onAction = { action: ActionDefinition, item: JsonObject? ->
-                        println("[DynamicScreen] onAction fired: action.id=${action.id}, type=${action.type}, screenKey=$screenKey")
                         if (onAction != null) {
                             onAction(action, item, scope)
                         } else {
                             scope.launch {
                                 val result = viewModel.executeAction(action, item)
-                                println("[DynamicScreen] executeAction result: $result")
                                 when (result) {
                                     is ActionResult.NavigateTo ->
                                         onNavigate(result.screenKey, result.params)

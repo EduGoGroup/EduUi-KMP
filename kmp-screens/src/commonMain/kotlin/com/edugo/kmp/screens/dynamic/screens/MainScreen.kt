@@ -41,7 +41,10 @@ fun MainScreen(
     // Load navigation config from backend
     LaunchedEffect(Unit) {
         when (val result = screenLoader.loadNavigation()) {
-            is Result.Success -> navDefinition = result.data
+            is Result.Success -> {
+                navDefinition = result.data
+                if (selectedTab >= result.data.bottomNav.size) selectedTab = 0
+            }
             is Result.Failure -> navDefinition = fallbackNavigation()
             is Result.Loading -> { /* already loading */ }
         }
@@ -60,7 +63,7 @@ fun MainScreen(
     AdaptiveNavigationLayout(
         navDefinition = nav,
         selectedIndex = selectedTab,
-        onTabSelected = { selectedTab = it },
+        onTabSelected = { selectedTab = it.coerceIn(0, nav.bottomNav.lastIndex) },
         modifier = modifier,
     ) { paddingModifier ->
         // Render current tab's screen
@@ -101,7 +104,7 @@ fun MainScreen(
 /** Fallback navigation when backend is unavailable */
 private fun fallbackNavigation() = NavigationDefinition(
     bottomNav = listOf(
-        NavigationItem(key = "dashboard", label = "Dashboard", icon = "dashboard", screenKey = "dashboard-teacher"),
+        NavigationItem(key = "dashboard", label = "Dashboard", icon = "dashboard", screenKey = "dashboard"),
         NavigationItem(key = "materials", label = "Materials", icon = "folder", screenKey = "materials-list"),
         NavigationItem(key = "settings", label = "Settings", icon = "settings", screenKey = "app-settings"),
     ),

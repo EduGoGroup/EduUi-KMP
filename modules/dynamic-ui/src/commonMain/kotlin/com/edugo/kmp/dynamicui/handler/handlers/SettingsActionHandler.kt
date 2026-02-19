@@ -30,7 +30,11 @@ class SettingsActionHandler(
             }
             ActionType.NAVIGATE_BACK -> ActionResult.NavigateTo("back")
             ActionType.CONFIRM -> {
-                ActionResult.Success(message = action.id)
+                val message = when (action.id) {
+                    "theme_toggle" -> "Theme changed"
+                    else -> "Success"
+                }
+                ActionResult.Success(message = message)
             }
             else -> ActionResult.Error("Unhandled action: ${action.type}")
         }

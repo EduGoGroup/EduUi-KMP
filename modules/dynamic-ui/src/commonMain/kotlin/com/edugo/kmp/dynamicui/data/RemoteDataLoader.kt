@@ -49,7 +49,6 @@ class RemoteDataLoader(
         }
 
         val url = "$baseUrl$path"
-        println("[DataLoader] GET $url")
 
         val result = httpClient.getSafe<String>(
             url = url,
@@ -84,7 +83,7 @@ class RemoteDataLoader(
 
             when (element) {
                 is JsonArray -> {
-                    val items = element.jsonArray.map { it.jsonObject }
+                    val items = element.jsonArray.mapNotNull { it as? JsonObject }
                     DataPage(
                         items = items,
                         total = items.size,
