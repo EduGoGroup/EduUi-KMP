@@ -32,6 +32,7 @@ class CachedScreenLoader(
         maxMemoryEntries, 0.75f, true // accessOrder=true para LRU
     )
     private val mutex = Mutex()
+    private var navCache: Pair<NavigationDefinition, Instant>? = null
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -103,12 +104,27 @@ class CachedScreenLoader(
         }
     }
 
-    override suspend fun loadNavigation(): Result<NavigationDefinition> {
-        return remote.loadNavigation()
+    override suspend fun loadNavigation(): Result<NavigationDefinition> = mutex.withLock {
+        // Check memory cache
+        navCache?.let { (def, ts) ->
+            if (isValid(ts)) {
+                return Result.Success(def)
+            } else {
+                navCache = null
+            }
+        }
+
+        // Load from remote
+        val result = remote.loadNavigation()
+        if (result is Result.Success) {
+            navCache = result.data to clock.now()
+        }
+        result
     }
 
     suspend fun clearCache() = mutex.withLock {
         memoryCache.clear()
+        navCache = null
         val now = clock.now()
         storage.putStringSafe(INVALIDATED_AT_KEY, now.toEpochMilliseconds().toString())
     }

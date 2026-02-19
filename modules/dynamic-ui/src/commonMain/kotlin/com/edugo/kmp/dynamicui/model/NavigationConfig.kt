@@ -29,13 +29,17 @@ data class NavigationAction(
 
 @Serializable
 data class NavigationDefinition(
-    val items: List<NavigationItem> = emptyList()
+    val bottomNav: List<NavigationItem> = emptyList(),
+    val drawerItems: List<NavigationItem> = emptyList(),
+    val version: Int = 1
 )
 
 @Serializable
 data class NavigationItem(
-    val screenKey: String,
+    val key: String,
     val label: String,
     val icon: String? = null,
-    val order: Int = 0
+    val screenKey: String? = null,
+    val sortOrder: Int = 0,
+    val children: List<NavigationItem> = emptyList()
 )

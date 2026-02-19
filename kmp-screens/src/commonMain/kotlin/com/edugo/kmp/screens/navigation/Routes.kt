@@ -14,6 +14,7 @@ sealed class Route(val path: String) {
     data object Dashboard : Route("dashboard")
     data object MaterialsList : Route("materials-list")
     data class MaterialDetail(val materialId: String) : Route("material-detail/$materialId")
+    data class Dynamic(val screenKey: String, val params: Map<String, String> = emptyMap()) : Route("dynamic/$screenKey")
 
     companion object {
         fun fromPath(path: String): Route? {

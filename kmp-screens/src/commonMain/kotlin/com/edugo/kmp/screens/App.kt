@@ -9,11 +9,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.di.KoinInitializer
+import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.screens.dynamic.DynamicScreen
 import com.edugo.kmp.screens.dynamic.screens.DynamicLoginScreen
 import com.edugo.kmp.screens.dynamic.screens.DynamicMaterialDetailScreen
 import com.edugo.kmp.screens.dynamic.screens.MainScreen
 import com.edugo.kmp.screens.navigation.NavigationState
 import com.edugo.kmp.screens.navigation.Route
+import com.edugo.kmp.screens.navigation.RouteRegistry
 import com.edugo.kmp.screens.ui.LoginScreen
 import com.edugo.kmp.screens.ui.SplashScreen
 import com.edugo.kmp.settings.model.ThemeOption
@@ -28,7 +31,7 @@ import org.koin.compose.koinInject
  * Inicializa:
  * - Koin con modulos de DI
  * - EduGoTheme (Material 3) con tema reactivo desde ThemeService
- * - Navegacion entre pantallas
+ * - Navegacion entre pantallas con RouteRegistry para rutas dinamicas
  *
  * Flujo: Splash -> Login -> Dashboard(MainScreen con BottomNav) -> MaterialDetail
  */
@@ -49,6 +52,7 @@ fun App() {
 
         EduGoTheme(darkTheme = darkTheme) {
             val navState = remember { NavigationState() }
+            val routeRegistry = remember { RouteRegistry() }
             val authService = koinInject<AuthService>()
             val scope = rememberCoroutineScope()
 
@@ -60,10 +64,8 @@ fun App() {
             }
 
             val handleDynamicNavigate: (String, Map<String, String>) -> Unit = { screenKey, params ->
-                val route = Route.fromScreenKey(screenKey, params)
-                if (route != null) {
-                    navState.navigateTo(route)
-                }
+                val route = routeRegistry.resolveOrDynamic(screenKey, params)
+                navState.navigateTo(route)
             }
 
             when (val currentRoute = navState.currentRoute) {
@@ -76,7 +78,7 @@ fun App() {
                     onLoginSuccess = { navState.replaceAll(Route.Dashboard) }
                 )
 
-                // TODO: Cambiar a DynamicLoginScreen cuando el endpoint /v1/screens/app-login sea público
+                // TODO: Cambiar a DynamicLoginScreen cuando el endpoint /v1/screens/app-login sea publico
                 // Route.Login -> DynamicLoginScreen(
                 //     onLoginSuccess = { navState.replaceAll(Route.Dashboard) },
                 //     onNavigate = handleDynamicNavigate,
@@ -108,6 +110,15 @@ fun App() {
                     onNavigate = handleDynamicNavigate,
                     onLogout = handleLogout,
                 )
+
+                is Route.Dynamic -> {
+                    val viewModel = koinInject<DynamicScreenViewModel>()
+                    DynamicScreen(
+                        screenKey = currentRoute.screenKey,
+                        viewModel = viewModel,
+                        onNavigate = handleDynamicNavigate,
+                    )
+                }
             }
         }
     }
