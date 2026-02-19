@@ -30,7 +30,7 @@ val dynamicUiModule = module {
     }
     single<DataLoader> {
         val appConfig = get<AppConfig>()
-        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl)
+        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl, appConfig.adminApiBaseUrl)
     }
     single { NavigateHandler() }
     single {

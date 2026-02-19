@@ -10,9 +10,18 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 
+/**
+ * Loads data from APIs with dual-API routing support.
+ *
+ * Endpoint convention:
+ * - "/v1/materials"         → mobile API (default, no prefix)
+ * - "mobile:/v1/materials"  → mobile API (explicit)
+ * - "admin:/v1/users"       → admin API
+ */
 class RemoteDataLoader(
     private val httpClient: EduGoHttpClient,
-    private val baseUrl: String
+    private val mobileBaseUrl: String,
+    private val adminBaseUrl: String
 ) : DataLoader {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -22,9 +31,12 @@ class RemoteDataLoader(
         config: DataConfig,
         params: Map<String, String>
     ): Result<DataPage> {
-        if (!endpoint.startsWith("/") || endpoint.contains("..") || endpoint.contains("://")) {
-            return Result.Failure("Invalid data endpoint")
+        val (baseUrl, path) = resolveEndpoint(endpoint)
+
+        if (!path.startsWith("/") || path.contains("..") || path.contains("://")) {
+            return Result.Failure("Invalid data endpoint: $path")
         }
+
         val configBuilder = HttpRequestConfig.builder()
         config.defaultParams.forEach { (key, value) ->
             configBuilder.queryParam(key, value)
@@ -36,7 +48,7 @@ class RemoteDataLoader(
             configBuilder.queryParam(it.limitParam, it.pageSize.toString())
         }
 
-        val url = "$baseUrl$endpoint"
+        val url = "$baseUrl$path"
         println("[DataLoader] GET $url")
 
         val result = httpClient.getSafe<String>(
@@ -51,13 +63,26 @@ class RemoteDataLoader(
         }
     }
 
+    /**
+     * Resolves the endpoint prefix to a base URL.
+     * "admin:/v1/users" → (adminBaseUrl, "/v1/users")
+     * "mobile:/v1/materials" → (mobileBaseUrl, "/v1/materials")
+     * "/v1/materials" → (mobileBaseUrl, "/v1/materials")  // default
+     */
+    private fun resolveEndpoint(endpoint: String): Pair<String, String> {
+        return when {
+            endpoint.startsWith("admin:") -> adminBaseUrl to endpoint.removePrefix("admin:")
+            endpoint.startsWith("mobile:") -> mobileBaseUrl to endpoint.removePrefix("mobile:")
+            else -> mobileBaseUrl to endpoint
+        }
+    }
+
     private fun parseResponse(body: String, config: DataConfig): Result<DataPage> {
         return try {
             val element = json.parseToJsonElement(body)
             val pageSize = config.pagination?.pageSize ?: 20
 
             when (element) {
-                // API returns array directly: [{...}, {...}]
                 is JsonArray -> {
                     val items = element.jsonArray.map { it.jsonObject }
                     DataPage(
@@ -66,7 +91,6 @@ class RemoteDataLoader(
                         hasMore = items.size >= pageSize
                     ).let { Result.Success(it) }
                 }
-                // API returns paginated object: {items: [...], total: N} or {data: [...]}
                 is JsonObject -> {
                     val obj = element.jsonObject
                     val items = (obj["items"] ?: obj["data"])
