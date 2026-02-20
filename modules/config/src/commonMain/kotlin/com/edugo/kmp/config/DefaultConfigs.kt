@@ -28,8 +28,8 @@ internal object DefaultConfigs {
         "config/staging.json" to """
             {
               "environmentName": "STAGING",
-              "adminApiBaseUrl": "https://api-staging.example.com",
-              "mobileApiBaseUrl": "https://api-mobile-staging.example.com",
+              "adminApiBaseUrl": "https://edugo-api-admin.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
+              "mobileApiBaseUrl": "https://edugo-api-mobile.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
               "webPort": 8080,
               "timeout": 60000,
               "debugMode": true,

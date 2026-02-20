@@ -16,6 +16,7 @@ data class ScreenDefinition(
     val dataEndpoint: String? = null,
     val dataConfig: DataConfig? = null,
     val actions: List<ActionDefinition> = emptyList(),
+    val handlerKey: String? = null,
     val userPreferences: JsonObject? = null,
     val updatedAt: String
 )

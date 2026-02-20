@@ -22,9 +22,9 @@ import org.koin.dsl.module
 val dynamicUiModule = module {
     single<ScreenLoader> {
         val appConfig = get<AppConfig>()
-        // screen-config endpoints están en API Admin
+        // screen endpoints en API Mobile (alineado con frontend Apple)
         CachedScreenLoader(
-            remote = RemoteScreenLoader(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl),
+            remote = RemoteScreenLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl),
             storage = get<SafeEduGoStorage>()
         )
     }

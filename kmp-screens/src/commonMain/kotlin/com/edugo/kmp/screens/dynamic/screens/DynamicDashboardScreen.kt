@@ -37,8 +37,12 @@ fun DynamicDashboardScreen(
     val user = authState.currentUser
 
     val screenKey = when {
+        context?.hasRole("super_admin") == true -> "dashboard-superadmin"
+        context?.hasRole("platform_admin") == true -> "dashboard-superadmin"
+        context?.hasRole("school_admin") == true -> "dashboard-schooladmin"
+        context?.hasRole("school_director") == true -> "dashboard-schooladmin"
         context?.hasRole("teacher") == true -> "dashboard-teacher"
-        context?.hasRole("admin") == true -> "dashboard-teacher"
+        context?.hasRole("guardian") == true -> "dashboard-guardian"
         else -> "dashboard-student"
     }
 

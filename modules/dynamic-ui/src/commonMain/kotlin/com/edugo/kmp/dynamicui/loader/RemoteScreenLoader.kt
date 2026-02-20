@@ -21,7 +21,7 @@ class RemoteScreenLoader(
         val configBuilder = HttpRequestConfig.builder()
         platform?.let { configBuilder.queryParam("platform", it) }
         return httpClient.getSafe(
-            url = "$baseUrl/v1/screen-config/resolve/key/$screenKey",
+            url = "$baseUrl/v1/screens/$screenKey",
             config = configBuilder.build()
         )
     }

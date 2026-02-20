@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Loads data from APIs with dual-API routing support.
@@ -73,6 +74,38 @@ class RemoteDataLoader(
             endpoint.startsWith("admin:") -> adminBaseUrl to endpoint.removePrefix("admin:")
             endpoint.startsWith("mobile:") -> mobileBaseUrl to endpoint.removePrefix("mobile:")
             else -> mobileBaseUrl to endpoint
+        }
+    }
+
+    override suspend fun submitData(
+        endpoint: String,
+        body: JsonObject,
+        method: String
+    ): Result<JsonObject?> {
+        val (baseUrl, path) = resolveEndpoint(endpoint)
+
+        if (!path.startsWith("/") || path.contains("..") || path.contains("://")) {
+            return Result.Failure("Invalid data endpoint: $path")
+        }
+
+        val url = "$baseUrl$path"
+
+        val result: Result<String> = when (method.uppercase()) {
+            "PUT" -> httpClient.putSafe(url, body)
+            else -> httpClient.postSafe(url, body)
+        }
+
+        return when (result) {
+            is Result.Success -> {
+                try {
+                    val jsonElement = json.parseToJsonElement(result.data)
+                    Result.Success(jsonElement as? JsonObject)
+                } catch (_: Exception) {
+                    Result.Success(null)
+                }
+            }
+            is Result.Failure -> Result.Failure(result.error)
+            is Result.Loading -> Result.Loading
         }
     }
 

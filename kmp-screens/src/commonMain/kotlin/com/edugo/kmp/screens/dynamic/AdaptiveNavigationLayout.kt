@@ -1,6 +1,7 @@
 package com.edugo.kmp.screens.dynamic
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
@@ -19,15 +20,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import com.edugo.kmp.design.components.navigation.DSBottomNavigationBar
 import com.edugo.kmp.design.components.navigation.DSNavigationBarItem
+import com.edugo.kmp.design.components.navigation.DSNavigationRail
+import com.edugo.kmp.design.components.navigation.DSNavigationRailItem
 import com.edugo.kmp.dynamicui.model.NavigationDefinition
 import com.edugo.kmp.dynamicui.model.NavigationItem
 
 /**
- * Adaptive navigation layout that renders bottom nav from NavigationDefinition.
- * Phase 2: Bottom nav for all platforms.
- * Phase 3 will add NavigationRail (tablet) and PermanentNavigationDrawer (desktop).
+ * Adaptive navigation layout that renders:
+ * - Bottom nav for compact/medium screens (< 840dp)
+ * - NavigationRail for expanded screens (>= 840dp)
  */
 @Composable
 fun AdaptiveNavigationLayout(
@@ -45,19 +49,46 @@ fun AdaptiveNavigationLayout(
         )
     }
 
-    Scaffold(
-        modifier = modifier,
-        bottomBar = {
-            if (navBarItems.isNotEmpty()) {
-                DSBottomNavigationBar(
-                    items = navBarItems,
-                    selectedIndex = selectedIndex,
-                    onItemSelected = onTabSelected,
-                )
+    val railItems = navDefinition.bottomNav.map { item ->
+        DSNavigationRailItem(
+            label = item.label,
+            icon = resolveIcon(item.icon, filled = false),
+            selectedIcon = resolveIcon(item.icon, filled = true),
+        )
+    }
+
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier = modifier) {
+        val windowWidth = maxWidth
+
+        when {
+            windowWidth >= 840.dp -> {
+                // EXPANDED: NavigationRail + content
+                Row(modifier = Modifier.fillMaxSize()) {
+                    DSNavigationRail(
+                        items = railItems,
+                        selectedIndex = selectedIndex,
+                        onItemSelected = onTabSelected,
+                    )
+                    content(Modifier.weight(1f))
+                }
             }
-        },
-    ) { paddingValues ->
-        content(Modifier.padding(paddingValues))
+            else -> {
+                // COMPACT/MEDIUM: Bottom Navigation Bar
+                Scaffold(
+                    bottomBar = {
+                        if (navBarItems.isNotEmpty()) {
+                            DSBottomNavigationBar(
+                                items = navBarItems,
+                                selectedIndex = selectedIndex,
+                                onItemSelected = onTabSelected,
+                            )
+                        }
+                    },
+                ) { paddingValues ->
+                    content(Modifier.padding(paddingValues))
+                }
+            }
+        }
     }
 }
 
