@@ -1,8 +1,10 @@
 package com.edugo.kmp.auth.repository
 
 import com.edugo.kmp.auth.circuit.CircuitBreaker
+import com.edugo.kmp.auth.model.AvailableContextsResponse
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResponse
+import com.edugo.kmp.auth.model.SwitchContextResponse
 import com.edugo.kmp.auth.retry.RetryPolicy
 import com.edugo.kmp.auth.retry.withRetry
 import com.edugo.kmp.foundation.error.ErrorCode
@@ -241,6 +243,62 @@ public class AuthRepositoryImpl(
             Result.Failure(errorMessage)
         } catch (e: Throwable) {
             // Mapeo de otros errores (network, timeout, etc.)
+            val networkException = ExceptionMapper.map(e)
+            Result.Failure(networkException.toAppError().toString())
+        }
+    }
+
+    @Serializable
+    private data class SwitchContextRequest(
+        @SerialName("school_id")
+        val schoolId: String
+    )
+
+    override suspend fun getAvailableContexts(accessToken: String): Result<AvailableContextsResponse> {
+        return try {
+            val url = "$baseUrl/v1/auth/contexts"
+            val config = HttpRequestConfig.builder()
+                .header("Authorization", "Bearer $accessToken")
+                .build()
+
+            httpClient.getSafe<AvailableContextsResponse>(url, config)
+        } catch (e: ClientRequestException) {
+            val errorMessage = when (e.response.status.value) {
+                401 -> ErrorCode.AUTH_INVALID_CREDENTIALS.description
+                else -> e.message ?: "Failed to get contexts"
+            }
+            Result.Failure(errorMessage)
+        } catch (e: ServerResponseException) {
+            Result.Failure(ErrorCode.SYSTEM_INTERNAL_ERROR.description)
+        } catch (e: Throwable) {
+            val networkException = ExceptionMapper.map(e)
+            Result.Failure(networkException.toAppError().toString())
+        }
+    }
+
+    override suspend fun switchContext(accessToken: String, schoolId: String): Result<SwitchContextResponse> {
+        return try {
+            val url = "$baseUrl/v1/auth/switch-context"
+            val config = HttpRequestConfig.builder()
+                .header("Authorization", "Bearer $accessToken")
+                .build()
+            val requestBody = SwitchContextRequest(schoolId = schoolId)
+
+            httpClient.postSafe<SwitchContextRequest, SwitchContextResponse>(
+                url = url,
+                body = requestBody,
+                config = config
+            )
+        } catch (e: ClientRequestException) {
+            val errorMessage = when (e.response.status.value) {
+                401 -> ErrorCode.AUTH_INVALID_CREDENTIALS.description
+                403 -> "No tiene membresía activa en la escuela seleccionada"
+                else -> e.message ?: "Failed to switch context"
+            }
+            Result.Failure(errorMessage)
+        } catch (e: ServerResponseException) {
+            Result.Failure(ErrorCode.SYSTEM_INTERNAL_ERROR.description)
+        } catch (e: Throwable) {
             val networkException = ExceptionMapper.map(e)
             Result.Failure(networkException.toAppError().toString())
         }

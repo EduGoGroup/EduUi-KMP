@@ -4,13 +4,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.edugo.kmp.auth.service.AuthService
+import com.edugo.kmp.auth.service.AuthState
 import com.edugo.kmp.design.components.progress.DSLinearProgress
 import com.edugo.kmp.dynamicui.loader.ScreenLoader
 import com.edugo.kmp.dynamicui.model.NavigationDefinition
@@ -19,6 +23,8 @@ import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.screens.dynamic.AdaptiveNavigationLayout
 import com.edugo.kmp.screens.dynamic.DynamicScreen
+import com.edugo.kmp.screens.dynamic.UserMenuHeader
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /**
@@ -34,6 +40,10 @@ fun MainScreen(
     modifier: Modifier = Modifier,
 ) {
     val screenLoader = koinInject<ScreenLoader>()
+    val authService = koinInject<AuthService>()
+    val authState by authService.authState.collectAsState()
+    val scope = rememberCoroutineScope()
+
     var navDefinition by remember { mutableStateOf<NavigationDefinition?>(null) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
@@ -43,7 +53,8 @@ fun MainScreen(
         when (val result = screenLoader.loadNavigation()) {
             is Result.Success -> {
                 navDefinition = result.data
-                if (selectedTab >= result.data.bottomNav.size) selectedTab = 0
+                val items = result.data.drawerItems.ifEmpty { result.data.bottomNav }
+                if (selectedTab >= items.size) selectedTab = 0
             }
             is Result.Failure -> navDefinition = fallbackNavigation()
             is Result.Loading -> { /* already loading */ }
@@ -59,16 +70,40 @@ fun MainScreen(
     }
 
     val nav = navDefinition ?: return
+    // Use drawerItems for expanded, bottomNav for compact (same logic as AdaptiveNavigationLayout)
+    val effectiveItems = nav.drawerItems.ifEmpty { nav.bottomNav }
 
     AdaptiveNavigationLayout(
         navDefinition = nav,
         selectedIndex = selectedTab,
-        onTabSelected = { selectedTab = it.coerceIn(0, nav.bottomNav.lastIndex) },
+        onTabSelected = { selectedTab = it.coerceIn(0, effectiveItems.lastIndex.coerceAtLeast(0)) },
         modifier = modifier,
+        header = {
+            val state = authState
+            if (state is AuthState.Authenticated) {
+                UserMenuHeader(
+                    userName = state.user.getDisplayName(),
+                    userRole = state.activeContext.roleName,
+                    userInitials = state.user.getInitials(),
+                    userEmail = state.user.email,
+                    schoolName = state.activeContext.schoolName,
+                    onLogout = {
+                        scope.launch {
+                            authService.logout()
+                            onLogout()
+                        }
+                    },
+                    onSwitchContext = null,
+                )
+            }
+        },
     ) { paddingModifier ->
         // Render current tab's screen
-        val currentItem = nav.bottomNav.getOrNull(selectedTab)
+        val currentItem = effectiveItems.getOrNull(selectedTab)
+
+        // Resolve screenKey: use item's own screenKey, or first child's screenKey
         val currentScreenKey = currentItem?.screenKey
+            ?: currentItem?.children?.firstOrNull()?.screenKey
 
         if (currentScreenKey != null) {
             when {
@@ -87,14 +122,29 @@ fun MainScreen(
                     )
                 }
                 else -> {
-                    // Generic dynamic screen for any other tab
-                    val viewModel = koinInject<DynamicScreenViewModel>()
-                    DynamicScreen(
-                        screenKey = currentScreenKey,
-                        viewModel = viewModel,
-                        onNavigate = onNavigate,
-                        modifier = paddingModifier,
-                    )
+                    // Check if super_admin needs to select a school first
+                    val currentState = authState
+                    val needsSchoolSelector = currentState is AuthState.Authenticated
+                        && currentState.activeContext.schoolId.isNullOrBlank()
+
+                    if (needsSchoolSelector) {
+                        SchoolSelectorScreen(
+                            onSchoolSelected = { _, _ ->
+                                // Context was switched in SchoolSelectorScreen
+                                // authState update triggers recomposition automatically
+                            },
+                            modifier = paddingModifier,
+                        )
+                    } else {
+                        // Generic dynamic screen for any other tab
+                        val viewModel = koinInject<DynamicScreenViewModel>()
+                        DynamicScreen(
+                            screenKey = currentScreenKey,
+                            viewModel = viewModel,
+                            onNavigate = onNavigate,
+                            modifier = paddingModifier,
+                        )
+                    }
                 }
             }
         }

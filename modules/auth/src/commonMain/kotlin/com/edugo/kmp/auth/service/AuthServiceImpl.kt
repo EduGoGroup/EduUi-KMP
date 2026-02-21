@@ -4,6 +4,7 @@ import com.edugo.kmp.auth.logging.AuthLogger
 import com.edugo.kmp.auth.model.AuthError
 import com.edugo.kmp.auth.model.AuthToken
 import com.edugo.kmp.auth.model.AuthUserInfo
+import com.edugo.kmp.auth.model.AvailableContextsResponse
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResult
 import com.edugo.kmp.auth.model.LogoutResult
@@ -359,6 +360,51 @@ public class AuthServiceImpl(
         storage.removeSafe(AUTH_TOKEN_KEY)
         storage.removeSafe(AUTH_USER_KEY)
         storage.removeSafe(AUTH_CONTEXT_KEY)
+    }
+
+    override suspend fun getAvailableContexts(): Result<AvailableContextsResponse> {
+        val token = getCurrentAuthToken()?.token
+            ?: return Result.Failure("Not authenticated")
+
+        return repository.getAvailableContexts(token)
+    }
+
+    override suspend fun switchContext(schoolId: String): Result<UserContext> {
+        val token = getCurrentAuthToken()?.token
+            ?: return Result.Failure("Not authenticated")
+
+        return when (val result = repository.switchContext(token, schoolId)) {
+            is Result.Success -> {
+                val switchResponse = result.data
+                val newToken = switchResponse.toAuthToken()
+                val contextInfo = switchResponse.context
+
+                // Build new UserContext from the switch response
+                val newContext = UserContext(
+                    roleId = (_authState.value as? AuthState.Authenticated)?.activeContext?.roleId ?: "",
+                    roleName = contextInfo?.role ?: "",
+                    schoolId = contextInfo?.schoolId,
+                    schoolName = contextInfo?.schoolName,
+                )
+
+                stateMutex.withLock {
+                    val currentState = _authState.value
+                    if (currentState is AuthState.Authenticated) {
+                        saveAuthData(newToken, currentState.user, newContext)
+                        _authState.value = AuthState.Authenticated(
+                            user = currentState.user,
+                            token = newToken,
+                            activeContext = newContext
+                        )
+                        tokenRefreshManager.startAutomaticRefresh(newToken)
+                    }
+                }
+
+                Result.Success(newContext)
+            }
+            is Result.Failure -> Result.Failure(result.error)
+            is Result.Loading -> Result.Failure("Unexpected loading state")
+        }
     }
 
     private fun mapErrorToAuthError(error: String): AuthError {

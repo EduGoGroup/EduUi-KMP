@@ -1,8 +1,12 @@
 package com.edugo.kmp.auth.repository
 
 import com.edugo.kmp.auth.model.AuthUserInfo
+import com.edugo.kmp.auth.model.AvailableContextsResponse
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResponse
+import com.edugo.kmp.auth.model.SwitchContextInfo
+import com.edugo.kmp.auth.model.SwitchContextResponse
+import com.edugo.kmp.auth.model.UserContext
 import com.edugo.kmp.foundation.result.Result
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
@@ -121,5 +125,54 @@ public class MockAuthRepository : AuthRepository {
         } else {
             Result.Failure("Mock verification failed: empty token")
         }
+    }
+
+    override suspend fun getAvailableContexts(accessToken: String): Result<AvailableContextsResponse> {
+        simulateNetworkDelay()
+
+        val currentContext = UserContext.createTestContext(
+            roleName = "admin",
+            schoolId = "mock-school-1",
+            schoolName = "Mock School 1"
+        )
+
+        val availableContexts = listOf(
+            currentContext,
+            UserContext.createTestContext(
+                roleId = "mock-role-teacher",
+                roleName = "teacher",
+                schoolId = "mock-school-2",
+                schoolName = "Mock School 2"
+            )
+        )
+
+        return Result.Success(
+            AvailableContextsResponse(
+                current = currentContext,
+                available = availableContexts
+            )
+        )
+    }
+
+    override suspend fun switchContext(accessToken: String, schoolId: String): Result<SwitchContextResponse> {
+        simulateNetworkDelay()
+
+        val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+
+        return Result.Success(
+            SwitchContextResponse(
+                accessToken = "access_mock_$timestamp",
+                refreshToken = "refresh_mock_$timestamp",
+                expiresIn = 900,
+                tokenType = "Bearer",
+                context = SwitchContextInfo(
+                    schoolId = schoolId,
+                    schoolName = "Mock School",
+                    role = "teacher",
+                    userId = "mock-user-0",
+                    email = "mock@edugo.com"
+                )
+            )
+        )
     }
 }

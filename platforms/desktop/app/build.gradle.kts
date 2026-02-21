@@ -36,6 +36,12 @@ compose.desktop {
     application {
         mainClass = "com.edugo.desktop.MainKt"
 
+        // Activar debug JDWP si se pasa -Pdebug=true al invocar Gradle
+        // Ej: ./gradlew run -Pdebug=true
+        if (project.hasProperty("debug") && project.property("debug") == "true") {
+            jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "EduGo"
