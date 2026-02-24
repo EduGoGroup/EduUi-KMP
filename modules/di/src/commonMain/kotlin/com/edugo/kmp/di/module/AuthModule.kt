@@ -6,6 +6,8 @@ import com.edugo.kmp.auth.interceptor.AuthInterceptor
 import com.edugo.kmp.auth.logging.AuthLogger
 import com.edugo.kmp.auth.repository.AuthRepository
 import com.edugo.kmp.auth.repository.AuthRepositoryImpl
+import com.edugo.kmp.auth.repository.MenuRepository
+import com.edugo.kmp.auth.repository.MenuRepositoryImpl
 import com.edugo.kmp.auth.repository.MockAuthRepository
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.auth.service.AuthServiceImpl
@@ -55,7 +57,7 @@ public val authModule = module {
             val authConfig = get<AuthConfig>()
             AuthRepositoryImpl(
                 httpClient = get<EduGoHttpClient>(named("plainHttp")),
-                baseUrl = appConfig.adminApiBaseUrl,
+                baseUrl = appConfig.iamApiBaseUrl,
                 circuitBreaker = get(),
                 retryPolicy = authConfig.retryPolicy
             )
@@ -75,6 +77,13 @@ public val authModule = module {
     single {
         AuthInterceptor(
             tokenProvider = get<AuthService>()
+        )
+    }
+    single<MenuRepository> {
+        val appConfig = get<AppConfig>()
+        MenuRepositoryImpl(
+            httpClient = get<EduGoHttpClient>(),
+            baseUrl = appConfig.iamApiBaseUrl
         )
     }
 }

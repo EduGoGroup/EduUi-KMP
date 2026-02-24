@@ -1,8 +1,12 @@
 package com.edugo.kmp.auth.repository
 
 import com.edugo.kmp.auth.model.AuthUserInfo
+import com.edugo.kmp.auth.model.AvailableContextsResponse
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResponse
+import com.edugo.kmp.auth.model.SwitchContextInfo
+import com.edugo.kmp.auth.model.SwitchContextResponse
+import com.edugo.kmp.auth.model.UserContext
 import com.edugo.kmp.foundation.error.ErrorCode
 import com.edugo.kmp.foundation.result.Result
 import kotlinx.coroutines.delay
@@ -195,6 +199,39 @@ public class StubAuthRepository : AuthRepository {
         )
 
         return Result.Success(response)
+    }
+
+    override suspend fun getAvailableContexts(accessToken: String): Result<AvailableContextsResponse> {
+        if (simulateDelay > 0) delay(simulateDelay)
+        if (simulateNetworkError) return Result.Failure(ErrorCode.NETWORK_TIMEOUT.description)
+
+        return Result.Success(
+            AvailableContextsResponse(
+                current = UserContext.createTestContext(),
+                available = listOf(UserContext.createTestContext())
+            )
+        )
+    }
+
+    override suspend fun switchContext(accessToken: String, schoolId: String): Result<SwitchContextResponse> {
+        if (simulateDelay > 0) delay(simulateDelay)
+        if (simulateNetworkError) return Result.Failure(ErrorCode.NETWORK_TIMEOUT.description)
+
+        return Result.Success(
+            SwitchContextResponse(
+                accessToken = "stub_access_token",
+                refreshToken = "stub_refresh_token",
+                expiresIn = 900,
+                tokenType = "Bearer",
+                context = SwitchContextInfo(
+                    schoolId = schoolId,
+                    schoolName = "Stub School",
+                    role = "student",
+                    userId = "stub-user-123",
+                    email = "test@edugo.com",
+                )
+            )
+        )
     }
 
     /**

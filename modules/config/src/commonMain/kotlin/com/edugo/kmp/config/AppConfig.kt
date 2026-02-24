@@ -18,13 +18,19 @@ public interface AppConfig {
     public val environment: Environment
 
     /**
-     * URL base completa del API de administración (puerto 8081 en local).
-     * Maneja endpoints de auth y screen-config.
+     * URL base del API IAM Platform (puerto 8070 en local).
+     * Maneja endpoints de auth, roles, permisos y menú.
+     */
+    public val iamApiBaseUrl: String
+
+    /**
+     * URL base completa del API de administración (puerto 8060 en local).
+     * Maneja endpoints de administración del negocio (escuelas, unidades, etc.).
      */
     public val adminApiBaseUrl: String
 
     /**
-     * URL base completa del API mobile (puerto 9091 en local).
+     * URL base completa del API mobile (puerto 8065 en local).
      * Maneja endpoints de materials y progress.
      */
     public val mobileApiBaseUrl: String
@@ -63,6 +69,7 @@ public interface AppConfig {
 @Serializable
 public data class AppConfigImpl(
     private val environmentName: String,
+    override val iamApiBaseUrl: String,
     override val adminApiBaseUrl: String,
     override val mobileApiBaseUrl: String,
     override val webPort: Int,

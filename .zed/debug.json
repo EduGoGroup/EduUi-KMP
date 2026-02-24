@@ -1,9 +1,9 @@
 [
   {
-    "label": "Desktop: Attach Debugger (port 5005)",
-    "type": "node",
-    "request": "launch",
-    "name": "Desktop Debug (Not Supported)",
-    "program": "${workspaceFolder}/platforms/desktop/app/build/libs/app.jar",
-  },
+    "adapter": "Java",
+    "label": "Desktop: Attach to Running App (port 5005)",
+    "request": "attach",
+    "hostName": "localhost",
+    "port": 5005
+  }
 ]

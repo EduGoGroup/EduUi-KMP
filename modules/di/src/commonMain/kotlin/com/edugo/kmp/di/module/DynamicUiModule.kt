@@ -22,26 +22,26 @@ import org.koin.dsl.module
 val dynamicUiModule = module {
     single<ScreenLoader> {
         val appConfig = get<AppConfig>()
-        // screen-config endpoints están en API Admin
+        // screen endpoints en API Mobile (alineado con frontend Apple)
         CachedScreenLoader(
-            remote = RemoteScreenLoader(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl),
+            remote = RemoteScreenLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl),
             storage = get<SafeEduGoStorage>()
         )
     }
     single<DataLoader> {
         val appConfig = get<AppConfig>()
-        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl, appConfig.adminApiBaseUrl)
+        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl, appConfig.adminApiBaseUrl, appConfig.iamApiBaseUrl)
     }
     single { NavigateHandler() }
     single {
         val appConfig = get<AppConfig>()
-        // TODO: ApiCallHandler necesitará enrutamiento inteligente para decidir entre adminApi y mobileApi
+        // TODO: ApiCallHandler necesitará enrutamiento inteligente para decidir entre adminApi, mobileApi e iamApi
         ApiCallHandler(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
     }
     single { RefreshHandler() }
     single {
         val appConfig = get<AppConfig>()
-        // TODO: SubmitFormHandler necesitará enrutamiento inteligente para decidir entre adminApi y mobileApi
+        // TODO: SubmitFormHandler necesitará enrutamiento inteligente para decidir entre adminApi, mobileApi e iamApi
         SubmitFormHandler(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
     }
     single { ConfirmHandler() }

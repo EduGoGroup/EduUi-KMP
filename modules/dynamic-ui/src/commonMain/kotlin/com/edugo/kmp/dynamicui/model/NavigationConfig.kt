@@ -43,3 +43,33 @@ data class NavigationItem(
     val sortOrder: Int = 0,
     val children: List<NavigationItem> = emptyList()
 )
+
+/** Recursively find a NavigationItem by its key. */
+fun List<NavigationItem>.findByKey(key: String): NavigationItem? {
+    for (item in this) {
+        if (item.key == key) return item
+        val found = item.children.findByKey(key)
+        if (found != null) return found
+    }
+    return null
+}
+
+/** Find the parent key of a child item by searching recursively. */
+fun List<NavigationItem>.findParentKey(childKey: String): String? {
+    for (item in this) {
+        if (item.children.any { it.key == childKey }) return item.key
+        val found = item.children.findParentKey(childKey)
+        if (found != null) return found
+    }
+    return null
+}
+
+/** Return the first leaf item (no children) in a depth-first traversal. */
+fun List<NavigationItem>.firstLeaf(): NavigationItem? {
+    for (item in this) {
+        if (item.children.isEmpty()) return item
+        val leaf = item.children.firstLeaf()
+        if (leaf != null) return leaf
+    }
+    return null
+}

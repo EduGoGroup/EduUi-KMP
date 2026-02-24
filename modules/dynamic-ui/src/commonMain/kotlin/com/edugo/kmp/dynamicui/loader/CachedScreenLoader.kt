@@ -28,9 +28,7 @@ class CachedScreenLoader(
         val cachedAt: Long
     )
 
-    private val memoryCache = LinkedHashMap<String, Pair<ScreenDefinition, Instant>>(
-        maxMemoryEntries, 0.75f, true // accessOrder=true para LRU
-    )
+    private val memoryCache = mutableMapOf<String, Pair<ScreenDefinition, Instant>>()
     private val mutex = Mutex()
     private var navCache: Pair<NavigationDefinition, Instant>? = null
 

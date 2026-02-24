@@ -16,6 +16,7 @@ kotlin {
                 implementation(project(":kmp-design"))
                 implementation(project(":kmp-resources"))
                 implementation(project(":modules:di"))
+                implementation(project(":modules:dynamic-ui"))
 
                 implementation(compose.desktop.currentOs)
                 implementation(compose.runtime)
@@ -35,6 +36,17 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "com.edugo.desktop.MainKt"
+
+        // Pasar environment: ./gradlew run -Penv=STAGING
+        if (project.hasProperty("env")) {
+            jvmArgs("-Dapp.environment=${project.property("env")}")
+        }
+
+        // Activar debug JDWP si se pasa -Pdebug=true al invocar Gradle
+        // Ej: ./gradlew run -Pdebug=true
+        if (project.hasProperty("debug") && project.property("debug") == "true") {
+            jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
+        }
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
