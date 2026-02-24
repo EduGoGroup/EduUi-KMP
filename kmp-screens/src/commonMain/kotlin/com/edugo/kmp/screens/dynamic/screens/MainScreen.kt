@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.School
@@ -138,6 +139,8 @@ fun MainScreen(
             header = { compact ->
                 val state = authState
                 if (state is AuthState.Authenticated) {
+                    val isSuperAdmin = state.activeContext.hasRole("super_admin")
+                    val canSwitch = availableContexts.size > 1 || isSuperAdmin
                     UserMenuHeader(
                         userName = state.user.getDisplayName(),
                         userRole = state.activeContext.roleName,
@@ -150,7 +153,7 @@ fun MainScreen(
                                 onLogout()
                             }
                         },
-                        onSwitchContext = if (availableContexts.size > 1) {
+                        onSwitchContext = if (canSwitch) {
                             { showContextPicker = true }
                         } else null,
                         compact = compact,
@@ -219,38 +222,62 @@ fun MainScreen(
             }
         }
 
-        // Overlay: context picker when user wants to change school
+        // Overlay: school/context picker when user wants to change school
         if (showContextPicker) {
-            ContextPickerOverlay(
-                contexts = availableContexts,
-                currentSchoolId = (authState as? AuthState.Authenticated)?.activeContext?.schoolId,
-                onContextSelected = { context ->
-                    showContextPicker = false
-                    scope.launch {
-                        isLoading = true
-                        val schoolId = context.schoolId ?: return@launch
-                        when (authService.switchContext(schoolId)) {
-                            is Result.Success -> {
-                                // Refresh available contexts
-                                when (val ctxResult = authService.getAvailableContexts()) {
-                                    is Result.Success -> availableContexts = ctxResult.data.available
-                                    else -> {}
-                                }
-                                // Reload menu (permissions differ per school/role)
+            val currentState = authState
+            val isSuperAdmin = currentState is AuthState.Authenticated
+                && currentState.activeContext.hasRole("super_admin")
+
+            if (isSuperAdmin) {
+                // Super admin: full school list from admin API (has schools:read)
+                DismissibleOverlay(onDismiss = { showContextPicker = false }) {
+                    SchoolSelectorScreen(
+                        onSchoolSelected = { _, _ ->
+                            showContextPicker = false
+                            scope.launch {
+                                isLoading = true
                                 reloadMenu(menuRepository) { navItems, firstKey, parentKeys ->
                                     allItems = navItems
                                     selectedKey = firstKey
                                     expandedKeys = parentKeys
                                 }
+                                isLoading = false
                             }
-                            is Result.Failure -> { /* switchContext failed, stay on current */ }
-                            is Result.Loading -> {}
+                        },
+                        modifier = Modifier.heightIn(max = 500.dp),
+                    )
+                }
+            } else {
+                // Regular user: context picker from available contexts (no extra perms)
+                ContextPickerOverlay(
+                    contexts = availableContexts,
+                    currentSchoolId = (currentState as? AuthState.Authenticated)?.activeContext?.schoolId,
+                    onContextSelected = { context ->
+                        showContextPicker = false
+                        scope.launch {
+                            isLoading = true
+                            val schoolId = context.schoolId ?: return@launch
+                            when (authService.switchContext(schoolId)) {
+                                is Result.Success -> {
+                                    when (val ctxResult = authService.getAvailableContexts()) {
+                                        is Result.Success -> availableContexts = ctxResult.data.available
+                                        else -> {}
+                                    }
+                                    reloadMenu(menuRepository) { navItems, firstKey, parentKeys ->
+                                        allItems = navItems
+                                        selectedKey = firstKey
+                                        expandedKeys = parentKeys
+                                    }
+                                }
+                                is Result.Failure -> { /* stay on current */ }
+                                is Result.Loading -> {}
+                            }
+                            isLoading = false
                         }
-                        isLoading = false
-                    }
-                },
-                onDismiss = { showContextPicker = false },
-            )
+                    },
+                    onDismiss = { showContextPicker = false },
+                )
+            }
         }
     } // end outer Box
 }
@@ -290,6 +317,38 @@ private suspend fun reloadMenu(
             onResult(items, items.firstLeaf()?.key, emptySet())
         }
         is Result.Loading -> {}
+    }
+}
+
+/** Scrim overlay with a centered dismissible card. */
+@Composable
+private fun DismissibleOverlay(
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Card(
+            modifier = Modifier
+                .widthIn(max = 480.dp)
+                .fillMaxWidth(0.9f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}, // consume click, prevent dismiss
+                ),
+        ) {
+            content()
+        }
     }
 }
 
