@@ -1,6 +1,8 @@
 package com.edugo.ios
 
 import androidx.compose.ui.window.ComposeUIViewController
+import com.edugo.kmp.dynamicui.platform.PlatformDetector
+import com.edugo.kmp.dynamicui.platform.PlatformType
 import com.edugo.kmp.screens.App
 
 /**
@@ -9,4 +11,7 @@ import com.edugo.kmp.screens.App
  * Es invocado desde Swift (AppDelegate) como:
  *   MainViewControllerKt.MainViewController()
  */
-fun MainViewController() = ComposeUIViewController { App() }
+fun MainViewController() = ComposeUIViewController {
+    PlatformDetector.current = PlatformType.IOS
+    App()
+}

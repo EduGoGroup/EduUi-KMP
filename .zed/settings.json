@@ -3,7 +3,14 @@
     "Kotlin": {
       "tab_size": 4,
       "hard_tabs": false,
-      "format_on_save": "off",
-    },
+      "format_on_save": "off"
+    }
   },
+  "lsp": {
+    "jdtls": {
+      "settings": {
+        "java_home": "/Users/jhoanmedina/Library/Java/JavaVirtualMachines/jbr-21.0.10/Contents/Home"
+      }
+    }
+  }
 }

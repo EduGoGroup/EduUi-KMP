@@ -33,7 +33,10 @@ public data class LoginResponse(
     val user: AuthUserInfo,
 
     @SerialName("active_context")
-    val activeContext: UserContext
+    val activeContext: UserContext,
+
+    @SerialName("schools")
+    val schools: List<SchoolInfo> = emptyList()
 ) {
 
     /**
@@ -93,7 +96,8 @@ public data class LoginResponse(
             expiresIn: Int = 3600,
             refreshToken: String = "test_refresh_token_${Clock.System.now().toEpochMilliseconds()}",
             user: AuthUserInfo = AuthUserInfo.createTestUser(),
-            activeContext: UserContext = UserContext.createTestContext()
+            activeContext: UserContext = UserContext.createTestContext(),
+            schools: List<SchoolInfo> = emptyList()
         ): LoginResponse {
             return LoginResponse(
                 accessToken = accessToken,
@@ -101,7 +105,8 @@ public data class LoginResponse(
                 refreshToken = refreshToken,
                 tokenType = "Bearer",
                 user = user,
-                activeContext = activeContext
+                activeContext = activeContext,
+                schools = schools
             )
         }
     }

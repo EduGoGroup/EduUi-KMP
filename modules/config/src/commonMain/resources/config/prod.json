@@ -1,5 +1,6 @@
 {
   "environmentName": "PROD",
+  "iamApiBaseUrl": "https://iam.example.com",
   "adminApiBaseUrl": "https://api.example.com",
   "mobileApiBaseUrl": "https://api-mobile.example.com",
   "webPort": 80,

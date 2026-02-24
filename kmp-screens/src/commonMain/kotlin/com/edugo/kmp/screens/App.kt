@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.edugo.kmp.auth.service.AuthService
+import com.edugo.kmp.auth.service.AuthState
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.di.KoinInitializer
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
@@ -21,6 +22,7 @@ import com.edugo.kmp.screens.ui.LoginScreen
 import com.edugo.kmp.screens.ui.SplashScreen
 import com.edugo.kmp.settings.model.ThemeOption
 import com.edugo.kmp.settings.theme.ThemeService
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
@@ -54,7 +56,18 @@ fun App() {
             val navState = remember { NavigationState() }
             val routeRegistry = remember { RouteRegistry() }
             val authService = koinInject<AuthService>()
+            val authState by authService.authState.collectAsState()
             val scope = rememberCoroutineScope()
+
+            // Redirigir al login si la sesión expira mientras la app está abierta
+            LaunchedEffect(authState) {
+                if (authState is AuthState.Unauthenticated &&
+                    navState.currentRoute != Route.Login &&
+                    navState.currentRoute != Route.Splash
+                ) {
+                    navState.replaceAll(Route.Login)
+                }
+            }
 
             val handleLogout: () -> Unit = {
                 scope.launch {
