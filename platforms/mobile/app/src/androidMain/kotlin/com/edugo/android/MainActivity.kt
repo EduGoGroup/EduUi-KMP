@@ -3,6 +3,8 @@ package com.edugo.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.edugo.kmp.dynamicui.platform.PlatformDetector
+import com.edugo.kmp.dynamicui.platform.PlatformType
 import com.edugo.kmp.screens.App
 
 /**
@@ -18,6 +20,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        PlatformDetector.current = PlatformType.ANDROID
         setContent {
             App()
         }

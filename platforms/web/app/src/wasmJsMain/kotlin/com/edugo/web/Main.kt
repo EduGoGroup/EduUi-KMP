@@ -2,6 +2,8 @@ package com.edugo.web
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
+import com.edugo.kmp.dynamicui.platform.PlatformDetector
+import com.edugo.kmp.dynamicui.platform.PlatformType
 import com.edugo.kmp.screens.App
 import kotlinx.browser.document
 
@@ -10,6 +12,7 @@ import kotlinx.browser.document
  */
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
+    PlatformDetector.current = PlatformType.WEB
     ComposeViewport(document.body!!) {
         App()
     }

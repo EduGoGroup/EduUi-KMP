@@ -2,6 +2,8 @@ package com.edugo.desktop
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.edugo.kmp.dynamicui.platform.PlatformDetector
+import com.edugo.kmp.dynamicui.platform.PlatformType
 import com.edugo.kmp.resources.Strings
 import com.edugo.kmp.screens.App
 
@@ -11,6 +13,7 @@ import com.edugo.kmp.screens.App
 fun main() {
     val appName = "EduGo Desktop"
     println("Iniciando $appName...")
+    PlatformDetector.current = PlatformType.DESKTOP
     application {
         Window(
             onCloseRequest = ::exitApplication,

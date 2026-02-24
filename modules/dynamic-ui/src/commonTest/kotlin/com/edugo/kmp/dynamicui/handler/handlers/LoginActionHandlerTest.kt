@@ -73,6 +73,8 @@ class LoginActionHandlerTest {
             override fun getCurrentUser(): AuthUserInfo? = null
             override fun getCurrentAuthToken(): AuthToken? = null
             override suspend fun restoreSession() {}
+            override suspend fun getAvailableContexts(): Result<com.edugo.kmp.auth.model.AvailableContextsResponse> = Result.Failure("Not implemented")
+            override suspend fun switchContext(schoolId: String): Result<com.edugo.kmp.auth.model.UserContext> = Result.Failure("Not implemented")
         }
     }
 

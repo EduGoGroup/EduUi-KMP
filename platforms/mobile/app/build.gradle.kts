@@ -43,6 +43,7 @@ kotlin {
                 implementation(project(":kmp-design"))
                 implementation(project(":kmp-resources"))
                 implementation(project(":modules:di"))
+                implementation(project(":modules:dynamic-ui"))
 
                 implementation(libs.koin.core)
                 implementation(libs.koin.compose)

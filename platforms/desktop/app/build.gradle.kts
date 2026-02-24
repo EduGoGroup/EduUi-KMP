@@ -16,6 +16,7 @@ kotlin {
                 implementation(project(":kmp-design"))
                 implementation(project(":kmp-resources"))
                 implementation(project(":modules:di"))
+                implementation(project(":modules:dynamic-ui"))
 
                 implementation(compose.desktop.currentOs)
                 implementation(compose.runtime)
