@@ -1,7 +1,25 @@
 package com.edugo.kmp.screens.dynamic.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,7 +30,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.edugo.kmp.auth.model.MenuItem
+import com.edugo.kmp.auth.model.UserContext
 import com.edugo.kmp.auth.repository.MenuRepository
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.auth.service.AuthState
@@ -50,10 +70,17 @@ fun MainScreen(
     var selectedKey by remember { mutableStateOf<String?>(null) }
     var expandedKeys by remember { mutableStateOf<Set<String>>(emptySet()) }
     var isLoading by remember { mutableStateOf(true) }
-    var showSchoolSelector by remember { mutableStateOf(false) }
+    var showContextPicker by remember { mutableStateOf(false) }
+    var availableContexts by remember { mutableStateOf<List<UserContext>>(emptyList()) }
 
-    // Load menu from IAM Platform API
+    // Load menu + check available contexts
     LaunchedEffect(Unit) {
+        // Load available contexts for school switching
+        when (val ctxResult = authService.getAvailableContexts()) {
+            is Result.Success -> availableContexts = ctxResult.data.available
+            else -> { /* keep empty */ }
+        }
+
         when (val result = menuRepository.getMenu()) {
             is Result.Success -> {
                 val navItems = result.data.items.map { it.toNavigationItem() }
@@ -111,7 +138,6 @@ fun MainScreen(
             header = { compact ->
                 val state = authState
                 if (state is AuthState.Authenticated) {
-                    val canSwitchContext = state.activeContext.roleName == "super_admin"
                     UserMenuHeader(
                         userName = state.user.getDisplayName(),
                         userRole = state.activeContext.roleName,
@@ -124,8 +150,8 @@ fun MainScreen(
                                 onLogout()
                             }
                         },
-                        onSwitchContext = if (canSwitchContext) {
-                            { showSchoolSelector = true }
+                        onSwitchContext = if (availableContexts.size > 1) {
+                            { showContextPicker = true }
                         } else null,
                         compact = compact,
                     )
@@ -157,7 +183,7 @@ fun MainScreen(
                         )
                     }
                     else -> {
-                        // Check if super_admin needs to select a school first
+                        // Check if user needs to select a school first
                         val currentState = authState
                         val needsSchoolSelector = currentState is AuthState.Authenticated
                             && currentState.activeContext.schoolId.isNullOrBlank()
@@ -165,8 +191,16 @@ fun MainScreen(
                         if (needsSchoolSelector) {
                             SchoolSelectorScreen(
                                 onSchoolSelected = { _, _ ->
-                                    // Context was switched in SchoolSelectorScreen
-                                    // authState update triggers recomposition automatically
+                                    // Reload menu after school selection
+                                    scope.launch {
+                                        isLoading = true
+                                        reloadMenu(menuRepository) { navItems, firstKey, parentKeys ->
+                                            allItems = navItems
+                                            selectedKey = firstKey
+                                            expandedKeys = parentKeys
+                                        }
+                                        isLoading = false
+                                    }
                                 },
                                 modifier = paddingModifier,
                             )
@@ -185,19 +219,38 @@ fun MainScreen(
             }
         }
 
-        // Overlay: school selector when super_admin wants to change school
-        if (showSchoolSelector) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.TopStart,
-            ) {
-                SchoolSelectorScreen(
-                    onSchoolSelected = { _, _ ->
-                        showSchoolSelector = false
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+        // Overlay: context picker when user wants to change school
+        if (showContextPicker) {
+            ContextPickerOverlay(
+                contexts = availableContexts,
+                currentSchoolId = (authState as? AuthState.Authenticated)?.activeContext?.schoolId,
+                onContextSelected = { context ->
+                    showContextPicker = false
+                    scope.launch {
+                        isLoading = true
+                        val schoolId = context.schoolId ?: return@launch
+                        when (authService.switchContext(schoolId)) {
+                            is Result.Success -> {
+                                // Refresh available contexts
+                                when (val ctxResult = authService.getAvailableContexts()) {
+                                    is Result.Success -> availableContexts = ctxResult.data.available
+                                    else -> {}
+                                }
+                                // Reload menu (permissions differ per school/role)
+                                reloadMenu(menuRepository) { navItems, firstKey, parentKeys ->
+                                    allItems = navItems
+                                    selectedKey = firstKey
+                                    expandedKeys = parentKeys
+                                }
+                            }
+                            is Result.Failure -> { /* switchContext failed, stay on current */ }
+                            is Result.Loading -> {}
+                        }
+                        isLoading = false
+                    }
+                },
+                onDismiss = { showContextPicker = false },
+            )
         }
     } // end outer Box
 }
@@ -217,3 +270,110 @@ private fun fallbackItems() = listOf(
     NavigationItem(key = "materials", label = "Materials", icon = "folder", screenKey = "materials-list"),
     NavigationItem(key = "settings", label = "Settings", icon = "settings", screenKey = "app-settings"),
 )
+
+/** Reload menu from backend and invoke [onResult] with the updated navigation state. */
+private suspend fun reloadMenu(
+    menuRepository: MenuRepository,
+    onResult: (navItems: List<NavigationItem>, firstKey: String?, expandedKeys: Set<String>) -> Unit,
+) {
+    when (val result = menuRepository.getMenu()) {
+        is Result.Success -> {
+            val navItems = result.data.items.map { it.toNavigationItem() }
+            val firstLeaf = navItems.firstLeaf()
+            val parentKeys = firstLeaf?.key?.let { key ->
+                navItems.findParentKey(key)?.let { setOf(it) }
+            } ?: emptySet()
+            onResult(navItems, firstLeaf?.key, parentKeys)
+        }
+        is Result.Failure -> {
+            val items = fallbackItems()
+            onResult(items, items.firstLeaf()?.key, emptySet())
+        }
+        is Result.Loading -> {}
+    }
+}
+
+/**
+ * Overlay dialog that shows available school contexts for switching.
+ * Uses data from getAvailableContexts() — no extra permissions needed.
+ */
+@Composable
+private fun ContextPickerOverlay(
+    contexts: List<UserContext>,
+    currentSchoolId: String?,
+    onContextSelected: (UserContext) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val otherContexts = contexts.filter { it.schoolId != currentSchoolId }
+
+    // Scrim
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Card that doesn't propagate clicks to scrim
+        Card(
+            modifier = Modifier
+                .widthIn(max = 400.dp)
+                .fillMaxWidth(0.85f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}, // consume click, prevent dismiss
+                ),
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = "Cambiar escuela",
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+                Text(
+                    text = "Selecciona la escuela a la que deseas cambiar",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(16.dp))
+
+                otherContexts.forEach { ctx ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable { onContextSelected(ctx) },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.School,
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Column {
+                                Text(
+                                    text = ctx.schoolName ?: "Escuela",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Text(
+                                    text = ctx.roleName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
