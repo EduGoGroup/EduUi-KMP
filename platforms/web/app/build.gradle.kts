@@ -6,6 +6,26 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+// Generate build-time environment constant: ./gradlew wasmJsBrowserDevelopmentRun -Penv=STAGING
+val generateBuildConfig by tasks.registering {
+    val envValue = project.findProperty("env")?.toString() ?: ""
+    inputs.property("env", envValue)
+    val outputDir = layout.buildDirectory.dir("generated/buildConfig")
+    outputs.dir(outputDir)
+    doLast {
+        val env = inputs.properties["env"] as String
+        val dir = outputDir.get().asFile
+        dir.mkdirs()
+        dir.resolve("BuildConfig.kt").writeText(
+            """
+            package com.edugo.web
+
+            internal const val BUILD_ENVIRONMENT: String = "$env"
+            """.trimIndent()
+        )
+    }
+}
+
 kotlin {
     wasmJs {
         browser {
@@ -18,10 +38,12 @@ kotlin {
 
     sourceSets {
         val wasmJsMain by getting {
+            kotlin.srcDir(generateBuildConfig.map { layout.buildDirectory.dir("generated/buildConfig") })
             dependencies {
                 implementation(project(":kmp-screens"))
                 implementation(project(":kmp-design"))
                 implementation(project(":kmp-resources"))
+                implementation(project(":modules:config"))
                 implementation(project(":modules:di"))
                 implementation(project(":modules:dynamic-ui"))
 
