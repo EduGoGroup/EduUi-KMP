@@ -15,14 +15,16 @@ import kotlinx.serialization.json.jsonPrimitive
  * Loads data from APIs with dual-API routing support.
  *
  * Endpoint convention:
- * - "/v1/materials"         → mobile API (default, no prefix)
- * - "mobile:/v1/materials"  → mobile API (explicit)
- * - "admin:/v1/users"       → admin API
+ * - "/api/v1/materials"         → mobile API (default, no prefix)
+ * - "mobile:/api/v1/materials"  → mobile API (explicit)
+ * - "admin:/api/v1/users"       → admin API
+ * - "iam:/api/v1/auth/contexts" → IAM Platform API
  */
 class RemoteDataLoader(
     private val httpClient: EduGoHttpClient,
     private val mobileBaseUrl: String,
-    private val adminBaseUrl: String
+    private val adminBaseUrl: String,
+    private val iamBaseUrl: String
 ) : DataLoader {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -65,14 +67,16 @@ class RemoteDataLoader(
 
     /**
      * Resolves the endpoint prefix to a base URL.
-     * "admin:/v1/users" → (adminBaseUrl, "/v1/users")
-     * "mobile:/v1/materials" → (mobileBaseUrl, "/v1/materials")
-     * "/v1/materials" → (mobileBaseUrl, "/v1/materials")  // default
+     * "admin:/api/v1/users" → (adminBaseUrl, "/api/v1/users")
+     * "mobile:/api/v1/materials" → (mobileBaseUrl, "/api/v1/materials")
+     * "iam:/api/v1/auth/contexts" → (iamBaseUrl, "/api/v1/auth/contexts")
+     * "/api/v1/materials" → (mobileBaseUrl, "/api/v1/materials")  // default
      */
     private fun resolveEndpoint(endpoint: String): Pair<String, String> {
         return when {
             endpoint.startsWith("admin:") -> adminBaseUrl to endpoint.removePrefix("admin:")
             endpoint.startsWith("mobile:") -> mobileBaseUrl to endpoint.removePrefix("mobile:")
+            endpoint.startsWith("iam:") -> iamBaseUrl to endpoint.removePrefix("iam:")
             else -> mobileBaseUrl to endpoint
         }
     }

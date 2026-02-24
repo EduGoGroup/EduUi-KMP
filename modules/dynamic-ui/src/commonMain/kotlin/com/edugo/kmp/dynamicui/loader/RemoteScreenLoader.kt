@@ -21,7 +21,7 @@ class RemoteScreenLoader(
         val configBuilder = HttpRequestConfig.builder()
         platform?.let { configBuilder.queryParam("platform", it) }
         return httpClient.getSafe(
-            url = "$baseUrl/v1/screens/$screenKey",
+            url = "$baseUrl/api/v1/screens/$screenKey",
             config = configBuilder.build()
         )
     }
@@ -32,7 +32,7 @@ class RemoteScreenLoader(
 
     override suspend fun loadNavigation(): Result<NavigationDefinition> {
         return httpClient.getSafe(
-            url = "$baseUrl/v1/screens/navigation",
+            url = "$baseUrl/api/v1/screens/navigation",
             config = HttpRequestConfig.builder()
                 .queryParam("platform", "mobile")
                 .build()

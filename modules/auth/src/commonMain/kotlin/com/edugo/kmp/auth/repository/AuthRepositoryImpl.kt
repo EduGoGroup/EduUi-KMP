@@ -34,15 +34,15 @@ import kotlinx.serialization.Serializable
  *     |
  * Ktor HttpClient
  *     |
- * Backend API (edu-admin)
+ * Backend API (IAM Platform)
  * ```
  *
  * ## Endpoints del Backend
  *
- * - `POST {baseUrl}/v1/auth/login` - Autenticacion
- * - `POST {baseUrl}/v1/auth/logout` - Cerrar sesion
- * - `POST {baseUrl}/v1/auth/refresh` - Renovar token
- * - `POST {baseUrl}/v1/auth/verify` - Verificar token
+ * - `POST {baseUrl}/api/v1/auth/login` - Autenticacion
+ * - `POST {baseUrl}/api/v1/auth/logout` - Cerrar sesion
+ * - `POST {baseUrl}/api/v1/auth/refresh` - Renovar token
+ * - `POST {baseUrl}/api/v1/auth/verify` - Verificar token
  *
  * ## Manejo de Errores
  *
@@ -65,7 +65,7 @@ import kotlinx.serialization.Serializable
  * para evitar llamadas de red reales.
  *
  * @property httpClient Cliente HTTP configurado (EduGoHttpClient)
- * @property baseUrl URL base del backend (ej: "https://api.edugo.com" o "http://localhost:8081")
+ * @property baseUrl URL base del backend (ej: "https://api.edugo.com" o "http://localhost:8070")
  */
 public class AuthRepositoryImpl(
     private val httpClient: EduGoHttpClient,
@@ -91,7 +91,7 @@ public class AuthRepositoryImpl(
 
     private suspend fun performLogin(credentials: LoginCredentials): Result<LoginResponse> {
         return try {
-            val url = "$baseUrl/v1/auth/login"
+            val url = "$baseUrl/api/v1/auth/login"
 
             val result = httpClient.postSafe<LoginCredentials, LoginResponse>(
                 url = url,
@@ -129,7 +129,7 @@ public class AuthRepositoryImpl(
 
     override suspend fun logout(accessToken: String): Result<Unit> {
         return try {
-            val url = "$baseUrl/v1/auth/logout"
+            val url = "$baseUrl/api/v1/auth/logout"
 
             // Configurar header de autorizacion
             val config = HttpRequestConfig.builder()
@@ -171,7 +171,7 @@ public class AuthRepositoryImpl(
 
     private suspend fun performRefresh(refreshToken: String): Result<RefreshResponse> {
         return try {
-            val url = "$baseUrl/v1/auth/refresh"
+            val url = "$baseUrl/api/v1/auth/refresh"
 
             val requestBody = RefreshRequest(refreshToken = refreshToken)
 
@@ -208,7 +208,7 @@ public class AuthRepositoryImpl(
 
     override suspend fun verifyToken(token: String): Result<TokenVerificationResponse> {
         return try {
-            val url = "$baseUrl/v1/auth/verify"
+            val url = "$baseUrl/api/v1/auth/verify"
 
             // Crear body con el token
             val requestBody = TokenVerificationRequest(token = token)
@@ -256,7 +256,7 @@ public class AuthRepositoryImpl(
 
     override suspend fun getAvailableContexts(accessToken: String): Result<AvailableContextsResponse> {
         return try {
-            val url = "$baseUrl/v1/auth/contexts"
+            val url = "$baseUrl/api/v1/auth/contexts"
             val config = HttpRequestConfig.builder()
                 .header("Authorization", "Bearer $accessToken")
                 .build()
@@ -278,7 +278,7 @@ public class AuthRepositoryImpl(
 
     override suspend fun switchContext(accessToken: String, schoolId: String): Result<SwitchContextResponse> {
         return try {
-            val url = "$baseUrl/v1/auth/switch-context"
+            val url = "$baseUrl/api/v1/auth/switch-context"
             val config = HttpRequestConfig.builder()
                 .header("Authorization", "Bearer $accessToken")
                 .build()
@@ -310,13 +310,10 @@ public class AuthRepositoryImpl(
          */
         public object BaseUrls {
             /** URL para desarrollo local */
-            public const val LOCAL: String = "http://localhost:8081"
+            public const val LOCAL: String = "http://localhost:8070"
 
-            /** URL para entorno de desarrollo */
-            public const val DEVELOPMENT: String = "https://dev-api.edugo.com"
-
-            /** URL para entorno de staging */
-            public const val STAGING: String = "https://staging-api.edugo.com"
+            /** URL para entorno de desarrollo/staging (Azure Container Apps) */
+            public const val STAGING: String = "https://edugo-api-iam-platform.wittyhill-f6d656fb.eastus.azurecontainerapps.io"
 
             /** URL para produccion */
             public const val PRODUCTION: String = "https://api.edugo.com"

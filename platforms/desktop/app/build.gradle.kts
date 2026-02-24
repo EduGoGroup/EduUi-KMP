@@ -36,6 +36,11 @@ compose.desktop {
     application {
         mainClass = "com.edugo.desktop.MainKt"
 
+        // Pasar environment: ./gradlew run -Penv=STAGING
+        if (project.hasProperty("env")) {
+            jvmArgs("-Dapp.environment=${project.property("env")}")
+        }
+
         // Activar debug JDWP si se pasa -Pdebug=true al invocar Gradle
         // Ej: ./gradlew run -Pdebug=true
         if (project.hasProperty("debug") && project.property("debug") == "true") {

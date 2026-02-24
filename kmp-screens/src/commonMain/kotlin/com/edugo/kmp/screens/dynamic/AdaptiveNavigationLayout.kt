@@ -1,9 +1,12 @@
 package com.edugo.kmp.screens.dynamic
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
@@ -72,7 +75,7 @@ fun AdaptiveNavigationLayout(
     // If drawerItems is available (desktop/web), prefer it for the rail
     val effectiveItems = navDefinition.drawerItems.ifEmpty { navDefinition.bottomNav }
 
-    val navBarItems = navDefinition.bottomNav.map { item ->
+    val navBarItems = navDefinition.bottomNav.ifEmpty { effectiveItems }.map { item ->
         DSNavigationBarItem(
             label = item.label,
             icon = resolveIcon(item.icon, filled = false),
@@ -109,6 +112,23 @@ fun AdaptiveNavigationLayout(
             else -> {
                 // COMPACT/MEDIUM: Bottom Navigation Bar
                 Scaffold(
+                    topBar = {
+                        if (header != null) {
+                            Surface(
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Column { header() }
+                                }
+                            }
+                        }
+                    },
                     bottomBar = {
                         if (navBarItems.isNotEmpty()) {
                             DSBottomNavigationBar(

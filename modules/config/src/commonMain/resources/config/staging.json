@@ -1,7 +1,8 @@
 {
   "environmentName": "STAGING",
-  "adminApiBaseUrl": "https://edugo-api-admin.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
-  "mobileApiBaseUrl": "https://edugo-api-mobile.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
+  "iamApiBaseUrl": "https://edugo-api-iam-platform.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
+  "adminApiBaseUrl": "https://edugo-api-admin-new.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
+  "mobileApiBaseUrl": "https://edugo-api-mobile-new.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
   "webPort": 8080,
   "timeout": 60000,
   "debugMode": true,

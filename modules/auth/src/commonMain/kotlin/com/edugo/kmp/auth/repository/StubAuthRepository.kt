@@ -225,9 +225,10 @@ public class StubAuthRepository : AuthRepository {
                 tokenType = "Bearer",
                 context = SwitchContextInfo(
                     schoolId = schoolId,
+                    schoolName = "Stub School",
                     role = "student",
                     userId = "stub-user-123",
-                    email = "test@edugo.com"
+                    email = "test@edugo.com",
                 )
             )
         )

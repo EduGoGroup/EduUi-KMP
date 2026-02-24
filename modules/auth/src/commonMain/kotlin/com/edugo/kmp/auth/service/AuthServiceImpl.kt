@@ -379,12 +379,12 @@ public class AuthServiceImpl(
                 val newToken = switchResponse.toAuthToken()
                 val contextInfo = switchResponse.context
 
-                // Build new UserContext from the switch response
+                // Build UserContext from SwitchContextInfo
                 val newContext = UserContext(
-                    roleId = (_authState.value as? AuthState.Authenticated)?.activeContext?.roleId ?: "",
+                    roleId = "",
                     roleName = contextInfo?.role ?: "",
-                    schoolId = contextInfo?.schoolId,
-                    schoolName = contextInfo?.schoolName,
+                    schoolId = contextInfo?.schoolId ?: schoolId,
+                    schoolName = contextInfo?.schoolName ?: "",
                 )
 
                 stateMutex.withLock {

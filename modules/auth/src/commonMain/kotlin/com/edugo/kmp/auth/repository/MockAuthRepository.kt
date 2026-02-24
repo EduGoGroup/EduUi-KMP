@@ -157,12 +157,10 @@ public class MockAuthRepository : AuthRepository {
     override suspend fun switchContext(accessToken: String, schoolId: String): Result<SwitchContextResponse> {
         simulateNetworkDelay()
 
-        val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
-
         return Result.Success(
             SwitchContextResponse(
-                accessToken = "access_mock_$timestamp",
-                refreshToken = "refresh_mock_$timestamp",
+                accessToken = "access_mock_${kotlinx.datetime.Clock.System.now().toEpochMilliseconds()}",
+                refreshToken = "refresh_mock_${kotlinx.datetime.Clock.System.now().toEpochMilliseconds()}",
                 expiresIn = 900,
                 tokenType = "Bearer",
                 context = SwitchContextInfo(
@@ -170,7 +168,7 @@ public class MockAuthRepository : AuthRepository {
                     schoolName = "Mock School",
                     role = "teacher",
                     userId = "mock-user-0",
-                    email = "mock@edugo.com"
+                    email = "mock@edugo.com",
                 )
             )
         )

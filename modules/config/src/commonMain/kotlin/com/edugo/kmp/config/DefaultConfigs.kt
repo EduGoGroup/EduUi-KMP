@@ -16,8 +16,9 @@ internal object DefaultConfigs {
         "config/dev.json" to """
             {
               "environmentName": "DEV",
-              "adminApiBaseUrl": "http://localhost:8081",
-              "mobileApiBaseUrl": "http://localhost:9091",
+              "iamApiBaseUrl": "http://localhost:8070",
+              "adminApiBaseUrl": "http://localhost:8060",
+              "mobileApiBaseUrl": "http://localhost:8065",
               "webPort": 8080,
               "timeout": 30000,
               "debugMode": true,
@@ -28,8 +29,9 @@ internal object DefaultConfigs {
         "config/staging.json" to """
             {
               "environmentName": "STAGING",
-              "adminApiBaseUrl": "https://edugo-api-admin.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
-              "mobileApiBaseUrl": "https://edugo-api-mobile.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
+              "iamApiBaseUrl": "https://edugo-api-iam-platform.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
+              "adminApiBaseUrl": "https://edugo-api-admin-new.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
+              "mobileApiBaseUrl": "https://edugo-api-mobile-new.wittyhill-f6d656fb.eastus.azurecontainerapps.io",
               "webPort": 8080,
               "timeout": 60000,
               "debugMode": true,
@@ -40,6 +42,7 @@ internal object DefaultConfigs {
         "config/prod.json" to """
             {
               "environmentName": "PROD",
+              "iamApiBaseUrl": "https://iam.example.com",
               "adminApiBaseUrl": "https://api.example.com",
               "mobileApiBaseUrl": "https://api-mobile.example.com",
               "webPort": 80,

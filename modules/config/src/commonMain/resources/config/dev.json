@@ -1,7 +1,8 @@
 {
   "environmentName": "DEV",
-  "adminApiBaseUrl": "http://localhost:8081",
-  "mobileApiBaseUrl": "http://localhost:9091",
+  "iamApiBaseUrl": "http://localhost:8070",
+  "adminApiBaseUrl": "http://localhost:8060",
+  "mobileApiBaseUrl": "http://localhost:8065",
   "webPort": 8080,
   "timeout": 30000,
   "debugMode": true,

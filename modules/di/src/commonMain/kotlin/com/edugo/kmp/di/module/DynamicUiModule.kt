@@ -30,18 +30,18 @@ val dynamicUiModule = module {
     }
     single<DataLoader> {
         val appConfig = get<AppConfig>()
-        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl, appConfig.adminApiBaseUrl)
+        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl, appConfig.adminApiBaseUrl, appConfig.iamApiBaseUrl)
     }
     single { NavigateHandler() }
     single {
         val appConfig = get<AppConfig>()
-        // TODO: ApiCallHandler necesitará enrutamiento inteligente para decidir entre adminApi y mobileApi
+        // TODO: ApiCallHandler necesitará enrutamiento inteligente para decidir entre adminApi, mobileApi e iamApi
         ApiCallHandler(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
     }
     single { RefreshHandler() }
     single {
         val appConfig = get<AppConfig>()
-        // TODO: SubmitFormHandler necesitará enrutamiento inteligente para decidir entre adminApi y mobileApi
+        // TODO: SubmitFormHandler necesitará enrutamiento inteligente para decidir entre adminApi, mobileApi e iamApi
         SubmitFormHandler(get<EduGoHttpClient>(), appConfig.adminApiBaseUrl)
     }
     single { ConfirmHandler() }

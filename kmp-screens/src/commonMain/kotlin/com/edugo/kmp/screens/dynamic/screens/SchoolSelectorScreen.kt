@@ -69,7 +69,7 @@ fun SchoolSelectorScreen(
     var isSwitching by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val url = "${appConfig.adminApiBaseUrl}/v1/schools"
+        val url = "${appConfig.adminApiBaseUrl}/api/v1/schools"
 
         when (val result = httpClient.getSafe<List<SchoolItem>>(url)) {
             is Result.Success -> {
@@ -130,13 +130,13 @@ fun SchoolSelectorScreen(
                                 .clickable {
                                     isSwitching = true
                                     scope.launch {
-                                        when (authService.switchContext(school.id)) {
+                                        when (val switchResult = authService.switchContext(school.id)) {
                                             is Result.Success -> {
                                                 onSchoolSelected(school.id, school.name)
                                             }
                                             is Result.Failure -> {
                                                 isSwitching = false
-                                                error = "Error al cambiar de escuela"
+                                                error = "Error al cambiar de escuela: ${switchResult.error}"
                                             }
                                             is Result.Loading -> { /* wait */ }
                                         }

@@ -13,10 +13,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.edugo.kmp.auth.model.MenuItem
+import com.edugo.kmp.auth.repository.MenuRepository
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.auth.service.AuthState
 import com.edugo.kmp.design.components.progress.DSLinearProgress
-import com.edugo.kmp.dynamicui.loader.ScreenLoader
 import com.edugo.kmp.dynamicui.model.NavigationDefinition
 import com.edugo.kmp.dynamicui.model.NavigationItem
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
@@ -39,7 +40,7 @@ fun MainScreen(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val screenLoader = koinInject<ScreenLoader>()
+    val menuRepository = koinInject<MenuRepository>()
     val authService = koinInject<AuthService>()
     val authState by authService.authState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -47,13 +48,14 @@ fun MainScreen(
     var navDefinition by remember { mutableStateOf<NavigationDefinition?>(null) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
+    var showSchoolSelector by remember { mutableStateOf(false) }
 
-    // Load navigation config from backend
+    // Load menu from IAM Platform API
     LaunchedEffect(Unit) {
-        when (val result = screenLoader.loadNavigation()) {
+        when (val result = menuRepository.getMenu()) {
             is Result.Success -> {
-                navDefinition = result.data
-                val items = result.data.drawerItems.ifEmpty { result.data.bottomNav }
+                navDefinition = result.data.items.toNavigationDefinition()
+                val items = navDefinition!!.drawerItems.ifEmpty { navDefinition!!.bottomNav }
                 if (selectedTab >= items.size) selectedTab = 0
             }
             is Result.Failure -> navDefinition = fallbackNavigation()
@@ -73,14 +75,16 @@ fun MainScreen(
     // Use drawerItems for expanded, bottomNav for compact (same logic as AdaptiveNavigationLayout)
     val effectiveItems = nav.drawerItems.ifEmpty { nav.bottomNav }
 
+    Box(modifier = modifier) {
     AdaptiveNavigationLayout(
         navDefinition = nav,
         selectedIndex = selectedTab,
         onTabSelected = { selectedTab = it.coerceIn(0, effectiveItems.lastIndex.coerceAtLeast(0)) },
-        modifier = modifier,
+        modifier = Modifier.fillMaxSize(),
         header = {
             val state = authState
             if (state is AuthState.Authenticated) {
+                val canSwitchContext = state.activeContext.roleName == "super_admin"
                 UserMenuHeader(
                     userName = state.user.getDisplayName(),
                     userRole = state.activeContext.roleName,
@@ -93,7 +97,9 @@ fun MainScreen(
                             onLogout()
                         }
                     },
-                    onSwitchContext = null,
+                    onSwitchContext = if (canSwitchContext) {
+                        { showSchoolSelector = true }
+                    } else null,
                 )
             }
         },
@@ -149,7 +155,43 @@ fun MainScreen(
             }
         }
     }
+
+    // Overlay: school selector when super_admin wants to change school
+    if (showSchoolSelector) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopStart,
+        ) {
+            SchoolSelectorScreen(
+                onSchoolSelected = { _, _ ->
+                    showSchoolSelector = false
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+    } // end outer Box
 }
+
+/** Convert menu items from IAM API to NavigationDefinition */
+private fun List<MenuItem>.toNavigationDefinition(): NavigationDefinition {
+    val navItems = map { it.toNavigationItem() }
+    // Items with children go to drawer, flat items to bottom nav
+    return if (navItems.any { it.children.isNotEmpty() }) {
+        NavigationDefinition(drawerItems = navItems)
+    } else {
+        NavigationDefinition(bottomNav = navItems)
+    }
+}
+
+private fun MenuItem.toNavigationItem(): NavigationItem = NavigationItem(
+    key = key,
+    label = displayName,
+    icon = icon,
+    screenKey = getDefaultScreen() ?: key,
+    sortOrder = sortOrder,
+    children = children.map { it.toNavigationItem() },
+)
 
 /** Fallback navigation when backend is unavailable */
 private fun fallbackNavigation() = NavigationDefinition(
