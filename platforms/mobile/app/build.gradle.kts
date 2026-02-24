@@ -42,6 +42,7 @@ kotlin {
                 implementation(project(":kmp-screens"))
                 implementation(project(":kmp-design"))
                 implementation(project(":kmp-resources"))
+                implementation(project(":modules:config"))
                 implementation(project(":modules:di"))
                 implementation(project(":modules:dynamic-ui"))
 
@@ -82,6 +83,10 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0"
+
+        // Pass environment: ./gradlew installDebug -Penv=STAGING
+        val env = findProperty("env")?.toString() ?: ""
+        buildConfigField("String", "BUILD_ENVIRONMENT", "\"$env\"")
     }
 
     buildTypes {
@@ -97,5 +102,6 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
