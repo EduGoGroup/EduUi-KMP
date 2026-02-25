@@ -128,7 +128,7 @@ fun MainScreen(
                 // Auto-expand parent if selecting a child
                 val parentKey = allItems.findParentKey(item.key)
                 if (parentKey != null && parentKey !in expandedKeys) {
-                    expandedKeys = expandedKeys + parentKey
+                    expandedKeys += parentKey
                 }
             },
             onExpandToggle = { key ->
@@ -173,6 +173,7 @@ fun MainScreen(
                     placeholders = contentParams,
                     onNavigate = onNavigate,
                     modifier = paddingModifier,
+                    onBack = onBack,
                 )
                 return@AdaptiveNavigationLayout
             }

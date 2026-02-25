@@ -33,7 +33,7 @@ abstract class BaseCrudContract(
             val id = context.params["id"]
             if (id != null) "$apiPrefix$basePath/$id" else null
         }
-        ScreenEvent.SELECT_ITEM -> null
+        ScreenEvent.SELECT_ITEM, ScreenEvent.CREATE -> null
     }
 
     /**

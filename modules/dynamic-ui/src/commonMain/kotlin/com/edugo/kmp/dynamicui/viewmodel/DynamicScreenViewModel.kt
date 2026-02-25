@@ -230,6 +230,10 @@ class DynamicScreenViewModel(
         }
     }
 
+    fun canExecute(screenKey: String, event: ScreenEvent): Boolean {
+        return orchestrator.canExecute(screenKey, event)
+    }
+
     fun resetFields() {
         _fieldValues.value = emptyMap()
         _fieldErrors.value = emptyMap()

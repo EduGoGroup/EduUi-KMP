@@ -2,11 +2,15 @@ package com.edugo.kmp.screens.di
 
 import com.edugo.kmp.dynamicui.contract.ScreenContract
 import com.edugo.kmp.screens.dynamic.contracts.*
+import com.edugo.kmp.screens.dynamic.renderer.ListItemRendererRegistry
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val screenContractsModule = module {
+    // List item renderer registry (empty = all lists use DefaultListItemRenderer)
+    single { ListItemRendererRegistry() }
+
     // Login & Settings (need AuthService)
     single { LoginContract(get()) } bind ScreenContract::class
     single { SettingsContract(get()) } bind ScreenContract::class

@@ -11,7 +11,7 @@ interface ScreenContract {
     fun permissionFor(event: ScreenEvent): String? = when (event) {
         ScreenEvent.LOAD_DATA, ScreenEvent.SEARCH,
         ScreenEvent.SELECT_ITEM, ScreenEvent.LOAD_MORE -> "$resource:read"
-        ScreenEvent.SAVE_NEW -> "$resource:create"
+        ScreenEvent.SAVE_NEW, ScreenEvent.CREATE -> "$resource:create"
         ScreenEvent.SAVE_EXISTING -> "$resource:update"
         ScreenEvent.DELETE -> "$resource:delete"
         ScreenEvent.REFRESH -> null

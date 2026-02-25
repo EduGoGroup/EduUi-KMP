@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
+import com.edugo.kmp.dynamicui.model.ZoneType
 import kotlinx.serialization.json.JsonObject
 
 @Composable
@@ -27,7 +28,8 @@ fun FormPatternRenderer(
     onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val zones = screen.template.zones
+    // Filter out the action-group zone (submit/cancel buttons) since toolbar handles those now
+    val zones = screen.template.zones.filter { it.type != ZoneType.ACTION_GROUP }
 
     Column(
         modifier = modifier

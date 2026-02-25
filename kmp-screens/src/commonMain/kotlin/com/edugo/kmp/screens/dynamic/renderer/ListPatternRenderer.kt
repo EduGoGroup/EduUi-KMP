@@ -23,6 +23,7 @@ import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
 import com.edugo.kmp.screens.dynamic.components.filterItems
 import kotlinx.serialization.json.JsonObject
+import org.koin.compose.getKoin
 
 @Composable
 fun ListPatternRenderer(
@@ -36,6 +37,10 @@ fun ListPatternRenderer(
     modifier: Modifier = Modifier,
 ) {
     val zones = screen.template.zones
+    val koin = getKoin()
+    val listItemRenderer = remember(screen.screenKey) {
+        koin.getOrNull<ListItemRendererRegistry>()?.find(screen.screenKey)
+    }
 
     val rawItems = when (dataState) {
         is DynamicScreenViewModel.DataState.Success -> dataState.items
@@ -84,6 +89,7 @@ fun ListPatternRenderer(
                 onEvent = onEvent,
                 onCustomEvent = onCustomEvent,
                 modifier = Modifier.fillMaxWidth(),
+                listItemRenderer = listItemRenderer,
             )
         }
     }

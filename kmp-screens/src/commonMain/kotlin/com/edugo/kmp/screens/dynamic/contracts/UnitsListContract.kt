@@ -36,7 +36,7 @@ class UnitsListContract : BaseCrudContract(
                 val id = context.params["id"]
                 if (id != null) "admin:$resolvedBase/$id" else null
             }
-            ScreenEvent.SELECT_ITEM -> null
+            ScreenEvent.SELECT_ITEM, ScreenEvent.CREATE -> null
         }
     }
 }

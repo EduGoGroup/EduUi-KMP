@@ -1,6 +1,7 @@
 package com.edugo.kmp.screens.dynamic
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,7 +23,9 @@ import com.edugo.kmp.design.components.progress.DSLinearProgress
 import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.EventResult
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
+import com.edugo.kmp.dynamicui.model.ScreenPattern
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.screens.dynamic.components.DynamicToolbar
 import com.edugo.kmp.screens.dynamic.renderer.PatternRouter
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
@@ -35,6 +38,7 @@ fun DynamicScreen(
     modifier: Modifier = Modifier,
     placeholders: Map<String, String> = emptyMap(),
     onFieldChanged: ((String, String) -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
 ) {
     val screenState by viewModel.screenState.collectAsState()
     val dataState by viewModel.dataState.collectAsState()
@@ -45,6 +49,34 @@ fun DynamicScreen(
 
     LaunchedEffect(screenKey, placeholders) {
         viewModel.loadScreen(screenKey, placeholders = placeholders)
+    }
+
+    val isEditMode = placeholders.containsKey("id")
+
+    /** Shared handler for EventResult from both standard and custom events. */
+    fun handleEventResult(result: EventResult) {
+        scope.launch {
+            when (result) {
+                is EventResult.NavigateTo -> onNavigate(result.screenKey, result.params)
+                is EventResult.Success -> result.message?.let { snackbarHostState.showSnackbar(it) }
+                is EventResult.Error -> snackbarHostState.showSnackbar(result.message)
+                is EventResult.PermissionDenied -> snackbarHostState.showSnackbar("Sin permisos")
+                is EventResult.Logout -> { /* handled by auth observer */ }
+                is EventResult.Cancelled -> { }
+                is EventResult.NoOp -> { }
+                is EventResult.SubmitTo -> {
+                    val submitResult = viewModel.submitForm(result.endpoint, result.method, result.fieldValues)
+                    when (submitResult) {
+                        is EventResult.Success -> {
+                            snackbarHostState.showSnackbar(submitResult.message ?: "Guardado")
+                            if (onBack != null) onBack() else onNavigate(screenKey, emptyMap())
+                        }
+                        is EventResult.Error -> snackbarHostState.showSnackbar(submitResult.message)
+                        else -> {}
+                    }
+                }
+            }
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -59,65 +91,75 @@ fun DynamicScreen(
             }
 
             is DynamicScreenViewModel.ScreenState.Ready -> {
-                PatternRouter(
-                    screen = state.screen,
-                    dataState = dataState,
-                    fieldValues = fieldValues,
-                    fieldErrors = fieldErrors,
-                    onFieldChanged = onFieldChanged ?: viewModel::onFieldChanged,
-                    onEvent = { event: ScreenEvent, item: JsonObject? ->
-                        scope.launch {
-                            val context = EventContext(
-                                screenKey = screenKey,
-                                fieldValues = viewModel.fieldValues.value,
-                                selectedItem = item,
-                                params = placeholders
-                            )
-                            when (val result = viewModel.executeEvent(screenKey, event, context)) {
-                                is EventResult.NavigateTo -> onNavigate(result.screenKey, result.params)
-                                is EventResult.Success -> result.message?.let { snackbarHostState.showSnackbar(it) }
-                                is EventResult.Error -> snackbarHostState.showSnackbar(result.message)
-                                is EventResult.PermissionDenied -> snackbarHostState.showSnackbar("Sin permisos")
-                                is EventResult.Logout -> { /* handled by auth observer */ }
-                                is EventResult.Cancelled -> { }
-                                is EventResult.NoOp -> { }
-                                is EventResult.SubmitTo -> { }
-                            }
-                        }
-                    },
-                    onCustomEvent = { eventId: String, item: JsonObject? ->
-                        scope.launch {
-                            val context = EventContext(
-                                screenKey = screenKey,
-                                fieldValues = viewModel.fieldValues.value,
-                                selectedItem = item,
-                                params = placeholders
-                            )
-                            when (val result = viewModel.executeCustomEvent(screenKey, eventId, context)) {
-                                is EventResult.NavigateTo -> onNavigate(result.screenKey, result.params)
-                                is EventResult.Success -> result.message?.let { snackbarHostState.showSnackbar(it) }
-                                is EventResult.Error -> snackbarHostState.showSnackbar(result.message)
-                                is EventResult.PermissionDenied -> snackbarHostState.showSnackbar("Sin permisos")
-                                is EventResult.Logout -> { /* handled by auth observer */ }
-                                is EventResult.Cancelled -> { }
-                                is EventResult.NoOp -> { }
-                                is EventResult.SubmitTo -> {
-                                    val submitResult = viewModel.submitForm(result.endpoint, result.method, result.fieldValues)
-                                    when (submitResult) {
-                                        is EventResult.Success -> {
-                                            snackbarHostState.showSnackbar(submitResult.message ?: "Guardado")
-                                            onNavigate("schools-list", emptyMap())
-                                        }
-                                        is EventResult.Error -> snackbarHostState.showSnackbar(submitResult.message)
-                                        else -> {}
+                val screen = state.screen
+                val showToolbar = screen.pattern != ScreenPattern.LOGIN
+
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Toolbar
+                    if (showToolbar) {
+                        DynamicToolbar(
+                            screen = screen,
+                            isEditMode = isEditMode,
+                            canCreate = viewModel.canExecute(screenKey, ScreenEvent.CREATE),
+                            onBack = onBack,
+                            onEvent = { event ->
+                                scope.launch {
+                                    val context = EventContext(
+                                        screenKey = screenKey,
+                                        fieldValues = viewModel.fieldValues.value,
+                                        params = placeholders,
+                                    )
+                                    // For form save events, route through "submit-form" custom handler
+                                    // which returns SubmitTo with proper type conversion
+                                    val result = if (
+                                        (event == ScreenEvent.SAVE_NEW || event == ScreenEvent.SAVE_EXISTING) &&
+                                        screen.pattern == ScreenPattern.FORM
+                                    ) {
+                                        viewModel.executeCustomEvent(screenKey, "submit-form", context)
+                                    } else {
+                                        viewModel.executeEvent(screenKey, event, context)
                                     }
+                                    handleEventResult(result)
                                 }
+                            },
+                        )
+                    }
+
+                    // Content
+                    PatternRouter(
+                        screen = screen,
+                        dataState = dataState,
+                        fieldValues = fieldValues,
+                        fieldErrors = fieldErrors,
+                        onFieldChanged = onFieldChanged ?: viewModel::onFieldChanged,
+                        onEvent = { event: ScreenEvent, item: JsonObject? ->
+                            scope.launch {
+                                val context = EventContext(
+                                    screenKey = screenKey,
+                                    fieldValues = viewModel.fieldValues.value,
+                                    selectedItem = item,
+                                    params = placeholders,
+                                )
+                                val result = viewModel.executeEvent(screenKey, event, context)
+                                handleEventResult(result)
                             }
-                        }
-                    },
-                    onNavigate = onNavigate,
-                    modifier = Modifier.fillMaxSize(),
-                )
+                        },
+                        onCustomEvent = { eventId: String, item: JsonObject? ->
+                            scope.launch {
+                                val context = EventContext(
+                                    screenKey = screenKey,
+                                    fieldValues = viewModel.fieldValues.value,
+                                    selectedItem = item,
+                                    params = placeholders,
+                                )
+                                val result = viewModel.executeCustomEvent(screenKey, eventId, context)
+                                handleEventResult(result)
+                            }
+                        },
+                        onNavigate = onNavigate,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
             is DynamicScreenViewModel.ScreenState.Error -> {

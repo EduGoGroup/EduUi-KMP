@@ -9,14 +9,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
+import com.edugo.kmp.design.components.media.DSDivider
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.Distribution
 import com.edugo.kmp.dynamicui.model.Zone
@@ -34,6 +30,7 @@ fun ZoneRenderer(
     onEvent: (ScreenEvent, JsonObject?) -> Unit,
     onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
+    listItemRenderer: ListItemRenderer? = null,
 ) {
     // Evaluate condition
     val condition = zone.condition
@@ -56,24 +53,20 @@ fun ZoneRenderer(
                 // Render list items
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.spacing1),
                 ) {
-                    data.forEach { item ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clickable { onEvent(ScreenEvent.SELECT_ITEM, item) }
-                                .padding(vertical = Spacing.spacing1),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
-                        ) {
-                            zone.itemLayout!!.slots.forEach { slot ->
-                                SlotRenderer(
-                                    slot = slot,
-                                    fieldValues = fieldValues,
-                                    fieldErrors = fieldErrors,
-                                    onFieldChanged = onFieldChanged,
-                                    onCustomEvent = onCustomEvent,
-                                    itemData = item,
-                                )
-                            }
+                    data.forEachIndexed { index, item ->
+                        if (listItemRenderer != null) {
+                            listItemRenderer(item, onEvent, onCustomEvent, Modifier.fillMaxWidth())
+                        } else {
+                            DefaultListItemRenderer(
+                                item = item,
+                                itemLayout = zone.itemLayout,
+                                onEvent = onEvent,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        if (index < data.lastIndex) {
+                            DSDivider()
                         }
                     }
                 }
@@ -150,6 +143,7 @@ fun ZoneRenderer(
                                         onFieldChanged = onFieldChanged,
                                         onEvent = onEvent,
                                         onCustomEvent = onCustomEvent,
+                                        listItemRenderer = listItemRenderer,
                                     )
                                 }
                             }
@@ -220,6 +214,7 @@ fun ZoneRenderer(
                     onFieldChanged = onFieldChanged,
                     onEvent = onEvent,
                     onCustomEvent = onCustomEvent,
+                    listItemRenderer = listItemRenderer,
                 )
             }
         }

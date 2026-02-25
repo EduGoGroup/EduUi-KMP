@@ -46,6 +46,16 @@ class EventOrchestrator(
                 }
                 return EventResult.NoOp
             }
+            if (event == ScreenEvent.CREATE) {
+                val handler = contract.customEventHandlers()["create"]
+                if (handler != null) {
+                    return try { handler.execute(context) } catch (e: Exception) {
+                        EventResult.Error(e.message ?: "Create navigation failed")
+                    }
+                }
+                // Default: navigate to {resource}-form
+                return EventResult.NavigateTo("${contract.resource}-form")
+            }
             return EventResult.Error("No endpoint defined for event: $event on screen: $screenKey")
         }
 
@@ -162,6 +172,7 @@ class EventOrchestrator(
             ScreenEvent.SAVE_EXISTING -> "PUT"
             ScreenEvent.DELETE -> "DELETE"
             ScreenEvent.SELECT_ITEM -> "GET"
+            ScreenEvent.CREATE -> "GET"
         }
     }
 }

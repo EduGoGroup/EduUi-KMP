@@ -8,5 +8,6 @@ enum class ScreenEvent {
     SEARCH,
     SELECT_ITEM,
     REFRESH,
-    LOAD_MORE
+    LOAD_MORE,
+    CREATE
 }
