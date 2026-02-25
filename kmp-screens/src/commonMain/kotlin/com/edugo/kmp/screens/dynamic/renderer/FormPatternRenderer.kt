@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.edugo.kmp.design.Spacing
-import com.edugo.kmp.dynamicui.model.ActionDefinition
+import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import kotlinx.serialization.json.JsonObject
 
@@ -23,11 +23,11 @@ fun FormPatternRenderer(
     fieldValues: Map<String, String>,
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
-    onAction: (ActionDefinition, JsonObject?) -> Unit,
+    onEvent: (ScreenEvent, JsonObject?) -> Unit,
+    onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val zones = screen.template.zones
-    val actions = screen.actions
 
     Column(
         modifier = modifier
@@ -43,12 +43,12 @@ fun FormPatternRenderer(
             zones.forEach { zone ->
                 ZoneRenderer(
                     zone = zone,
-                    actions = actions,
                     data = emptyList(),
                     fieldValues = fieldValues,
                     fieldErrors = fieldErrors,
                     onFieldChanged = onFieldChanged,
-                    onAction = onAction,
+                    onEvent = onEvent,
+                    onCustomEvent = onCustomEvent,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

@@ -6,16 +6,14 @@ import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class ScreenDefinition(
-    @SerialName("id") val screenId: String = "",
+    @SerialName("screen_id") val screenId: String = "",
     @SerialName("screen_key") val screenKey: String,
-    @SerialName("name") val screenName: String,
+    @SerialName("screen_name") val screenName: String,
     val pattern: ScreenPattern,
     val version: Int = 1,
-    @SerialName("definition") val template: ScreenTemplate,
+    @SerialName("template") val template: ScreenTemplate,
     @SerialName("slot_data") val slotData: JsonObject? = null,
-    @SerialName("data_endpoint") val dataEndpoint: String? = null,
     @SerialName("data_config") val dataConfig: DataConfig? = null,
-    val actions: List<ActionDefinition> = emptyList(),
     @SerialName("handler_key") val handlerKey: String? = null,
     @SerialName("user_preferences") val userPreferences: JsonObject? = null,
     @SerialName("updated_at") val updatedAt: String = ""

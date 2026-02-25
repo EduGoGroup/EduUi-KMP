@@ -18,11 +18,8 @@ class RemoteScreenLoader(
         if (!VALID_KEY_REGEX.matches(screenKey)) {
             return Result.Failure("Invalid screenKey: only alphanumeric, hyphens and underscores allowed")
         }
-        val configBuilder = HttpRequestConfig.builder()
-        platform?.let { configBuilder.queryParam("platform", it) }
         return httpClient.getSafe(
-            url = "$baseUrl/api/v1/screens/$screenKey",
-            config = configBuilder.build()
+            url = "$baseUrl/api/v1/screen-config/resolve/key/$screenKey"
         )
     }
 

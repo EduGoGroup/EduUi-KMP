@@ -63,9 +63,11 @@ public data class MenuItem(
     public fun hasScreens(): Boolean = screens.isNotEmpty()
 
     /**
-     * Obtiene la pantalla por defecto (primera en el mapa de screens).
+     * Obtiene la pantalla por defecto.
+     * Prioriza: "default" > "list" > "dashboard" > primera disponible.
      */
-    public fun getDefaultScreen(): String? = screens.values.firstOrNull()
+    public fun getDefaultScreen(): String? =
+        screens["default"] ?: screens["list"] ?: screens["dashboard"] ?: screens.values.firstOrNull()
 
     /**
      * Obtiene la pantalla para un tipo específico.

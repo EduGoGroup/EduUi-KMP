@@ -61,6 +61,9 @@ fun MainScreen(
     onNavigate: (String, Map<String, String>) -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
+    contentOverride: String? = null,
+    contentParams: Map<String, String> = emptyMap(),
+    onBack: (() -> Unit)? = null,
 ) {
     val menuRepository = koinInject<MenuRepository>()
     val authService = koinInject<AuthService>()
@@ -161,6 +164,19 @@ fun MainScreen(
                 }
             },
         ) { paddingModifier ->
+            // If there's a content override (e.g., form/detail from Route.Dynamic), render that
+            if (contentOverride != null) {
+                val overrideViewModel = koinInject<DynamicScreenViewModel>()
+                DynamicScreen(
+                    screenKey = contentOverride,
+                    viewModel = overrideViewModel,
+                    placeholders = contentParams,
+                    onNavigate = onNavigate,
+                    modifier = paddingModifier,
+                )
+                return@AdaptiveNavigationLayout
+            }
+
             // Resolve current screen from selectedKey
             val currentItem = selectedKey?.let { allItems.findByKey(it) }
             val currentScreenKey = currentItem?.screenKey

@@ -10,14 +10,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
-import com.edugo.kmp.design.components.progress.DSCircularProgress
 import com.edugo.kmp.design.components.progress.DSLinearProgress
-import com.edugo.kmp.dynamicui.model.ActionDefinition
+import com.edugo.kmp.dynamicui.contract.ScreenEvent
+import com.edugo.kmp.dynamicui.model.ControlType
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.screens.dynamic.components.filterItems
 import kotlinx.serialization.json.JsonObject
 
 @Composable
@@ -27,15 +31,28 @@ fun ListPatternRenderer(
     fieldValues: Map<String, String>,
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
-    onAction: (ActionDefinition, JsonObject?) -> Unit,
+    onEvent: (ScreenEvent, JsonObject?) -> Unit,
+    onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val zones = screen.template.zones
-    val actions = screen.actions
 
-    val items = when (dataState) {
+    val rawItems = when (dataState) {
         is DynamicScreenViewModel.DataState.Success -> dataState.items
         else -> emptyList()
+    }
+
+    // Find search bar slot id to get the current query from fieldValues
+    val searchSlotId = remember(zones) {
+        zones.flatMap { it.slots }
+            .firstOrNull { it.controlType == ControlType.SEARCH_BAR }
+            ?.id
+    }
+
+    // Filter items client-side based on search query
+    val searchQuery = searchSlotId?.let { fieldValues[it] } ?: ""
+    val items by remember(rawItems, searchQuery) {
+        derivedStateOf { filterItems(rawItems, searchQuery) }
     }
 
     Column(
@@ -52,7 +69,7 @@ fun ListPatternRenderer(
         if (dataState is DynamicScreenViewModel.DataState.Error) {
             DSEmptyState(
                 icon = Icons.Default.Warning,
-                title = "Error loading data",
+                title = "Error al cargar datos",
                 description = dataState.message,
             )
         }
@@ -60,12 +77,12 @@ fun ListPatternRenderer(
         zones.forEach { zone ->
             ZoneRenderer(
                 zone = zone,
-                actions = actions,
                 data = items,
                 fieldValues = fieldValues,
                 fieldErrors = fieldErrors,
                 onFieldChanged = onFieldChanged,
-                onAction = onAction,
+                onEvent = onEvent,
+                onCustomEvent = onCustomEvent,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

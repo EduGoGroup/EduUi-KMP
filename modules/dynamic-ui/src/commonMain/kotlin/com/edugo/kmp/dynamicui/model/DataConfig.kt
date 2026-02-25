@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 data class DataConfig(
     val defaultParams: Map<String, String> = emptyMap(),
     val pagination: PaginationConfig? = null,
-    val refreshInterval: Long? = null
+    val refreshInterval: Long? = null,
+    val fieldMapping: Map<String, String> = emptyMap()
 )
 
 @Serializable

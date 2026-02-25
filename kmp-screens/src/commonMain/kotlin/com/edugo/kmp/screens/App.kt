@@ -24,6 +24,7 @@ import com.edugo.kmp.settings.model.ThemeOption
 import com.edugo.kmp.settings.theme.ThemeService
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
+import com.edugo.kmp.screens.di.screenContractsModule
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 
@@ -40,7 +41,7 @@ import org.koin.compose.koinInject
 @Composable
 fun App() {
     KoinApplication(application = {
-        modules(KoinInitializer.allModules())
+        modules(KoinInitializer.allModules() + screenContractsModule)
     }) {
         val themeService = koinInject<ThemeService>()
         val themePreference by themeService.themePreference.collectAsState()
@@ -125,11 +126,13 @@ fun App() {
                 )
 
                 is Route.Dynamic -> {
-                    val viewModel = koinInject<DynamicScreenViewModel>()
-                    DynamicScreen(
-                        screenKey = currentRoute.screenKey,
-                        viewModel = viewModel,
+                    // Render inside MainScreen to keep sidebar and theme
+                    MainScreen(
                         onNavigate = handleDynamicNavigate,
+                        onLogout = handleLogout,
+                        contentOverride = currentRoute.screenKey,
+                        contentParams = currentRoute.params,
+                        onBack = { navState.back() },
                     )
                 }
             }

@@ -1,5 +1,6 @@
 package com.edugo.kmp.screens.dynamic.renderer
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
-import com.edugo.kmp.dynamicui.model.ActionDefinition
+import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.Distribution
 import com.edugo.kmp.dynamicui.model.Zone
 import com.edugo.kmp.dynamicui.model.ZoneType
@@ -26,12 +27,12 @@ import kotlinx.serialization.json.JsonObject
 @Composable
 fun ZoneRenderer(
     zone: Zone,
-    actions: List<ActionDefinition>,
     data: List<JsonObject>,
     fieldValues: Map<String, String>,
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
-    onAction: (ActionDefinition, JsonObject?) -> Unit,
+    onEvent: (ScreenEvent, JsonObject?) -> Unit,
+    onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Evaluate condition
@@ -46,11 +47,10 @@ fun ZoneRenderer(
                 zone.slots.forEach { slot ->
                     SlotRenderer(
                         slot = slot,
-                        actions = actions,
                         fieldValues = fieldValues,
                         fieldErrors = fieldErrors,
                         onFieldChanged = onFieldChanged,
-                        onAction = onAction,
+                        onCustomEvent = onCustomEvent,
                     )
                 }
                 // Render list items
@@ -60,17 +60,17 @@ fun ZoneRenderer(
                 ) {
                     data.forEach { item ->
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().clickable { onEvent(ScreenEvent.SELECT_ITEM, item) }
+                                .padding(vertical = Spacing.spacing1),
                             horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
                         ) {
                             zone.itemLayout!!.slots.forEach { slot ->
                                 SlotRenderer(
                                     slot = slot,
-                                    actions = actions,
                                     fieldValues = fieldValues,
                                     fieldErrors = fieldErrors,
                                     onFieldChanged = onFieldChanged,
-                                    onAction = onAction,
+                                    onCustomEvent = onCustomEvent,
                                     itemData = item,
                                 )
                             }
@@ -83,23 +83,21 @@ fun ZoneRenderer(
                 zone.slots.forEach { slot ->
                     SlotRenderer(
                         slot = slot,
-                        actions = actions,
                         fieldValues = fieldValues,
                         fieldErrors = fieldErrors,
                         onFieldChanged = onFieldChanged,
-                        onAction = onAction,
+                        onCustomEvent = onCustomEvent,
                     )
                 }
                 data.forEach { item ->
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.fillMaxWidth().clickable { onEvent(ScreenEvent.SELECT_ITEM, item) }) {
                         zone.itemLayout!!.slots.forEach { slot ->
                             SlotRenderer(
                                 slot = slot,
-                                actions = actions,
                                 fieldValues = fieldValues,
                                 fieldErrors = fieldErrors,
                                 onFieldChanged = onFieldChanged,
-                                onAction = onAction,
+                                onCustomEvent = onCustomEvent,
                                 itemData = item,
                             )
                         }
@@ -117,12 +115,11 @@ fun ZoneRenderer(
                         ) {
                             renderZoneContent(
                                 zone = zone,
-                                actions = actions,
                                 data = data,
                                 fieldValues = fieldValues,
                                 fieldErrors = fieldErrors,
                                 onFieldChanged = onFieldChanged,
-                                onAction = onAction,
+                                onCustomEvent = onCustomEvent,
                             )
                         }
                     }
@@ -136,11 +133,10 @@ fun ZoneRenderer(
                                 Box(modifier = Modifier.weight(slot.weight ?: 1f)) {
                                     SlotRenderer(
                                         slot = slot,
-                                        actions = actions,
                                         fieldValues = fieldValues,
                                         fieldErrors = fieldErrors,
                                         onFieldChanged = onFieldChanged,
-                                        onAction = onAction,
+                                        onCustomEvent = onCustomEvent,
                                     )
                                 }
                             }
@@ -148,12 +144,12 @@ fun ZoneRenderer(
                                 Box(modifier = Modifier.weight(1f)) {
                                     ZoneRenderer(
                                         zone = childZone,
-                                        actions = actions,
                                         data = data,
                                         fieldValues = fieldValues,
                                         fieldErrors = fieldErrors,
                                         onFieldChanged = onFieldChanged,
-                                        onAction = onAction,
+                                        onEvent = onEvent,
+                                        onCustomEvent = onCustomEvent,
                                     )
                                 }
                             }
@@ -173,11 +169,10 @@ fun ZoneRenderer(
                                         Box(modifier = Modifier.weight(1f)) {
                                             SlotRenderer(
                                                 slot = slot,
-                                                actions = actions,
                                                 fieldValues = fieldValues,
                                                 fieldErrors = fieldErrors,
                                                 onFieldChanged = onFieldChanged,
-                                                onAction = onAction,
+                                                onCustomEvent = onCustomEvent,
                                                 modifier = Modifier.fillMaxWidth(),
                                             )
                                         }
@@ -202,11 +197,10 @@ fun ZoneRenderer(
                             zone.slots.forEach { slot ->
                                 SlotRenderer(
                                     slot = slot,
-                                    actions = actions,
                                     fieldValues = fieldValues,
                                     fieldErrors = fieldErrors,
                                     onFieldChanged = onFieldChanged,
-                                    onAction = onAction,
+                                    onCustomEvent = onCustomEvent,
                                 )
                             }
                         }
@@ -220,12 +214,12 @@ fun ZoneRenderer(
             zone.zones.forEach { childZone ->
                 ZoneRenderer(
                     zone = childZone,
-                    actions = actions,
                     data = data,
                     fieldValues = fieldValues,
                     fieldErrors = fieldErrors,
                     onFieldChanged = onFieldChanged,
-                    onAction = onAction,
+                    onEvent = onEvent,
+                    onCustomEvent = onCustomEvent,
                 )
             }
         }
@@ -235,21 +229,19 @@ fun ZoneRenderer(
 @Composable
 private fun renderZoneContent(
     zone: Zone,
-    actions: List<ActionDefinition>,
     data: List<JsonObject>,
     fieldValues: Map<String, String>,
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
-    onAction: (ActionDefinition, JsonObject?) -> Unit,
+    onCustomEvent: (String, JsonObject?) -> Unit,
 ) {
     zone.slots.forEach { slot ->
         SlotRenderer(
             slot = slot,
-            actions = actions,
             fieldValues = fieldValues,
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
-            onAction = onAction,
+            onCustomEvent = onCustomEvent,
         )
     }
 }

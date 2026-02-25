@@ -19,11 +19,11 @@ import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
 import com.edugo.kmp.design.components.progress.DSLinearProgress
-import com.edugo.kmp.dynamicui.action.ActionResult
-import com.edugo.kmp.dynamicui.model.ActionDefinition
+import com.edugo.kmp.dynamicui.contract.EventContext
+import com.edugo.kmp.dynamicui.contract.EventResult
+import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
 import com.edugo.kmp.screens.dynamic.renderer.PatternRouter
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 
@@ -34,7 +34,6 @@ fun DynamicScreen(
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
     placeholders: Map<String, String> = emptyMap(),
-    onAction: ((ActionDefinition, JsonObject?, CoroutineScope) -> Unit)? = null,
     onFieldChanged: ((String, String) -> Unit)? = null,
 ) {
     val screenState by viewModel.screenState.collectAsState()
@@ -66,20 +65,52 @@ fun DynamicScreen(
                     fieldValues = fieldValues,
                     fieldErrors = fieldErrors,
                     onFieldChanged = onFieldChanged ?: viewModel::onFieldChanged,
-                    onAction = { action: ActionDefinition, item: JsonObject? ->
-                        if (onAction != null) {
-                            onAction(action, item, scope)
-                        } else {
-                            scope.launch {
-                                val result = viewModel.executeAction(action, item)
-                                when (result) {
-                                    is ActionResult.NavigateTo ->
-                                        onNavigate(result.screenKey, result.params)
-                                    is ActionResult.Success ->
-                                        result.message?.let { snackbarHostState.showSnackbar(it) }
-                                    is ActionResult.Error ->
-                                        snackbarHostState.showSnackbar(result.message)
-                                    else -> { /* handled elsewhere */ }
+                    onEvent = { event: ScreenEvent, item: JsonObject? ->
+                        scope.launch {
+                            val context = EventContext(
+                                screenKey = screenKey,
+                                fieldValues = viewModel.fieldValues.value,
+                                selectedItem = item,
+                                params = placeholders
+                            )
+                            when (val result = viewModel.executeEvent(screenKey, event, context)) {
+                                is EventResult.NavigateTo -> onNavigate(result.screenKey, result.params)
+                                is EventResult.Success -> result.message?.let { snackbarHostState.showSnackbar(it) }
+                                is EventResult.Error -> snackbarHostState.showSnackbar(result.message)
+                                is EventResult.PermissionDenied -> snackbarHostState.showSnackbar("Sin permisos")
+                                is EventResult.Logout -> { /* handled by auth observer */ }
+                                is EventResult.Cancelled -> { }
+                                is EventResult.NoOp -> { }
+                                is EventResult.SubmitTo -> { }
+                            }
+                        }
+                    },
+                    onCustomEvent = { eventId: String, item: JsonObject? ->
+                        scope.launch {
+                            val context = EventContext(
+                                screenKey = screenKey,
+                                fieldValues = viewModel.fieldValues.value,
+                                selectedItem = item,
+                                params = placeholders
+                            )
+                            when (val result = viewModel.executeCustomEvent(screenKey, eventId, context)) {
+                                is EventResult.NavigateTo -> onNavigate(result.screenKey, result.params)
+                                is EventResult.Success -> result.message?.let { snackbarHostState.showSnackbar(it) }
+                                is EventResult.Error -> snackbarHostState.showSnackbar(result.message)
+                                is EventResult.PermissionDenied -> snackbarHostState.showSnackbar("Sin permisos")
+                                is EventResult.Logout -> { /* handled by auth observer */ }
+                                is EventResult.Cancelled -> { }
+                                is EventResult.NoOp -> { }
+                                is EventResult.SubmitTo -> {
+                                    val submitResult = viewModel.submitForm(result.endpoint, result.method, result.fieldValues)
+                                    when (submitResult) {
+                                        is EventResult.Success -> {
+                                            snackbarHostState.showSnackbar(submitResult.message ?: "Guardado")
+                                            onNavigate("schools-list", emptyMap())
+                                        }
+                                        is EventResult.Error -> snackbarHostState.showSnackbar(submitResult.message)
+                                        else -> {}
+                                    }
                                 }
                             }
                         }

@@ -1,14 +1,15 @@
 package com.edugo.kmp.dynamicui.viewmodel
 
-import com.edugo.kmp.dynamicui.action.ActionContext
-import com.edugo.kmp.dynamicui.action.ActionRegistry
-import com.edugo.kmp.dynamicui.action.ActionResult
+import com.edugo.kmp.dynamicui.contract.EventContext
+import com.edugo.kmp.dynamicui.contract.EventResult
+import com.edugo.kmp.dynamicui.contract.ScreenContractRegistry
+import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.data.DataLoader
-import com.edugo.kmp.dynamicui.handler.ScreenHandlerRegistry
 import com.edugo.kmp.dynamicui.loader.ScreenLoader
-import com.edugo.kmp.dynamicui.model.ActionDefinition
 import com.edugo.kmp.dynamicui.model.DataConfig
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
+import com.edugo.kmp.dynamicui.orchestrator.EventOrchestrator
+import com.edugo.kmp.dynamicui.resolver.FormFieldsResolver
 import com.edugo.kmp.dynamicui.resolver.PlaceholderResolver
 import com.edugo.kmp.dynamicui.resolver.SlotBindingResolver
 import com.edugo.kmp.foundation.result.Result
@@ -16,13 +17,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 class DynamicScreenViewModel(
     private val screenLoader: ScreenLoader,
     private val dataLoader: DataLoader,
-    private val actionRegistry: ActionRegistry,
-    private val screenHandlerRegistry: ScreenHandlerRegistry = ScreenHandlerRegistry()
+    private val orchestrator: EventOrchestrator,
+    private val contractRegistry: ScreenContractRegistry
 ) {
     private val _screenState = MutableStateFlow<ScreenState>(ScreenState.Loading)
     val screenState: StateFlow<ScreenState> = _screenState.asStateFlow()
@@ -61,11 +63,24 @@ class DynamicScreenViewModel(
         _screenState.value = ScreenState.Loading
         when (val result = screenLoader.loadScreen(screenKey, platform)) {
             is Result.Success -> {
-                val slotResolved = SlotBindingResolver.resolve(result.data)
+                val formResolved = FormFieldsResolver.resolve(result.data)
+                val slotResolved = SlotBindingResolver.resolve(formResolved)
                 val resolved = PlaceholderResolver.resolve(slotResolved, placeholders)
                 _screenState.value = ScreenState.Ready(resolved)
-                resolved.dataEndpoint?.let { endpoint ->
-                    resolved.dataConfig?.let { config ->
+
+                // Use contract to determine data loading
+                val contract = contractRegistry.find(screenKey)
+                val context = EventContext(
+                    screenKey = screenKey,
+                    params = placeholders
+                )
+                val endpoint = contract?.endpointFor(ScreenEvent.LOAD_DATA, context)
+                if (endpoint != null) {
+                    val config = contract.dataConfig()
+                    // For forms in edit mode (single object), pre-fill field values
+                    if (resolved.pattern == com.edugo.kmp.dynamicui.model.ScreenPattern.FORM && placeholders.containsKey("id")) {
+                        loadFormData(endpoint, config)
+                    } else {
                         loadData(endpoint, config)
                     }
                 }
@@ -87,8 +102,9 @@ class DynamicScreenViewModel(
         _dataState.value = DataState.Loading
         when (val result = dataLoader.loadData(endpoint, config, extraParams)) {
             is Result.Success -> {
+                val items = applyFieldMapping(result.data.items, config.fieldMapping)
                 _dataState.value = DataState.Success(
-                    items = result.data.items,
+                    items = items,
                     hasMore = result.data.hasMore
                 )
             }
@@ -106,8 +122,10 @@ class DynamicScreenViewModel(
         if (currentState !is DataState.Success || !currentState.hasMore || currentState.loadingMore) return
 
         val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
-        val endpoint = screen.dataEndpoint ?: return
-        val config = screen.dataConfig ?: return
+        val contract = contractRegistry.find(screen.screenKey) ?: return
+        val context = EventContext(screenKey = screen.screenKey)
+        val endpoint = contract.endpointFor(ScreenEvent.LOAD_MORE, context) ?: return
+        val config = contract.dataConfig()
         val pagination = config.pagination ?: return
 
         _dataState.value = currentState.copy(loadingMore = true)
@@ -117,8 +135,9 @@ class DynamicScreenViewModel(
 
         when (val result = dataLoader.loadData(endpoint, config, extraParams)) {
             is Result.Success -> {
+                val items = applyFieldMapping(result.data.items, config.fieldMapping)
                 _dataState.value = DataState.Success(
-                    items = currentState.items + result.data.items,
+                    items = currentState.items + items,
                     hasMore = result.data.hasMore
                 )
             }
@@ -129,36 +148,20 @@ class DynamicScreenViewModel(
         }
     }
 
-    suspend fun executeAction(
-        actionDef: ActionDefinition,
-        itemData: JsonObject? = null
-    ): ActionResult {
-        val currentScreen = (screenState.value as? ScreenState.Ready)?.screen
-        val screenKey = currentScreen?.screenKey ?: ""
+    suspend fun executeEvent(
+        screenKey: String,
+        event: ScreenEvent,
+        context: EventContext
+    ): EventResult {
+        return orchestrator.execute(screenKey, event, context)
+    }
 
-        // 1. Check for screen-specific custom handler
-        val customHandler = screenHandlerRegistry.findHandler(screenKey, actionDef)
-        if (customHandler != null) {
-            val context = ActionContext(
-                screenKey = screenKey,
-                actionId = actionDef.id,
-                config = actionDef.config,
-                fieldValues = _fieldValues.value,
-                selectedItem = itemData
-            )
-            return customHandler.handle(actionDef, context)
-        }
-
-        // 2. Fall back to generic action registry
-        val handler = actionRegistry.resolve(actionDef.type)
-        val context = ActionContext(
-            screenKey = screenKey,
-            actionId = actionDef.id,
-            config = actionDef.config,
-            fieldValues = _fieldValues.value,
-            selectedItem = itemData
-        )
-        return handler.execute(context)
+    suspend fun executeCustomEvent(
+        screenKey: String,
+        eventId: String,
+        context: EventContext
+    ): EventResult {
+        return orchestrator.executeCustom(screenKey, eventId, context)
     }
 
     fun onFieldChanged(fieldId: String, value: String) {
@@ -166,8 +169,92 @@ class DynamicScreenViewModel(
         _fieldErrors.update { it - fieldId }
     }
 
+    private suspend fun loadFormData(endpoint: String, config: DataConfig) {
+        when (val result = dataLoader.loadData(endpoint, config)) {
+            is Result.Success -> {
+                // Single-object response: first item is the entity
+                val item = result.data.items.firstOrNull()
+                if (item != null) {
+                    val values = mutableMapOf<String, String>()
+                    for ((key, value) in item) {
+                        val str = when (value) {
+                            is kotlinx.serialization.json.JsonPrimitive -> {
+                                if (value.isString) value.content else value.toString()
+                            }
+                            else -> continue
+                        }
+                        values[key] = str
+                    }
+                    _fieldValues.value = values
+                }
+            }
+            is Result.Failure -> { /* silently ignore, form stays empty */ }
+            is Result.Loading -> { }
+        }
+    }
+
+    suspend fun submitForm(
+        endpoint: String,
+        method: String,
+        fieldValues: Map<String, String>
+    ): EventResult {
+        // Get form field keys from the screen definition to filter only editable fields
+        val screen = (_screenState.value as? ScreenState.Ready)?.screen
+        val formFieldKeys = screen?.template?.zones
+            ?.filter { it.type == com.edugo.kmp.dynamicui.model.ZoneType.FORM_SECTION }
+            ?.flatMap { it.slots }
+            ?.map { it.id }
+            ?.toSet()
+
+        // Only include fields that are in the form definition
+        val editableValues = if (formFieldKeys != null) {
+            fieldValues.filterKeys { it in formFieldKeys }
+        } else {
+            fieldValues
+        }
+
+        // Convert types: numbers → JsonPrimitive(int/double), booleans → JsonPrimitive(bool)
+        val body = JsonObject(editableValues.mapValues { (_, v) ->
+            when {
+                v == "true" || v == "false" -> kotlinx.serialization.json.JsonPrimitive(v.toBoolean())
+                v.toLongOrNull() != null -> kotlinx.serialization.json.JsonPrimitive(v.toLong())
+                v.toDoubleOrNull() != null -> kotlinx.serialization.json.JsonPrimitive(v.toDouble())
+                else -> kotlinx.serialization.json.JsonPrimitive(v)
+            }
+        })
+
+        return when (val result = dataLoader.submitData(endpoint, body, method)) {
+            is Result.Success -> EventResult.Success(message = "Guardado exitosamente")
+            is Result.Failure -> EventResult.Error(result.error)
+            is Result.Loading -> EventResult.Error("Unexpected loading state")
+        }
+    }
+
     fun resetFields() {
         _fieldValues.value = emptyMap()
         _fieldErrors.value = emptyMap()
+    }
+
+    /**
+     * Applies field mapping to transform API response field names to template-expected field names.
+     * Mapping is "templateField" -> "apiField", e.g., "title" -> "full_name".
+     * Original fields are preserved alongside mapped aliases.
+     */
+    private fun applyFieldMapping(
+        items: List<JsonObject>,
+        mapping: Map<String, String>
+    ): List<JsonObject> {
+        if (mapping.isEmpty()) return items
+        return items.map { item ->
+            val extra = mutableMapOf<String, JsonElement>()
+            for ((templateField, apiField) in mapping) {
+                val value = item[apiField]
+                if (value != null) {
+                    extra[templateField] = value
+                }
+            }
+            if (extra.isEmpty()) item
+            else JsonObject(item + extra)
+        }
     }
 }
