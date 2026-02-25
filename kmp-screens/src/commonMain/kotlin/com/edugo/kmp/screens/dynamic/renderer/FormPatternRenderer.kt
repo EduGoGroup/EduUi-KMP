@@ -13,8 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.edugo.kmp.design.Spacing
-import com.edugo.kmp.dynamicui.model.ActionDefinition
+import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
+import com.edugo.kmp.dynamicui.model.ZoneType
 import kotlinx.serialization.json.JsonObject
 
 @Composable
@@ -23,11 +24,12 @@ fun FormPatternRenderer(
     fieldValues: Map<String, String>,
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
-    onAction: (ActionDefinition, JsonObject?) -> Unit,
+    onEvent: (ScreenEvent, JsonObject?) -> Unit,
+    onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val zones = screen.template.zones
-    val actions = screen.actions
+    // Filter out the action-group zone (submit/cancel buttons) since toolbar handles those now
+    val zones = screen.template.zones.filter { it.type != ZoneType.ACTION_GROUP }
 
     Column(
         modifier = modifier
@@ -43,12 +45,12 @@ fun FormPatternRenderer(
             zones.forEach { zone ->
                 ZoneRenderer(
                     zone = zone,
-                    actions = actions,
                     data = emptyList(),
                     fieldValues = fieldValues,
                     fieldErrors = fieldErrors,
                     onFieldChanged = onFieldChanged,
-                    onAction = onAction,
+                    onEvent = onEvent,
+                    onCustomEvent = onCustomEvent,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

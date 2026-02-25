@@ -148,8 +148,7 @@ public class TokenRefreshManagerImpl(
         saveToken(newToken)
     }
 
-    private suspend fun handleRefreshFailure(reason: RefreshFailureReason): Result<AuthToken> {
-        _onRefreshFailed.emit(reason)
+    private fun handleRefreshFailure(reason: RefreshFailureReason): Result<AuthToken> {
         return failure(reason.toAuthError().errorCode.description)
     }
 
@@ -247,9 +246,15 @@ public class TokenRefreshManagerImpl(
         delay(delayMs)
 
         val result = performRefresh()
-        if (result is Result.Success) {
-            _onRefreshSuccess.emit(result.data)
-            scheduleNextRefresh(result.data)
+        when {
+            result is Result.Success -> {
+                _onRefreshSuccess.emit(result.data)
+                scheduleNextRefresh(result.data)
+            }
+            result is Result.Failure -> {
+                val reason = mapErrorToFailureReason(result.error)
+                _onRefreshFailed.emit(reason)
+            }
         }
     }
 

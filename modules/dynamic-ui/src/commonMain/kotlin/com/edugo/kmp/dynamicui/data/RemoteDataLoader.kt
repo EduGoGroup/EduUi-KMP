@@ -129,9 +129,17 @@ class RemoteDataLoader(
                 }
                 is JsonObject -> {
                     val obj = element.jsonObject
-                    val items = (obj["items"] ?: obj["data"])
-                        ?.jsonArray?.map { it.jsonObject }
-                        ?: emptyList()
+                    // Try standard keys first, then find any array value as fallback
+                    val itemsElement = obj["items"] ?: obj["data"]
+                        ?: obj.values.firstOrNull { it is JsonArray }
+                    val items = if (itemsElement is JsonArray) {
+                        itemsElement.jsonArray.map { it.jsonObject }
+                    } else if (obj.containsKey("id")) {
+                        // Single entity response (e.g., GET /schools/{id})
+                        listOf(obj)
+                    } else {
+                        emptyList()
+                    }
                     val total = obj["total"]?.toString()?.toIntOrNull()
                     DataPage(
                         items = items,

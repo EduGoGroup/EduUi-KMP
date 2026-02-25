@@ -26,7 +26,6 @@ import com.edugo.kmp.design.components.selection.DSCheckbox
 import com.edugo.kmp.design.components.selection.DSChip
 import com.edugo.kmp.design.components.selection.DSChipVariant
 import com.edugo.kmp.design.components.selection.DSSwitch
-import com.edugo.kmp.dynamicui.model.ActionDefinition
 import com.edugo.kmp.dynamicui.model.ControlType
 import com.edugo.kmp.dynamicui.model.Slot
 import kotlinx.serialization.json.JsonObject
@@ -34,11 +33,10 @@ import kotlinx.serialization.json.JsonObject
 @Composable
 fun SlotRenderer(
     slot: Slot,
-    actions: List<ActionDefinition>,
     fieldValues: Map<String, String>,
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
-    onAction: (ActionDefinition, JsonObject?) -> Unit,
+    onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
     itemData: JsonObject? = null,
 ) {
@@ -115,38 +113,34 @@ fun SlotRenderer(
         }
 
         ControlType.FILLED_BUTTON -> {
-            val action = findActionForSlot(slot.id, actions)
             DSFilledButton(
                 text = displayValue,
-                onClick = { action?.let { onAction(it, itemData) } },
+                onClick = { slot.eventId?.let { onCustomEvent(it, itemData) } },
                 modifier = modifier.fillMaxWidth(),
             )
         }
 
         ControlType.OUTLINED_BUTTON -> {
-            val action = findActionForSlot(slot.id, actions)
             DSOutlinedButton(
                 text = displayValue,
-                onClick = { action?.let { onAction(it, itemData) } },
+                onClick = { slot.eventId?.let { onCustomEvent(it, itemData) } },
                 modifier = modifier,
             )
         }
 
         ControlType.TEXT_BUTTON -> {
-            val action = findActionForSlot(slot.id, actions)
             DSTextButton(
                 text = displayValue,
-                onClick = { action?.let { onAction(it, itemData) } },
+                onClick = { slot.eventId?.let { onCustomEvent(it, itemData) } },
                 modifier = modifier,
             )
         }
 
         ControlType.ICON_BUTTON -> {
-            val action = findActionForSlot(slot.id, actions)
             DSIconButton(
                 icon = Icons.Default.Star,
                 contentDescription = slot.label,
-                onClick = { action?.let { onAction(it, itemData) } },
+                onClick = { slot.eventId?.let { onCustomEvent(it, itemData) } },
                 modifier = modifier,
             )
         }
@@ -194,7 +188,6 @@ fun SlotRenderer(
         }
 
         ControlType.LIST_ITEM_NAVIGATION -> {
-            val action = findActionForSlot(slot.id, actions)
             DSListItem(
                 headlineText = slot.label ?: displayValue,
                 supportingText = if (slot.label != null && displayValue.isNotEmpty()) displayValue else null,
@@ -205,7 +198,7 @@ fun SlotRenderer(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
-                onClick = { action?.let { onAction(it, itemData) } },
+                onClick = { slot.eventId?.let { onCustomEvent(it, itemData) } },
                 modifier = modifier,
             )
         }
@@ -322,9 +315,3 @@ private fun resolveFieldFromJson(field: String, data: JsonObject): String? {
     }
 }
 
-private fun findActionForSlot(
-    slotId: String,
-    actions: List<ActionDefinition>,
-): ActionDefinition? {
-    return actions.find { it.triggerSlotId == slotId }
-}
