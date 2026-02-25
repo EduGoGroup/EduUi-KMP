@@ -17,7 +17,8 @@ data class Slot(
     val required: Boolean = false,
     val readOnly: Boolean = false,
     val width: String? = null,
-    val weight: Float? = null
+    val weight: Float? = null,
+    @SerialName("event_id") val eventId: String? = null
 )
 
 @Serializable

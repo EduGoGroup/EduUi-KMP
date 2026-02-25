@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
-import com.edugo.kmp.dynamicui.model.ActionDefinition
+import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.model.ScreenPattern
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
@@ -23,7 +23,8 @@ fun PatternRouter(
     fieldValues: Map<String, String>,
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
-    onAction: (ActionDefinition, JsonObject?) -> Unit,
+    onEvent: (ScreenEvent, JsonObject?) -> Unit,
+    onCustomEvent: (String, JsonObject?) -> Unit,
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -33,7 +34,8 @@ fun PatternRouter(
             fieldValues = fieldValues,
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
-            onAction = onAction,
+            onEvent = onEvent,
+            onCustomEvent = onCustomEvent,
             modifier = modifier,
         )
 
@@ -43,7 +45,8 @@ fun PatternRouter(
             fieldValues = fieldValues,
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
-            onAction = onAction,
+            onEvent = onEvent,
+            onCustomEvent = onCustomEvent,
             modifier = modifier,
         )
 
@@ -53,7 +56,8 @@ fun PatternRouter(
             fieldValues = fieldValues,
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
-            onAction = onAction,
+            onEvent = onEvent,
+            onCustomEvent = onCustomEvent,
             modifier = modifier,
         )
 
@@ -63,7 +67,8 @@ fun PatternRouter(
             fieldValues = fieldValues,
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
-            onAction = onAction,
+            onEvent = onEvent,
+            onCustomEvent = onCustomEvent,
             modifier = modifier,
         )
 
@@ -73,7 +78,8 @@ fun PatternRouter(
             fieldValues = fieldValues,
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
-            onAction = onAction,
+            onEvent = onEvent,
+            onCustomEvent = onCustomEvent,
             modifier = modifier,
         )
 
@@ -82,7 +88,8 @@ fun PatternRouter(
             fieldValues = fieldValues,
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
-            onAction = onAction,
+            onEvent = onEvent,
+            onCustomEvent = onCustomEvent,
             modifier = modifier,
         )
 

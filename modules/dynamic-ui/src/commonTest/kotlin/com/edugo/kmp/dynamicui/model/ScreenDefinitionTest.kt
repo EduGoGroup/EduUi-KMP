@@ -2,8 +2,6 @@ package com.edugo.kmp.dynamicui.model
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -78,29 +76,8 @@ class ScreenDefinitionTest {
             updatedAt = "2026-01-01T00:00:00Z"
         )
 
-        assertNull(screen.dataEndpoint)
         assertNull(screen.dataConfig)
-        assertEquals(emptyList(), screen.actions)
         assertNull(screen.userPreferences)
-    }
-
-    @Test
-    fun actionDefinition_serializes_with_config() {
-        val action = ActionDefinition(
-            id = "act-1",
-            trigger = ActionTrigger.BUTTON_CLICK,
-            triggerSlotId = "btn-submit",
-            type = ActionType.SUBMIT_FORM,
-            config = JsonObject(mapOf("endpoint" to JsonPrimitive("/api/submit")))
-        )
-
-        val encoded = json.encodeToString(action)
-        val decoded = json.decodeFromString<ActionDefinition>(encoded)
-
-        assertEquals("act-1", decoded.id)
-        assertEquals(ActionTrigger.BUTTON_CLICK, decoded.trigger)
-        assertEquals(ActionType.SUBMIT_FORM, decoded.type)
-        assertEquals("btn-submit", decoded.triggerSlotId)
     }
 
     @Test
@@ -155,9 +132,9 @@ class ScreenDefinitionTest {
     fun full_screen_definition_json_round_trip() {
         val screenJson = """
         {
-            "screenId": "scr-100",
-            "screenKey": "dashboard",
-            "screenName": "Dashboard",
+            "screen_id": "scr-100",
+            "screen_key": "dashboard",
+            "screen_name": "Dashboard",
             "pattern": "dashboard",
             "version": 2,
             "template": {
@@ -183,13 +160,11 @@ class ScreenDefinitionTest {
                     }
                 ]
             },
-            "dataEndpoint": "/v1/dashboard/data",
-            "dataConfig": {
+            "data_config": {
                 "defaultParams": {},
                 "refreshInterval": 30000
             },
-            "actions": [],
-            "updatedAt": "2026-02-01T12:00:00Z"
+            "updated_at": "2026-02-01T12:00:00Z"
         }
         """.trimIndent()
 
@@ -203,6 +178,32 @@ class ScreenDefinitionTest {
         assertEquals(1, screen.template.zones.size)
         assertEquals(ZoneType.METRIC_GRID, screen.template.zones[0].type)
         assertEquals(Distribution.GRID, screen.template.zones[0].distribution)
-        assertEquals("/v1/dashboard/data", screen.dataEndpoint)
+    }
+
+    @Test
+    fun slot_with_eventId_serializes_correctly() {
+        val slot = Slot(
+            id = "btn-submit",
+            controlType = ControlType.FILLED_BUTTON,
+            value = "Submit",
+            eventId = "submit-login"
+        )
+
+        val encoded = json.encodeToString(slot)
+        val decoded = json.decodeFromString<Slot>(encoded)
+
+        assertEquals("btn-submit", decoded.id)
+        assertEquals("submit-login", decoded.eventId)
+    }
+
+    @Test
+    fun slot_without_eventId_defaults_to_null() {
+        val slot = Slot(
+            id = "label-1",
+            controlType = ControlType.LABEL,
+            value = "Hello"
+        )
+
+        assertNull(slot.eventId)
     }
 }
