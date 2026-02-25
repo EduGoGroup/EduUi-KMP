@@ -28,7 +28,7 @@ class EventOrchestrator(
         val requiredPermission = contract.permissionFor(event)
         if (requiredPermission != null) {
             val userContext = userContextProvider()
-            if (userContext != null && !userContext.hasPermission(requiredPermission)) {
+            if (userContext == null || !userContext.hasPermission(requiredPermission)) {
                 return EventResult.PermissionDenied
             }
         }

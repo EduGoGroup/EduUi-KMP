@@ -223,29 +223,74 @@ No hay persistencia de draft. Si el usuario llena un formulario, navega accident
 
 ---
 
+## 11. DELETE se envía como POST (bug latente)
+
+**Archivos:** `EventOrchestrator.kt:69-74`, `RemoteDataLoader.kt`
+
+`EventOrchestrator` resuelve el método HTTP y llama a `dataLoader.submitData(..., method = "DELETE")`, pero `RemoteDataLoader.submitData` solo distingue PUT vs "todo lo demás" (POST):
+
+```kotlin
+// RemoteDataLoader — submitData
+val response = if (method == "PUT") {
+    client.put(url) { ... }
+} else {
+    client.post(url) { ... }   // DELETE llega aquí → se envía como POST
+}
+```
+
+No hay contratos que usen DELETE actualmente, pero el `EventOrchestrator` ya tiene el `when ("DELETE")` enrutado. Cuando se implemente el primer contrato con DELETE, romperá silenciosamente la API.
+
+---
+
+## 12. ViewModel recreado en cada recomposición
+
+**Archivo:** `MainScreen.kt:169,229` _(confirmado por Copilot review PR #7)_
+
+```kotlin
+// Dentro de AdaptiveNavigationLayout — se ejecuta en cada recomposición
+if (contentOverride != null) {
+    val overrideViewModel = koinInject<DynamicScreenViewModel>()  // factory: nueva instancia
+    ...
+}
+val viewModel = koinInject<DynamicScreenViewModel>()  // ídem rama principal
+```
+
+Koin está registrado como `factory`, por lo que cada `koinInject()` sin `remember` produce una instancia nueva. Una recomposición por cambio de tema, rotación o cualquier estado padre recrea el ViewModel, perdiendo `_screenState`, `_dataState`, `_fieldValues` y cancelando los jobs de carga en curso.
+
+**Alcance del problema:**
+- El `contentOverride` branch se activa en toda navegación a form/detail (Route.Dynamic)
+- La rama principal cubre todos los screens de lista y dashboard
+- Ambas ramas sin `remember` → afecta la totalidad del sistema SDUI
+
+---
+
 ## Tabla resumen
 
-| # | Problema | Archivo clave | Severidad | Tipo |
-|---|----------|---------------|-----------|------|
-| 1 | Race condition SESSION_EXPIRED doble | `AuthServiceImpl.kt:313` | **CRÍTICA** | Auth / Bug |
-| 2 | Datos de lista nunca cacheados | `DynamicScreenViewModel.kt` | **ALTA** | API calls |
-| 3 | ViewModel instanciado N veces | `MainScreen.kt:169,229` | **ALTA** | Memory |
-| 4 | Listas crecen sin límite (loadMore) | `DynamicScreenViewModel.kt:139` | **ALTA** | UI freeze |
-| 5 | EventContext sin estabilidad | `DynamicScreen.kt:107` | **MEDIA** | Recomposición |
-| 6 | SearchBar sin debounce | `ListPatternRenderer.kt:50` | **MEDIA** | CPU |
-| 7 | Menú recargado en cada switch | `MainScreen.kt:318` | **MEDIA** | API calls |
-| 8 | ZoneRenderer recursión sin límite | `ZoneRenderer.kt:206` | **MEDIA** | Render |
-| 9 | Coroutines sin guards anti-doble-click | `DynamicScreen.kt:58` | **MEDIA** | Race condition |
-| 10 | FormPatternRenderer filtra sin memo | `FormPatternRenderer.kt:32` | **BAJA** | Recomposición |
-| 11 | Estado form perdido al navegar | `DynamicScreenViewModel.kt:237` | **BAJA** | UX |
+| # | Problema | Archivo clave | Severidad | Tipo | Estado |
+|---|----------|---------------|-----------|------|--------|
+| 1 | Race condition SESSION_EXPIRED doble | `AuthServiceImpl.kt:313` | **CRÍTICA** | Auth / Bug | ✅ Resuelto |
+| 2 | Datos de lista nunca cacheados | `DynamicScreenViewModel.kt` | **ALTA** | API calls | Pendiente |
+| 3 | ViewModel instanciado N veces | `MainScreen.kt:169,229` | **ALTA** | Memory | Pendiente |
+| 4 | Listas crecen sin límite (loadMore) | `DynamicScreenViewModel.kt:139` | **ALTA** | UI freeze | Pendiente |
+| 5 | EventContext sin estabilidad | `DynamicScreen.kt:107` | **MEDIA** | Recomposición | Pendiente |
+| 6 | SearchBar sin debounce | `ListPatternRenderer.kt:50` | **MEDIA** | CPU | Pendiente |
+| 7 | Menú recargado en cada switch | `MainScreen.kt:318` | **MEDIA** | API calls | Pendiente |
+| 8 | ZoneRenderer recursión sin límite | `ZoneRenderer.kt:206` | **MEDIA** | Render | Pendiente |
+| 9 | Coroutines sin guards anti-doble-click | `DynamicScreen.kt:58` | **MEDIA** | Race condition | Pendiente |
+| 10 | FormPatternRenderer filtra sin memo | `FormPatternRenderer.kt:32` | **BAJA** | Recomposición | Pendiente |
+| 11 | Estado form perdido al navegar | `DynamicScreenViewModel.kt:237` | **BAJA** | UX | Pendiente |
+| 12 | DELETE enviado como POST | `RemoteDataLoader.kt` | **MEDIA** | Bug latente | Pendiente |
+| 13 | ViewModel recreado en recomposición | `MainScreen.kt:169,229` | **ALTA** | Memory / State loss | Pendiente |
+
+> **Nota:** #3 y #13 son el mismo problema visto desde ángulos distintos (performance report vs Copilot review). Se resuelven juntos.
 
 ---
 
 ## Archivos candidatos para mejora (en orden de impacto)
 
-1. `AuthServiceImpl.kt` — race condition en `restoreSession()`
-2. `MainScreen.kt` — scoping del ViewModel
-3. `DynamicScreenViewModel.kt` — caché de datos, límite en loadMore
-4. `ListPatternRenderer.kt` — LazyColumn, debounce en search
-5. `ZoneRenderer.kt` — estabilidad de parámetros, límite de profundidad
-6. `DynamicScreen.kt` — remember en callbacks, guards anti-doble-click
+1. `MainScreen.kt` — scoping del ViewModel con `remember(key)` (resuelve #3/#13)
+2. `DynamicScreenViewModel.kt` — caché de datos, límite en loadMore (resuelve #2, #4)
+3. `RemoteDataLoader.kt` — soporte HTTP DELETE (resuelve #12)
+4. `ListPatternRenderer.kt` — LazyColumn, debounce en search (resuelve #4, #6)
+5. `ZoneRenderer.kt` — estabilidad de parámetros, límite de profundidad (resuelve #8)
+6. `DynamicScreen.kt` — remember en callbacks, guards anti-doble-click (resuelve #5, #9)

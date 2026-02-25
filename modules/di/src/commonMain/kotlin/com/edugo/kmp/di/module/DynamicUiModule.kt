@@ -1,5 +1,7 @@
 package com.edugo.kmp.di.module
 
+import com.edugo.kmp.auth.service.AuthService
+import com.edugo.kmp.auth.service.activeContext
 import com.edugo.kmp.config.AppConfig
 import com.edugo.kmp.dynamicui.contract.ScreenContract
 import com.edugo.kmp.dynamicui.contract.ScreenContractRegistry
@@ -28,10 +30,11 @@ val dynamicUiModule = module {
     }
     single { ScreenContractRegistry(getAll()) }
     single {
+        val authService = get<AuthService>()
         EventOrchestrator(
             registry = get(),
             dataLoader = get(),
-            userContextProvider = { null } // TODO: wire to AuthService active context
+            userContextProvider = { authService.authState.value.activeContext }
         )
     }
     factory { DynamicScreenViewModel(get(), get(), get(), get()) }
