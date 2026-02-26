@@ -1,6 +1,7 @@
 package com.edugo.kmp.screens.dynamic.contracts
 
 import com.edugo.kmp.dynamicui.model.DataConfig
+import com.edugo.kmp.dynamicui.model.PaginationConfig
 
 class MembershipsListContract : BaseCrudContract(
     apiPrefix = "admin:",
@@ -10,10 +11,12 @@ class MembershipsListContract : BaseCrudContract(
     override val screenKey = "memberships-list"
 
     override fun dataConfig() = DataConfig(
+        pagination = PaginationConfig(),
         fieldMapping = mapOf(
             "title" to "full_name",
             "subtitle" to "role_name",
             "status" to "is_active"
-        )
+        ),
+        searchFields = listOf("role")
     )
 }

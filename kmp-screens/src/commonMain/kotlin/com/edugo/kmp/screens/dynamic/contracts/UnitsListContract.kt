@@ -3,6 +3,7 @@ package com.edugo.kmp.screens.dynamic.contracts
 import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.DataConfig
+import com.edugo.kmp.dynamicui.model.PaginationConfig
 
 class UnitsListContract : BaseCrudContract(
     apiPrefix = "admin:",
@@ -12,11 +13,13 @@ class UnitsListContract : BaseCrudContract(
     override val screenKey = "units-list"
 
     override fun dataConfig() = DataConfig(
+        pagination = PaginationConfig(),
         fieldMapping = mapOf(
             "title" to "name",
             "subtitle" to "description",
             "status" to "is_active"
-        )
+        ),
+        searchFields = listOf("name", "code", "level")
     )
 
     override fun endpointFor(event: ScreenEvent, context: EventContext): String? {

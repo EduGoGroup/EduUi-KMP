@@ -4,6 +4,7 @@ import com.edugo.kmp.dynamicui.contract.CustomEventHandler
 import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.EventResult
 import com.edugo.kmp.dynamicui.model.DataConfig
+import com.edugo.kmp.dynamicui.model.PaginationConfig
 import kotlinx.serialization.json.jsonPrimitive
 
 class SchoolsListContract : BaseCrudContract(
@@ -14,11 +15,13 @@ class SchoolsListContract : BaseCrudContract(
     override val screenKey = "schools-list"
 
     override fun dataConfig() = DataConfig(
+        pagination = PaginationConfig(),
         fieldMapping = mapOf(
             "title" to "name",
             "subtitle" to "city",
             "status" to "is_active"
-        )
+        ),
+        searchFields = listOf("name", "city", "code")
     )
 
     override fun customEventHandlers(): Map<String, CustomEventHandler> = mapOf(
