@@ -82,3 +82,5 @@ build-logic/bin/
 # iOS / Xcode — estado local del usuario, no debe versionarse
 # =============================================================================
 xcuserdata/
+
+.obsidian/

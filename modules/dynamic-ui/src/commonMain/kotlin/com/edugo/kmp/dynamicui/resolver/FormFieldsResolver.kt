@@ -3,6 +3,7 @@ package com.edugo.kmp.dynamicui.resolver
 import com.edugo.kmp.dynamicui.model.ControlType
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.model.Slot
+import com.edugo.kmp.dynamicui.model.SlotOption
 import com.edugo.kmp.dynamicui.model.ZoneType
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -48,13 +49,25 @@ object FormFieldsResolver {
                 else -> ControlType.TEXT_INPUT
             }
 
+            val options = if (controlType == ControlType.SELECT) {
+                (obj["options"] as? JsonArray)?.mapNotNull { optElement ->
+                    val optObj = optElement as? JsonObject ?: return@mapNotNull null
+                    val optLabel = optObj["label"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                    val optValue = optObj["value"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                    SlotOption(label = optLabel, value = optValue)
+                }
+            } else {
+                null
+            }
+
             Slot(
                 id = key,
                 controlType = controlType,
                 label = label,
                 placeholder = placeholder,
                 required = required,
-                field = key
+                field = key,
+                options = options,
             )
         }
 

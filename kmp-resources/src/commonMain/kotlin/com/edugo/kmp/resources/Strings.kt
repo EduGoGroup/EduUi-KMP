@@ -50,6 +50,22 @@ expect object Strings {
     val message_info_title: String
     val message_info_ok: String
 
+    // Toolbar
+    val toolbar_back: String
+    val toolbar_new: String
+    val toolbar_save: String
+    val toolbar_edit: String
+
+    // Menu
+    val menu_switch_context: String
+    val menu_logout: String
+
+    // School selection
+    val school_selection_title: String
+    val school_selection_subtitle: String
+    val school_selection_empty: String
+    fun school_selection_error(error: String): String
+
     // Common
     val app_name: String
     val back_button: String

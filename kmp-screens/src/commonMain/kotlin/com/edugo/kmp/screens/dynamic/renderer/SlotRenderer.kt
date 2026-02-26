@@ -28,6 +28,7 @@ import com.edugo.kmp.design.components.selection.DSChipVariant
 import com.edugo.kmp.design.components.selection.DSSwitch
 import com.edugo.kmp.dynamicui.model.ControlType
 import com.edugo.kmp.dynamicui.model.Slot
+import com.edugo.kmp.screens.dynamic.components.SelectField
 import kotlinx.serialization.json.JsonObject
 
 @Composable
@@ -244,7 +245,21 @@ fun SlotRenderer(
             )
         }
 
-        ControlType.RADIO_GROUP, ControlType.SELECT, ControlType.RATING -> {
+        ControlType.SELECT -> {
+            val options = slot.options ?: emptyList()
+            SelectField(
+                label = slot.label,
+                placeholder = slot.placeholder,
+                options = options,
+                selectedValue = fieldValues[slot.id] ?: "",
+                onValueChange = { onFieldChanged(slot.id, it) },
+                isError = fieldErrors.containsKey(slot.id),
+                supportingText = fieldErrors[slot.id],
+                modifier = modifier.fillMaxWidth(),
+            )
+        }
+
+        ControlType.RADIO_GROUP, ControlType.RATING -> {
             Text(
                 text = displayValue,
                 style = MaterialTheme.typography.bodyMedium,

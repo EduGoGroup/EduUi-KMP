@@ -21,6 +21,7 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.seconds
+import com.edugo.kmp.auth.model.UserContext
 
 /**
  * Implementación de [TokenRefreshManager] con sincronización thread-safe y retry inteligente.
@@ -49,6 +50,7 @@ public class TokenRefreshManagerImpl(
 
     private companion object {
         private const val AUTH_TOKEN_KEY = "auth_token"
+        private const val AUTH_CONTEXT_KEY = "auth_context"
         private const val MIN_SCHEDULE_DELAY_MS = 5_000L
     }
 
@@ -121,6 +123,12 @@ public class TokenRefreshManagerImpl(
                     val newToken = refreshResponse.toAuthToken(refreshToken)
 
                     handleSuccessfulRefresh(newToken)
+
+                    // If server returned updated context, save it
+                    if (refreshResponse.activeContext != null) {
+                        val contextJson = json.encodeToString(refreshResponse.activeContext)
+                        storage.putStringSafe(AUTH_CONTEXT_KEY, contextJson)
+                    }
 
                     return success(newToken)
                 }

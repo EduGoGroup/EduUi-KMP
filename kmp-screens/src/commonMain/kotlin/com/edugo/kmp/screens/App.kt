@@ -2,19 +2,24 @@ package com.edugo.kmp.screens
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import com.edugo.kmp.auth.model.SchoolInfo
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.auth.service.AuthState
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.di.KoinInitializer
-import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.dynamicui.sync.DataSyncService
 import com.edugo.kmp.screens.dynamic.DynamicScreen
 import com.edugo.kmp.screens.dynamic.screens.DynamicLoginScreen
 import com.edugo.kmp.screens.dynamic.screens.DynamicMaterialDetailScreen
 import com.edugo.kmp.screens.dynamic.screens.MainScreen
+import com.edugo.kmp.screens.dynamic.screens.SchoolSelectionScreen
 import com.edugo.kmp.screens.navigation.NavigationState
 import com.edugo.kmp.screens.navigation.Route
 import com.edugo.kmp.screens.navigation.RouteRegistry
@@ -22,7 +27,6 @@ import com.edugo.kmp.screens.ui.LoginScreen
 import com.edugo.kmp.screens.ui.SplashScreen
 import com.edugo.kmp.settings.model.ThemeOption
 import com.edugo.kmp.settings.theme.ThemeService
-import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import com.edugo.kmp.screens.di.screenContractsModule
 import org.koin.compose.KoinApplication
@@ -31,12 +35,7 @@ import org.koin.compose.koinInject
 /**
  * Componente principal de la aplicacion compartido entre plataformas.
  *
- * Inicializa:
- * - Koin con modulos de DI
- * - EduGoTheme (Material 3) con tema reactivo desde ThemeService
- * - Navegacion entre pantallas con RouteRegistry para rutas dinamicas
- *
- * Flujo: Splash -> Login -> Dashboard(MainScreen con BottomNav) -> MaterialDetail
+ * Flujo: Splash -> Login -> [SchoolSelection si >1 escuela] -> Dashboard
  */
 @Composable
 fun App() {
@@ -57,21 +56,34 @@ fun App() {
             val navState = remember { NavigationState() }
             val routeRegistry = remember { RouteRegistry() }
             val authService = koinInject<AuthService>()
+            val dataSyncService = koinInject<DataSyncService>()
             val authState by authService.authState.collectAsState()
             val scope = rememberCoroutineScope()
 
-            // Redirigir al login si la sesión expira mientras la app está abierta
+            // Schools from login response, used by SchoolSelectionScreen
+            var pendingSchools by remember { mutableStateOf<List<SchoolInfo>>(emptyList()) }
+
+            // Redirect to login if session expires while app is open
             LaunchedEffect(authState) {
                 if (authState is AuthState.Unauthenticated &&
                     navState.currentRoute != Route.Login &&
                     navState.currentRoute != Route.Splash
                 ) {
+                    dataSyncService.clearAll()
                     navState.replaceAll(Route.Login)
+                }
+            }
+
+            // Delta sync on token refresh
+            LaunchedEffect(Unit) {
+                authService.onTokenRefreshed.collect {
+                    dataSyncService.deltaSync()
                 }
             }
 
             val handleLogout: () -> Unit = {
                 scope.launch {
+                    dataSyncService.clearAll()
                     authService.logout()
                 }
                 navState.replaceAll(Route.Login)
@@ -85,18 +97,28 @@ fun App() {
             when (val currentRoute = navState.currentRoute) {
                 Route.Splash -> SplashScreen(
                     onNavigateToLogin = { navState.replaceAll(Route.Login) },
-                    onNavigateToHome = { navState.replaceAll(Route.Dashboard) }
+                    onNavigateToHome = { navState.replaceAll(Route.Dashboard) },
                 )
 
                 Route.Login -> LoginScreen(
-                    onLoginSuccess = { navState.replaceAll(Route.Dashboard) }
+                    onLoginSuccess = { schools ->
+                        if (schools.size > 1) {
+                            pendingSchools = schools
+                            navState.replaceAll(Route.SchoolSelection)
+                        } else {
+                            // Single or no school: auto full-sync and go to dashboard
+                            scope.launch {
+                                dataSyncService.fullSync()
+                                navState.replaceAll(Route.Dashboard)
+                            }
+                        }
+                    }
                 )
 
-                // TODO: Cambiar a DynamicLoginScreen cuando el endpoint /v1/screens/app-login sea publico
-                // Route.Login -> DynamicLoginScreen(
-                //     onLoginSuccess = { navState.replaceAll(Route.Dashboard) },
-                //     onNavigate = handleDynamicNavigate,
-                // )
+                Route.SchoolSelection -> SchoolSelectionScreen(
+                    schools = pendingSchools,
+                    onSyncComplete = { navState.replaceAll(Route.Dashboard) },
+                )
 
                 Route.Dashboard -> MainScreen(
                     onNavigate = handleDynamicNavigate,
@@ -119,14 +141,12 @@ fun App() {
                     onLogout = handleLogout,
                 )
 
-                // Legacy routes - redirect to new flow
                 Route.Home -> MainScreen(
                     onNavigate = handleDynamicNavigate,
                     onLogout = handleLogout,
                 )
 
                 is Route.Dynamic -> {
-                    // Render inside MainScreen to keep sidebar and theme
                     MainScreen(
                         onNavigate = handleDynamicNavigate,
                         onLogout = handleLogout,

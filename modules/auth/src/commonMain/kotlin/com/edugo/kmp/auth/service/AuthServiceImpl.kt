@@ -65,6 +65,9 @@ public class AuthServiceImpl(
     private val _onLogout = MutableSharedFlow<LogoutResult>(replay = 0)
     override val onLogout: Flow<LogoutResult> = _onLogout.asSharedFlow()
 
+    private val _onTokenRefreshed = MutableSharedFlow<Unit>(replay = 0)
+    override val onTokenRefreshed: Flow<Unit> = _onTokenRefreshed.asSharedFlow()
+
     init {
         scope.launch {
             tokenRefreshManager.onRefreshFailed.collect { reason ->
@@ -91,9 +94,18 @@ public class AuthServiceImpl(
                     val currentState = _authState.value
                     if (currentState is AuthState.Authenticated) {
                         saveToken(newToken)
-                        _authState.value = currentState.copy(token = newToken)
+                        // Check if context was updated by refresh
+                        val contextJson = storage.getStringSafe(AUTH_CONTEXT_KEY, "")
+                        val updatedContext = if (contextJson.isNotBlank()) {
+                            try { json.decodeFromString<UserContext>(contextJson) } catch (_: Exception) { null }
+                        } else null
+                        _authState.value = currentState.copy(
+                            token = newToken,
+                            activeContext = updatedContext ?: currentState.activeContext
+                        )
                     }
                 }
+                _onTokenRefreshed.emit(Unit)
             }
         }
     }
@@ -379,13 +391,14 @@ public class AuthServiceImpl(
                 val newToken = switchResponse.toAuthToken()
                 val contextInfo = switchResponse.context
 
-                // Build UserContext from SwitchContextInfo
-                val newContext = UserContext(
-                    roleId = "",
-                    roleName = contextInfo?.role ?: "",
-                    schoolId = contextInfo?.schoolId ?: schoolId,
-                    schoolName = contextInfo?.schoolName ?: "",
-                )
+                // Try to extract full UserContext (with permissions) from the new JWT
+                val newContext = extractContextFromJwt(switchResponse.accessToken)
+                    ?: UserContext(
+                        roleId = "",
+                        roleName = contextInfo?.role ?: "",
+                        schoolId = contextInfo?.schoolId ?: schoolId,
+                        schoolName = contextInfo?.schoolName ?: "",
+                    )
 
                 stateMutex.withLock {
                     val currentState = _authState.value
@@ -404,6 +417,18 @@ public class AuthServiceImpl(
             }
             is Result.Failure -> Result.Failure(result.error)
             is Result.Loading -> Result.Failure("Unexpected loading state")
+        }
+    }
+
+    private fun extractContextFromJwt(accessToken: String): UserContext? {
+        return try {
+            val parseResult = com.edugo.kmp.auth.jwt.JwtParser.parse(accessToken)
+            if (parseResult is com.edugo.kmp.auth.jwt.JwtParseResult.Success) {
+                val ctxJson = parseResult.claims.customClaims["active_context"] ?: return null
+                json.decodeFromString<UserContext>(ctxJson)
+            } else null
+        } catch (_: Exception) {
+            null
         }
     }
 

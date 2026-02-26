@@ -2,6 +2,8 @@ package com.edugo.kmp.di.module
 
 import com.edugo.kmp.auth.interceptor.AuthInterceptor
 import com.edugo.kmp.network.EduGoHttpClient
+import com.edugo.kmp.network.connectivity.NetworkObserver
+import com.edugo.kmp.network.connectivity.createNetworkObserver
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -22,4 +24,6 @@ public val networkModule = module {
     }
 
     factory { EduGoHttpClient.builder() }
+
+    single<NetworkObserver> { createNetworkObserver() }
 }

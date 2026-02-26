@@ -14,6 +14,7 @@ sealed class Route(val path: String) {
     data object Dashboard : Route("dashboard")
     data object MaterialsList : Route("materials-list")
     data class MaterialDetail(val materialId: String) : Route("material-detail/$materialId")
+    data object SchoolSelection : Route("school-selection")
     data class Dynamic(val screenKey: String, val params: Map<String, String> = emptyMap()) : Route("dynamic/$screenKey")
 
     companion object {
@@ -24,6 +25,7 @@ sealed class Route(val path: String) {
                 trimmed == "login" -> Login
                 trimmed == "home" -> Home
                 trimmed == "settings" -> Settings
+                trimmed == "school-selection" -> SchoolSelection
                 trimmed == "dashboard" -> Dashboard
                 trimmed == "materials-list" -> MaterialsList
                 trimmed.startsWith("material-detail/") -> {

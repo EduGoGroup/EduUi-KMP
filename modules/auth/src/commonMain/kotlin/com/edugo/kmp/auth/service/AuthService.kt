@@ -29,6 +29,8 @@ public interface AuthService : TokenProvider {
 
     public val onLogout: Flow<LogoutResult>
 
+    public val onTokenRefreshed: Flow<Unit>
+
     public suspend fun login(credentials: LoginCredentials): LoginResult
 
     public suspend fun logout(): Result<Unit>

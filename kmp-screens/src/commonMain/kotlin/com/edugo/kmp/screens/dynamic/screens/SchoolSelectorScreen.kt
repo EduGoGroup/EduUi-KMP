@@ -37,6 +37,7 @@ import com.edugo.kmp.network.EduGoHttpClient
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import com.edugo.kmp.resources.Strings
 import org.koin.compose.koinInject
 
 @Serializable
@@ -89,11 +90,11 @@ fun SchoolSelectorScreen(
             .padding(24.dp),
     ) {
         Text(
-            text = "Seleccionar escuela",
+            text = Strings.school_selection_title,
             style = MaterialTheme.typography.headlineSmall,
         )
         Text(
-            text = "Selecciona una escuela para continuar a esta seccion",
+            text = Strings.school_selection_subtitle,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -109,14 +110,14 @@ fun SchoolSelectorScreen(
             error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Error cargando escuelas: $error",
+                        text = Strings.school_selection_error(error ?: ""),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
             schools.isEmpty() -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No hay escuelas disponibles")
+                    Text(Strings.school_selection_empty)
                 }
             }
             else -> {

@@ -26,7 +26,9 @@ import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.EventResult
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenPattern
+import com.edugo.kmp.dynamicui.offline.SyncEngine
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.screens.dynamic.components.ConnectivityBanner
 import com.edugo.kmp.screens.dynamic.components.DynamicToolbar
 import com.edugo.kmp.screens.dynamic.renderer.PatternRouter
 import kotlinx.coroutines.launch
@@ -41,11 +43,14 @@ fun DynamicScreen(
     placeholders: Map<String, String> = emptyMap(),
     onFieldChanged: ((String, String) -> Unit)? = null,
     onBack: (() -> Unit)? = null,
+    syncState: SyncEngine.SyncState = SyncEngine.SyncState.Idle,
 ) {
     val screenState by viewModel.screenState.collectAsState()
     val dataState by viewModel.dataState.collectAsState()
     val fieldValues by viewModel.fieldValues.collectAsState()
     val fieldErrors by viewModel.fieldErrors.collectAsState()
+    val isOnline by viewModel.isOnline.collectAsState()
+    val pendingCount by viewModel.pendingMutationCount.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var isProcessingEvent by remember { mutableStateOf(false) }
@@ -134,7 +139,16 @@ fun DynamicScreen(
                         )
                     }
 
+                    // Connectivity banner between toolbar and content
+                    ConnectivityBanner(
+                        isOnline = isOnline,
+                        pendingMutationCount = pendingCount,
+                        syncState = syncState,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
                     // Content
+                    val isStale = (dataState as? DynamicScreenViewModel.DataState.Success)?.isStale == true
                     PatternRouter(
                         screen = screen,
                         dataState = dataState,
@@ -195,6 +209,7 @@ fun DynamicScreen(
                         },
                         onNavigate = onNavigate,
                         modifier = Modifier.weight(1f),
+                        isStale = isStale,
                     )
                 }
             }
