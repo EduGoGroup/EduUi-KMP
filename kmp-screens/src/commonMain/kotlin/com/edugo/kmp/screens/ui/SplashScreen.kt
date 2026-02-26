@@ -47,20 +47,22 @@ fun SplashScreen(
     val dataSyncService = koinInject<DataSyncService>()
 
     LaunchedEffect(Unit) {
-        try {
-            authService.restoreSession()
-        } catch (_: Exception) {
-            // Si falla restore, continuamos al login
+        // Phase 1: Restore auth + local bundle in parallel
+        val authJob = async {
+            try { authService.restoreSession() } catch (_: Exception) { }
         }
+        val localJob = async { dataSyncService.restoreFromLocal() }
+
+        authJob.await()
+        localJob.await()
 
         if (authService.isAuthenticated()) {
-            // Restore local bundle + delta sync in parallel with splash delay
-            val syncJob = async {
-                dataSyncService.restoreFromLocal()
+            // Phase 2: Delta sync in parallel with splash delay
+            val deltaJob = async {
                 try { dataSyncService.deltaSync() } catch (_: Exception) { /* non-critical */ }
             }
             delay(delayMs)
-            syncJob.await()
+            deltaJob.await()
             onNavigateToHome()
         } else {
             delay(delayMs)

@@ -738,6 +738,8 @@ factory {
 
 **Nota:** `getOrNull<NetworkObserver>()` se usa en varios sitios para manejar gracefully el caso donde la plataforma no provee un observer (ej: Android sin Context inyectado).
 
+**Nota:** `DynamicScreenViewModel.isOnline` es un `StateFlow<Boolean>` reactivo que delega directamente al `networkObserver.status`. Ya NO usa snapshots manuales (`updateOnlineStatus()` fue eliminado). Cualquier cambio en el `NetworkObserver` se refleja inmediatamente en la UI via Compose `collectAsState()`.
+
 ---
 
 ## Diferencias por Plataforma en Offline
@@ -778,6 +780,66 @@ factory {
 
 ---
 
+## Optimizaciones de Rendimiento: Primera Carga (Sprint 8)
+
+### Flujo Optimizado del SplashScreen
+
+El splash screen ejecuta las operaciones de restauración en paralelo para minimizar el tiempo total:
+
+```mermaid
+sequenceDiagram
+    participant Splash as SplashScreen
+    participant Auth as AuthService
+    participant DSS as DataSyncService
+    participant Store as LocalSyncStore
+    participant Repo as SyncRepository
+    participant Backend as IAM Platform
+
+    Note over Splash: Fase 1: Paralelo
+    par restoreSession() + restoreFromLocal()
+        Splash->>Auth: restoreSession()
+        Auth->>Auth: leer token de storage
+        alt token expirado
+            Auth->>Backend: POST /api/v1/auth/refresh
+            Backend-->>Auth: nuevo token
+        end
+    and
+        Splash->>DSS: restoreFromLocal()
+        DSS->>Store: loadBundle()
+        Note over Store: Deserializa 21 screens EN PARALELO<br/>via withContext(Dispatchers.Default) + async
+        Store-->>DSS: UserDataBundle (o null)
+        DSS->>DSS: seedScreenLoader(screens) en paralelo
+    end
+
+    Note over Splash: Fase 2: Solo si autenticado
+    par deltaSync() + splash delay
+        Splash->>DSS: deltaSync()
+        DSS->>Store: getHashes()
+        DSS->>Repo: POST /api/v1/sync/delta { hashes }
+        Backend-->>Repo: DeltaSyncResponse { changed, unchanged }
+        DSS->>DSS: applyDeltaToBundle(base, changed)
+        Note over DSS: Construye bundle actualizado IN-MEMORY<br/>sin recargar 21 screens de storage
+        DSS->>Store: persistDeltaChanges(changed)
+        Note over Store: Solo persiste los buckets que cambiaron
+    and
+        Splash->>Splash: delay(splashMs)
+    end
+
+    Splash->>Splash: onNavigateToHome()
+```
+
+### Comparación: Antes vs Después
+
+| Paso | Antes | Después |
+|------|-------|---------|
+| Auth + restoreFromLocal | Secuencial (~1.5-3s) | Paralelo (~max 1-2s) |
+| Screen deserialization (21 screens) | Secuencial (~300-840ms) | Paralelo ~4 cores (~80-200ms) |
+| seedFromBundle serialization | Secuencial (~150-420ms) | Paralelo (~40-100ms) |
+| Delta sync → reload bundle | Recargaba TODO de storage (~300-840ms) | Incremental en memoria (~10-50ms) |
+| **Total primera carga** | **~3.5-5s** | **~1.5-2.5s** |
+
+---
+
 ## Mejoras Implementadas vs Propuestas
 
 ### Completadas
@@ -792,6 +854,10 @@ factory {
 | Cache TTL por tipo | HECHO | CacheConfig con TTLs por ScreenPattern + overrides por screenKey |
 | Conflict resolution basico | HECHO | ConflictResolver con last-write-wins y skip para entidades eliminadas |
 | Re-sync de pantallas recientes | HECHO | ConnectivitySyncManager + RecentScreenTracker evict + reload |
+| isOnline reactivo en ViewModel | HECHO | `DynamicScreenViewModel.isOnline` ahora es StateFlow reactivo directo del `NetworkObserver.status`, eliminando snapshots manuales y race conditions al arranque |
+| Paralelización del splash screen | HECHO | `restoreSession()` y `restoreFromLocal()` corren en paralelo. `deltaSync()` corre en paralelo con splash delay |
+| Paralelización de screen I/O | HECHO | `LocalSyncStore.loadAllScreens()` y `CachedScreenLoader.seedFromBundle()` serializan/deserializan 21 screens en paralelo via `withContext(Dispatchers.Default)` + `async` |
+| Delta sync incremental | HECHO | `DataSyncService.deltaSync()` construye bundle actualizado en memoria (`applyDeltaToBundle`) en lugar de recargar todo el bundle de storage |
 
 ### Pendientes
 

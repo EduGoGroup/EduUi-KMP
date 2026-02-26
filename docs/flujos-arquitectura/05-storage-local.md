@@ -59,8 +59,8 @@ classDiagram
     class LocalSyncStore {
         -storage: SafeEduGoStorage
         -json: Json
-        +saveBundle(bundle: UserDataBundle)
-        +loadBundle(): UserDataBundle?
+        +saveBundle(bundle: UserDataBundle) «suspend»
+        +loadBundle(): UserDataBundle? «suspend»
         +getHashes(): Map~String String~
         +updateMenu(menu, hash)
         +updatePermissions(perms, hash)
@@ -249,9 +249,10 @@ sequenceDiagram
     LSS->>Storage: putStringSafe("sync.contexts", contextsJson)
     LSS->>Storage: putStringSafe("sync.hashes", hashesJson)
     LSS->>Storage: putStringSafe("sync.synced_at", epochMillis)
-    loop cada screen en bundle.screens
-        LSS->>Storage: putStringSafe("sync.screen.{key}", screenJson)
+    par cada screen en bundle.screens (Dispatchers.Default)
+        LSS->>Storage: async { putStringSafe("sync.screen.{key}", screenJson) }
     end
+    Note over LSS: awaitAll() — serialización paralela
     LSS->>Storage: putStringSafe("sync.screen_keys", keysListJson)
     DS->>CSL: seedFromBundle(screens)
     Note over CSL: Inyecta cada screen en<br/>L1 (memoria) y L2 (storage)
@@ -275,9 +276,10 @@ sequenceDiagram
     LSS->>Storage: getStringSafe("sync.hashes")
     LSS->>Storage: getStringSafe("sync.synced_at")
     LSS->>Storage: getStringSafe("sync.screen_keys") → lista de keys
-    loop cada key
-        LSS->>Storage: getStringSafe("sync.screen.{key}")
+    par cada key (Dispatchers.Default)
+        LSS->>Storage: async { getStringSafe + decodeFromString }
     end
+    Note over LSS: awaitAll() — deserialización paralela de 21 screens
     LSS-->>DS: UserDataBundle (o null si datos corruptos/ausentes)
     alt bundle != null
         DS->>CSL: seedFromBundle(bundle.screens)
@@ -310,9 +312,12 @@ sequenceDiagram
             DS->>CSL: seedFromBundle({screenKey: screen})
         end
     end
+    DS->>DS: applyDeltaToBundle(base, changed, now)
+    Note over DS: Construye bundle actualizado IN-MEMORY<br/>sin recargar de storage
+    DS->>DS: persistDeltaChanges(changed) → solo guarda buckets modificados
     DS->>LSS: updateSyncedAt(now)
-    DS->>LSS: loadBundle() → updatedBundle
     DS->>DS: _currentBundle.value = updatedBundle
+    DS->>CSL: seedScreenLoader(changedScreens) solo screens que cambiaron
 ```
 
 ---

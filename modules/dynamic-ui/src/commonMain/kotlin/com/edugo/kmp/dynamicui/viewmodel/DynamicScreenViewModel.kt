@@ -18,11 +18,12 @@ import com.edugo.kmp.dynamicui.resolver.SlotBindingResolver
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.network.connectivity.NetworkObserver
 import com.edugo.kmp.network.connectivity.NetworkStatus
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -48,9 +49,17 @@ class DynamicScreenViewModel(
     private val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
     val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
 
+    @OptIn(kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi::class)
     val isOnline: StateFlow<Boolean> = networkObserver?.let { observer ->
-        MutableStateFlow(observer.isOnline).also { flow ->
-            // Will be collected by the UI; updates derived from networkObserver.status
+        object : StateFlow<Boolean> {
+            override val value: Boolean get() = observer.isOnline
+            override val replayCache: List<Boolean> get() = listOf(value)
+            override suspend fun collect(collector: FlowCollector<Boolean>): Nothing {
+                observer.status.map { it == NetworkStatus.AVAILABLE }
+                    .distinctUntilChanged()
+                    .collect(collector)
+                error("StateFlow collection should never complete")
+            }
         }
     } ?: MutableStateFlow(true)
 
@@ -85,9 +94,6 @@ class DynamicScreenViewModel(
 
         // Track recent screen access
         recentScreenTracker?.recordAccess(screenKey)
-
-        // Update online status
-        updateOnlineStatus()
 
         when (val result = screenLoader.loadScreen(screenKey, platform)) {
             is Result.Success -> {
@@ -375,12 +381,6 @@ class DynamicScreenViewModel(
     fun resetFields() {
         _fieldValues.value = emptyMap()
         _fieldErrors.value = emptyMap()
-    }
-
-    private fun updateOnlineStatus() {
-        if (networkObserver != null) {
-            (isOnline as? MutableStateFlow)?.value = networkObserver.isOnline
-        }
     }
 
     /**

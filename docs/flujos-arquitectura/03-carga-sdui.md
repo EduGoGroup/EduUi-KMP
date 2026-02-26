@@ -175,7 +175,7 @@ sequenceDiagram
     DS->>VM: LaunchedEffect(screenKey) → loadScreen(screenKey, params)
 
     VM->>VM: recentScreenTracker.recordAccess(screenKey)
-    VM->>VM: updateOnlineStatus() via NetworkObserver
+    Note over VM: isOnline es StateFlow reactivo<br/>directo del NetworkObserver.status
 
     VM->>CL: loadScreen(screenKey)
 
@@ -342,7 +342,9 @@ sequenceDiagram
     DSS->>DSS: mapBundleResponse → UserDataBundle
     DSS->>Store: saveBundle(bundle) → persiste en storage
     DSS->>CL: seedFromBundle(bundle.screens)
-    CL->>CL: para cada (screenKey, screen):<br/>putMemoryEntry (L1) +<br/>storage.putStringSafe (L2)
+    CL->>CL: Fase 1 (secuencial): putMemoryEntry (L1)<br/>para cada screen — HashMap no es thread-safe
+    CL->>CL: Fase 2 (paralelo): withContext(Dispatchers.Default)<br/>async { json.encodeToString + storage.putStringSafe } (L2)
+    Note over CL: awaitAll() — 21 screens serializados en paralelo
 
     Note over CL: Todas las pantallas quedan<br/>disponibles inmediatamente,<br/>incluso sin red
 ```
@@ -583,3 +585,7 @@ Uso: al acceder una pantalla, el ViewModel registra el acceso. Se puede consulta
 | Skeleton loading | PENDIENTE | Mostrar placeholders mientras se carga la ScreenDefinition (actualmente es pantalla en blanco) |
 | Error boundaries por zona | PENDIENTE | Si una Zone falla al renderizar, mostrar error solo en esa zona en vez de toda la pantalla |
 | ScreenDefinition diff | PENDIENTE | Al recibir nueva version del servidor, hacer diff y re-renderizar solo las zonas cambiadas |
+| Paralelización de seedFromBundle | HECHO | Fase 1: memoria secuencial (HashMap), Fase 2: serialización + storage en paralelo via `withContext(Dispatchers.Default)` + `async/awaitAll` |
+| isOnline reactivo | HECHO | `DynamicScreenViewModel.isOnline` es StateFlow reactivo del `NetworkObserver.status`, elimina `updateOnlineStatus()` manual |
+| Delta sync incremental | HECHO | `applyDeltaToBundle()` construye bundle en memoria sin recargar de storage. Solo persiste buckets cambiados |
+| Splash paralelo | HECHO | `restoreSession()` + `restoreFromLocal()` en paralelo. `deltaSync()` en paralelo con splash delay |

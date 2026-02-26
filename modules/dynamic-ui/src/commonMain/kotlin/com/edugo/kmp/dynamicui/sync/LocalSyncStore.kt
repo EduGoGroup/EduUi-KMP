@@ -5,6 +5,10 @@ import com.edugo.kmp.auth.model.UserContext
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.sync.model.UserDataBundle
 import com.edugo.kmp.storage.SafeEduGoStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.encodeToString
@@ -24,22 +28,27 @@ class LocalSyncStore(
         private const val KEY_SCREEN_KEYS = "sync.screen_keys"
     }
 
-    fun saveBundle(bundle: UserDataBundle) {
+    suspend fun saveBundle(bundle: UserDataBundle) {
+        // Save metadata (small, fast)
         storage.putStringSafe(KEY_MENU, json.encodeToString(bundle.menu))
         storage.putStringSafe(KEY_PERMISSIONS, json.encodeToString(bundle.permissions))
         storage.putStringSafe(KEY_CONTEXTS, json.encodeToString(bundle.availableContexts))
         storage.putStringSafe(KEY_HASHES, json.encodeToString(bundle.hashes))
         storage.putStringSafe(KEY_SYNCED_AT, bundle.syncedAt.toEpochMilliseconds().toString())
 
-        val screenKeys = mutableListOf<String>()
-        for ((key, screen) in bundle.screens) {
-            storage.putStringSafe("$SCREEN_PREFIX$key", json.encodeToString(screen))
-            screenKeys.add(key)
+        // Serialize & save screens in parallel
+        val screenKeys = bundle.screens.keys.toList()
+        withContext(Dispatchers.Default) {
+            bundle.screens.map { (key, screen) ->
+                async {
+                    storage.putStringSafe("$SCREEN_PREFIX$key", json.encodeToString(screen))
+                }
+            }.awaitAll()
         }
         storage.putStringSafe(KEY_SCREEN_KEYS, json.encodeToString(screenKeys))
     }
 
-    fun loadBundle(): UserDataBundle? {
+    suspend fun loadBundle(): UserDataBundle? {
         val menuJson = storage.getStringSafe(KEY_MENU)
         val permJson = storage.getStringSafe(KEY_PERMISSIONS)
         val ctxJson = storage.getStringSafe(KEY_CONTEXTS)
@@ -129,20 +138,20 @@ class LocalSyncStore(
         storage.removeSafe(KEY_SCREEN_KEYS)
     }
 
-    private fun loadAllScreens(): Map<String, ScreenDefinition> {
+    private suspend fun loadAllScreens(): Map<String, ScreenDefinition> = withContext(Dispatchers.Default) {
         val keys = getScreenKeys()
-        val screens = mutableMapOf<String, ScreenDefinition>()
-        for (key in keys) {
-            val screenJson = storage.getStringSafe("$SCREEN_PREFIX$key")
-            if (screenJson.isNotBlank()) {
-                try {
-                    screens[key] = json.decodeFromString(screenJson)
-                } catch (_: Exception) {
-                    // Skip corrupt entries
-                }
+        keys.map { key ->
+            async {
+                val screenJson = storage.getStringSafe("$SCREEN_PREFIX$key")
+                if (screenJson.isNotBlank()) {
+                    try {
+                        key to json.decodeFromString<ScreenDefinition>(screenJson)
+                    } catch (_: Exception) {
+                        null
+                    }
+                } else null
             }
-        }
-        return screens
+        }.awaitAll().filterNotNull().toMap()
     }
 
     private fun getScreenKeys(): List<String> {

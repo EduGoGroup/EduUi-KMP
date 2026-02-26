@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 
@@ -73,18 +74,34 @@ class DataSyncService(
         return when (val result = repository.deltaSync(localHashes)) {
             is Result.Success -> {
                 val delta = result.data
-                applyDelta(delta.changed)
                 val now = Clock.System.now()
-                store.updateSyncedAt(now)
 
-                val updatedBundle = store.loadBundle()
-                if (updatedBundle != null) {
+                // Build updated bundle incrementally from current in-memory bundle
+                val baseBundle = _currentBundle.value ?: store.loadBundle()
+                if (baseBundle != null) {
+                    val updatedBundle = applyDeltaToBundle(baseBundle, delta.changed, now)
+                    store.updateSyncedAt(now)
                     _currentBundle.value = updatedBundle
                     _syncState.value = SyncState.Synced(now)
+
+                    // Seed screen loader with changed screens only
+                    val changedScreens = delta.changed.keys
+                        .filter { it.startsWith("screen:") }
+                        .associate { key ->
+                            val screenKey = key.removePrefix("screen:")
+                            screenKey to updatedBundle.screens[screenKey]
+                        }
+                        .filterValues { it != null }
+                        .mapValues { it.value!! }
+                    if (changedScreens.isNotEmpty()) {
+                        seedScreenLoader(changedScreens)
+                    }
+
                     Result.Success(updatedBundle)
                 } else {
-                    _syncState.value = SyncState.Error("Failed to load bundle after delta")
-                    Result.Failure("Failed to load bundle after delta sync")
+                    // No base bundle available, fall back to full sync
+                    _syncState.value = SyncState.Error("No base bundle for delta")
+                    performFullSyncUnlocked()
                 }
             }
             is Result.Failure -> {
@@ -188,26 +205,26 @@ class DataSyncService(
         )
     }
 
-    private suspend fun applyDelta(changed: Map<String, BucketData>) {
+    private fun persistDeltaChanges(changed: Map<String, BucketData>) {
         for ((key, bucketData) in changed) {
             when {
                 key == "menu" -> {
                     try {
                         val items = json.decodeFromJsonElement<List<MenuItem>>(bucketData.data)
                         store.updateMenu(MenuResponse(items = items), bucketData.hash)
-                    } catch (_: Exception) { /* skip corrupt */ }
+                    } catch (_: Exception) { }
                 }
                 key == "permissions" -> {
                     try {
                         val perms = json.decodeFromJsonElement<List<String>>(bucketData.data)
                         store.updatePermissions(perms, bucketData.hash)
-                    } catch (_: Exception) { /* skip corrupt */ }
+                    } catch (_: Exception) { }
                 }
                 key == "available_contexts" -> {
                     try {
                         val contexts = json.decodeFromJsonElement<List<UserContext>>(bucketData.data)
                         store.updateContexts(contexts, bucketData.hash)
-                    } catch (_: Exception) { /* skip corrupt */ }
+                    } catch (_: Exception) { }
                 }
                 key.startsWith("screen:") -> {
                     val screenKey = key.removePrefix("screen:")
@@ -215,11 +232,62 @@ class DataSyncService(
                         val entry = json.decodeFromJsonElement<ScreenBundleEntry>(bucketData.data)
                         val screen = mapScreenEntry(entry)
                         store.updateScreen(screenKey, screen, bucketData.hash)
-                        seedScreenLoader(mapOf(screenKey to screen))
-                    } catch (_: Exception) { /* skip corrupt */ }
+                    } catch (_: Exception) { }
                 }
             }
         }
+    }
+
+    private fun applyDeltaToBundle(
+        base: UserDataBundle,
+        changed: Map<String, BucketData>,
+        syncedAt: Instant,
+    ): UserDataBundle {
+        var menu = base.menu
+        var permissions = base.permissions
+        var contexts = base.availableContexts
+        val screens = base.screens.toMutableMap()
+        val hashes = base.hashes.toMutableMap()
+
+        for ((key, bucketData) in changed) {
+            hashes[key] = bucketData.hash
+            when {
+                key == "menu" -> {
+                    try {
+                        menu = MenuResponse(items = json.decodeFromJsonElement<List<MenuItem>>(bucketData.data))
+                    } catch (_: Exception) { }
+                }
+                key == "permissions" -> {
+                    try {
+                        permissions = json.decodeFromJsonElement<List<String>>(bucketData.data)
+                    } catch (_: Exception) { }
+                }
+                key == "available_contexts" -> {
+                    try {
+                        contexts = json.decodeFromJsonElement<List<UserContext>>(bucketData.data)
+                    } catch (_: Exception) { }
+                }
+                key.startsWith("screen:") -> {
+                    val screenKey = key.removePrefix("screen:")
+                    try {
+                        val entry = json.decodeFromJsonElement<ScreenBundleEntry>(bucketData.data)
+                        screens[screenKey] = mapScreenEntry(entry)
+                    } catch (_: Exception) { }
+                }
+            }
+        }
+
+        // Persist changes to storage in the background
+        persistDeltaChanges(changed)
+
+        return UserDataBundle(
+            menu = menu,
+            permissions = permissions,
+            screens = screens,
+            availableContexts = contexts,
+            hashes = hashes,
+            syncedAt = syncedAt,
+        )
     }
 
     private suspend fun seedScreenLoader(screens: Map<String, ScreenDefinition>) {
