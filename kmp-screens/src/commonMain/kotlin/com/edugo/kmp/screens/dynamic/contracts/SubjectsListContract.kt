@@ -4,6 +4,7 @@ import com.edugo.kmp.dynamicui.contract.CustomEventHandler
 import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.EventResult
 import com.edugo.kmp.dynamicui.model.DataConfig
+import com.edugo.kmp.dynamicui.model.PaginationConfig
 
 class SubjectsListContract : BaseCrudContract(
     apiPrefix = "admin:",
@@ -13,11 +14,13 @@ class SubjectsListContract : BaseCrudContract(
     override val screenKey = "subjects-list"
 
     override fun dataConfig() = DataConfig(
+        pagination = PaginationConfig(),
         fieldMapping = mapOf(
             "title" to "name",
             "subtitle" to "description",
             "status" to "is_active"
-        )
+        ),
+        searchFields = listOf("name", "code")
     )
 
     override fun customEventHandlers(): Map<String, CustomEventHandler> = mapOf(

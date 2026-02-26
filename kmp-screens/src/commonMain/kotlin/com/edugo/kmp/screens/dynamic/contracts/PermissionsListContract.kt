@@ -1,6 +1,7 @@
 package com.edugo.kmp.screens.dynamic.contracts
 
 import com.edugo.kmp.dynamicui.model.DataConfig
+import com.edugo.kmp.dynamicui.model.PaginationConfig
 
 class PermissionsListContract : BaseCrudContract(
     apiPrefix = "iam:",
@@ -10,10 +11,12 @@ class PermissionsListContract : BaseCrudContract(
     override val screenKey = "permissions-list"
 
     override fun dataConfig() = DataConfig(
+        pagination = PaginationConfig(),
         fieldMapping = mapOf(
             "title" to "display_name",
             "subtitle" to "description",
             "status" to "is_active"
-        )
+        ),
+        searchFields = listOf("display_name", "name", "action")
     )
 }

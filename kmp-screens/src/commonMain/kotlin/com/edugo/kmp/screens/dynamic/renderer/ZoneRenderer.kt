@@ -31,7 +31,11 @@ fun ZoneRenderer(
     onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
     listItemRenderer: ListItemRenderer? = null,
+    maxDepth: Int = 10,
 ) {
+    // Guard against excessively deep zone nesting
+    if (maxDepth <= 0) return
+
     // Evaluate condition
     val condition = zone.condition
     if (condition != null && !evaluateCondition(condition, data)) return
@@ -144,6 +148,7 @@ fun ZoneRenderer(
                                         onEvent = onEvent,
                                         onCustomEvent = onCustomEvent,
                                         listItemRenderer = listItemRenderer,
+                                        maxDepth = maxDepth - 1,
                                     )
                                 }
                             }
@@ -215,6 +220,7 @@ fun ZoneRenderer(
                     onEvent = onEvent,
                     onCustomEvent = onCustomEvent,
                     listItemRenderer = listItemRenderer,
+                    maxDepth = maxDepth - 1,
                 )
             }
         }

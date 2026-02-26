@@ -5,6 +5,8 @@ import com.edugo.kmp.auth.service.activeContext
 import com.edugo.kmp.config.AppConfig
 import com.edugo.kmp.dynamicui.contract.ScreenContract
 import com.edugo.kmp.dynamicui.contract.ScreenContractRegistry
+import com.edugo.kmp.auth.service.AuthState
+import com.edugo.kmp.dynamicui.data.CachedDataLoader
 import com.edugo.kmp.dynamicui.data.DataLoader
 import com.edugo.kmp.dynamicui.data.RemoteDataLoader
 import com.edugo.kmp.dynamicui.loader.CachedScreenLoader
@@ -26,7 +28,16 @@ val dynamicUiModule = module {
     }
     single<DataLoader> {
         val appConfig = get<AppConfig>()
-        RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl, appConfig.adminApiBaseUrl, appConfig.iamApiBaseUrl)
+        val remote = RemoteDataLoader(get<EduGoHttpClient>(), appConfig.mobileApiBaseUrl, appConfig.adminApiBaseUrl, appConfig.iamApiBaseUrl)
+        CachedDataLoader(
+            remote = remote,
+            storage = get<SafeEduGoStorage>(),
+            contextKeyProvider = {
+                val authService = get<AuthService>()
+                val state = authService.authState.value
+                (state as? AuthState.Authenticated)?.activeContext?.schoolId ?: ""
+            }
+        )
     }
     single { ScreenContractRegistry(getAll()) }
     single {

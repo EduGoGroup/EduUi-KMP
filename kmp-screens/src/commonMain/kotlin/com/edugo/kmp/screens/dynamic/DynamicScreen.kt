@@ -13,8 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
@@ -46,6 +48,7 @@ fun DynamicScreen(
     val fieldErrors by viewModel.fieldErrors.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    var isProcessingEvent by remember { mutableStateOf(false) }
 
     LaunchedEffect(screenKey, placeholders) {
         viewModel.loadScreen(screenKey, placeholders = placeholders)
@@ -104,22 +107,28 @@ fun DynamicScreen(
                             onBack = onBack,
                             onEvent = { event ->
                                 scope.launch {
-                                    val context = EventContext(
-                                        screenKey = screenKey,
-                                        fieldValues = viewModel.fieldValues.value,
-                                        params = placeholders,
-                                    )
-                                    // For form save events, route through "submit-form" custom handler
-                                    // which returns SubmitTo with proper type conversion
-                                    val result = if (
-                                        (event == ScreenEvent.SAVE_NEW || event == ScreenEvent.SAVE_EXISTING) &&
-                                        screen.pattern == ScreenPattern.FORM
-                                    ) {
-                                        viewModel.executeCustomEvent(screenKey, "submit-form", context)
-                                    } else {
-                                        viewModel.executeEvent(screenKey, event, context)
+                                    if (isProcessingEvent) return@launch
+                                    isProcessingEvent = true
+                                    try {
+                                        val context = EventContext(
+                                            screenKey = screenKey,
+                                            fieldValues = viewModel.fieldValues.value,
+                                            params = placeholders,
+                                        )
+                                        // For form save events, route through "submit-form" custom handler
+                                        // which returns SubmitTo with proper type conversion
+                                        val result = if (
+                                            (event == ScreenEvent.SAVE_NEW || event == ScreenEvent.SAVE_EXISTING) &&
+                                            screen.pattern == ScreenPattern.FORM
+                                        ) {
+                                            viewModel.executeCustomEvent(screenKey, "submit-form", context)
+                                        } else {
+                                            viewModel.executeEvent(screenKey, event, context)
+                                        }
+                                        handleEventResult(result)
+                                    } finally {
+                                        isProcessingEvent = false
                                     }
-                                    handleEventResult(result)
                                 }
                             },
                         )
@@ -133,27 +142,55 @@ fun DynamicScreen(
                         fieldErrors = fieldErrors,
                         onFieldChanged = onFieldChanged ?: viewModel::onFieldChanged,
                         onEvent = { event: ScreenEvent, item: JsonObject? ->
+                            if (event == ScreenEvent.LOAD_MORE) {
+                                scope.launch { viewModel.loadMore() }
+                                return@PatternRouter
+                            }
+                            if (event == ScreenEvent.SEARCH) {
+                                scope.launch {
+                                    val readyScreen = (viewModel.screenState.value as? DynamicScreenViewModel.ScreenState.Ready)?.screen
+                                    val searchSlotId = readyScreen?.template?.zones
+                                        ?.flatMap { it.slots }
+                                        ?.firstOrNull { it.controlType == com.edugo.kmp.dynamicui.model.ControlType.SEARCH_BAR }
+                                        ?.id
+                                    val query = searchSlotId?.let { viewModel.fieldValues.value[it] } ?: ""
+                                    viewModel.search(query)
+                                }
+                                return@PatternRouter
+                            }
                             scope.launch {
-                                val context = EventContext(
-                                    screenKey = screenKey,
-                                    fieldValues = viewModel.fieldValues.value,
-                                    selectedItem = item,
-                                    params = placeholders,
-                                )
-                                val result = viewModel.executeEvent(screenKey, event, context)
-                                handleEventResult(result)
+                                if (isProcessingEvent) return@launch
+                                isProcessingEvent = true
+                                try {
+                                    val context = EventContext(
+                                        screenKey = screenKey,
+                                        fieldValues = viewModel.fieldValues.value,
+                                        selectedItem = item,
+                                        params = placeholders,
+                                    )
+                                    val result = viewModel.executeEvent(screenKey, event, context)
+                                    handleEventResult(result)
+                                } finally {
+                                    isProcessingEvent = false
+                                }
                             }
                         },
                         onCustomEvent = { eventId: String, item: JsonObject? ->
                             scope.launch {
-                                val context = EventContext(
-                                    screenKey = screenKey,
-                                    fieldValues = viewModel.fieldValues.value,
-                                    selectedItem = item,
-                                    params = placeholders,
-                                )
-                                val result = viewModel.executeCustomEvent(screenKey, eventId, context)
-                                handleEventResult(result)
+                                if (isProcessingEvent) return@launch
+                                isProcessingEvent = true
+                                try {
+                                    val context = EventContext(
+                                        screenKey = screenKey,
+                                        fieldValues = viewModel.fieldValues.value,
+                                        selectedItem = item,
+                                        params = placeholders,
+                                    )
+                                    val result = viewModel.executeCustomEvent(screenKey, eventId, context)
+                                    handleEventResult(result)
+                                } finally {
+                                    isProcessingEvent = false
+                                }
                             }
                         },
                         onNavigate = onNavigate,
