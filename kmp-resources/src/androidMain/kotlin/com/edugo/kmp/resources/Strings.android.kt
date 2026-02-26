@@ -79,6 +79,29 @@ actual object Strings {
     actual val message_info_title: String get() = getString(R.string.message_info_title, "Información")
     actual val message_info_ok: String get() = getString(R.string.message_info_ok, "Aceptar")
 
+    // Toolbar
+    actual val toolbar_back: String get() = getString(R.string.toolbar_back, "Volver")
+    actual val toolbar_new: String get() = getString(R.string.toolbar_new, "Nuevo")
+    actual val toolbar_save: String get() = getString(R.string.toolbar_save, "Guardar")
+    actual val toolbar_edit: String get() = getString(R.string.toolbar_edit, "Editar")
+
+    // Menu
+    actual val menu_switch_context: String get() = getString(R.string.menu_switch_context, "Cambiar contexto")
+    actual val menu_logout: String get() = getString(R.string.menu_logout, "Cerrar sesión")
+
+    // School selection
+    actual val school_selection_title: String get() = getString(R.string.school_selection_title, "Seleccionar escuela")
+    actual val school_selection_subtitle: String get() = getString(R.string.school_selection_subtitle, "Selecciona una escuela para continuar")
+    actual val school_selection_empty: String get() = getString(R.string.school_selection_empty, "No hay escuelas disponibles")
+    actual fun school_selection_error(error: String): String {
+        if (!::appContext.isInitialized) return "Error cargando escuelas: $error"
+        return try {
+            appContext.getString(R.string.school_selection_error, error)
+        } catch (_: Resources.NotFoundException) {
+            "Error cargando escuelas: $error"
+        }
+    }
+
     // Common
     actual val app_name: String get() = getString(R.string.app_name, "EduGo")
     actual val back_button: String get() = getString(R.string.back_button, "Volver")

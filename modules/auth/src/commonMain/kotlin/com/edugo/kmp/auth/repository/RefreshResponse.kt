@@ -1,6 +1,7 @@
 package com.edugo.kmp.auth.repository
 
 import com.edugo.kmp.auth.model.AuthToken
+import com.edugo.kmp.auth.model.UserContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,12 +14,16 @@ public data class RefreshResponse(
     @SerialName("expires_in")
     val expiresIn: Int,
     @SerialName("token_type")
-    val tokenType: String
+    val tokenType: String,
+    @SerialName("refresh_token")
+    val refreshToken: String? = null,
+    @SerialName("active_context")
+    val activeContext: UserContext? = null
 ) {
     public fun toAuthToken(existingRefreshToken: String): AuthToken {
         val now = Clock.System.now()
         val expiresAt = now + expiresIn.seconds
-        return AuthToken(token = accessToken, expiresAt = expiresAt, refreshToken = existingRefreshToken)
+        return AuthToken(token = accessToken, expiresAt = expiresAt, refreshToken = refreshToken ?: existingRefreshToken)
     }
 
     public fun isBearerToken(): Boolean = tokenType.equals("Bearer", ignoreCase = true)

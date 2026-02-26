@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.model.ScreenPattern
+import com.edugo.kmp.resources.Strings
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -51,7 +52,7 @@ fun DynamicToolbar(
                         IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Volver",
+                                contentDescription = Strings.toolbar_back,
                             )
                         }
                     }
@@ -66,7 +67,7 @@ fun DynamicToolbar(
                         IconButton(onClick = { onEvent(ScreenEvent.CREATE) }) {
                             Icon(
                                 imageVector = Icons.Filled.Add,
-                                contentDescription = "Nuevo",
+                                contentDescription = Strings.toolbar_new,
                             )
                         }
                     }
@@ -80,7 +81,7 @@ fun DynamicToolbar(
                             )
                         },
                     ) {
-                        Text("Guardar")
+                        Text(Strings.toolbar_save)
                     }
                 }
                 else -> { /* No actions for detail/dashboard/settings */ }
@@ -103,10 +104,10 @@ private fun resolveTitle(
         ScreenPattern.FORM -> {
             if (isEditMode) {
                 slotData["edit_title"]?.jsonPrimitive?.content
-                    ?: slotData["page_title"]?.let { "Editar ${it.jsonPrimitive.content}" }
-                    ?: "Editar"
+                    ?: slotData["page_title"]?.let { "${Strings.toolbar_edit} ${it.jsonPrimitive.content}" }
+                    ?: Strings.toolbar_edit
             } else {
-                slotData["page_title"]?.jsonPrimitive?.content ?: "Nuevo"
+                slotData["page_title"]?.jsonPrimitive?.content ?: Strings.toolbar_new
             }
         }
         else -> slotData["page_title"]?.jsonPrimitive?.content ?: ""

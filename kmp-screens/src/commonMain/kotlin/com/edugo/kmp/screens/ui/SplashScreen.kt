@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.auth.service.AuthService
+import com.edugo.kmp.dynamicui.sync.DataSyncService
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Sizes
 import com.edugo.kmp.design.Spacing
@@ -25,6 +26,7 @@ import com.edugo.kmp.design.tokens.ScreenDuration
 import com.edugo.kmp.design.tokens.SurfaceOpacity
 import com.edugo.kmp.resources.InitStringsForPreview
 import com.edugo.kmp.resources.Strings
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
@@ -42,6 +44,7 @@ fun SplashScreen(
     delayMs: Long = ScreenDuration.splash,
 ) {
     val authService = koinInject<AuthService>()
+    val dataSyncService = koinInject<DataSyncService>()
 
     LaunchedEffect(Unit) {
         try {
@@ -49,10 +52,18 @@ fun SplashScreen(
         } catch (_: Exception) {
             // Si falla restore, continuamos al login
         }
-        delay(delayMs)
+
         if (authService.isAuthenticated()) {
+            // Restore local bundle + delta sync in parallel with splash delay
+            val syncJob = async {
+                dataSyncService.restoreFromLocal()
+                try { dataSyncService.deltaSync() } catch (_: Exception) { /* non-critical */ }
+            }
+            delay(delayMs)
+            syncJob.await()
             onNavigateToHome()
         } else {
+            delay(delayMs)
             onNavigateToLogin()
         }
     }

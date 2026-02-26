@@ -1,21 +1,28 @@
 package com.edugo.kmp.dynamicui.viewmodel
 
+import com.edugo.kmp.dynamicui.cache.RecentScreenTracker
 import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.EventResult
 import com.edugo.kmp.dynamicui.contract.ScreenContractRegistry
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
+import com.edugo.kmp.dynamicui.data.CachedDataLoader
 import com.edugo.kmp.dynamicui.data.DataLoader
 import com.edugo.kmp.dynamicui.loader.ScreenLoader
 import com.edugo.kmp.dynamicui.model.DataConfig
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
+import com.edugo.kmp.dynamicui.offline.MutationQueue
 import com.edugo.kmp.dynamicui.orchestrator.EventOrchestrator
 import com.edugo.kmp.dynamicui.resolver.FormFieldsResolver
 import com.edugo.kmp.dynamicui.resolver.PlaceholderResolver
 import com.edugo.kmp.dynamicui.resolver.SlotBindingResolver
 import com.edugo.kmp.foundation.result.Result
+import com.edugo.kmp.network.connectivity.NetworkObserver
+import com.edugo.kmp.network.connectivity.NetworkStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -24,7 +31,10 @@ class DynamicScreenViewModel(
     private val screenLoader: ScreenLoader,
     private val dataLoader: DataLoader,
     private val orchestrator: EventOrchestrator,
-    private val contractRegistry: ScreenContractRegistry
+    private val contractRegistry: ScreenContractRegistry,
+    private val networkObserver: NetworkObserver? = null,
+    private val recentScreenTracker: RecentScreenTracker? = null,
+    private val mutationQueue: MutationQueue? = null,
 ) {
     private val _screenState = MutableStateFlow<ScreenState>(ScreenState.Loading)
     val screenState: StateFlow<ScreenState> = _screenState.asStateFlow()
@@ -37,6 +47,15 @@ class DynamicScreenViewModel(
 
     private val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
     val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
+
+    val isOnline: StateFlow<Boolean> = networkObserver?.let { observer ->
+        MutableStateFlow(observer.isOnline).also { flow ->
+            // Will be collected by the UI; updates derived from networkObserver.status
+        }
+    } ?: MutableStateFlow(true)
+
+    val pendingMutationCount: StateFlow<Int> = mutationQueue?.pendingCount
+        ?: MutableStateFlow(0)
 
     sealed class ScreenState {
         data object Loading : ScreenState()
@@ -51,7 +70,8 @@ class DynamicScreenViewModel(
             val items: List<JsonObject>,
             val hasMore: Boolean,
             val loadingMore: Boolean = false,
-            val isOfflineFiltered: Boolean = false
+            val isOfflineFiltered: Boolean = false,
+            val isStale: Boolean = false,
         ) : DataState()
         data class Error(val message: String) : DataState()
     }
@@ -59,9 +79,16 @@ class DynamicScreenViewModel(
     suspend fun loadScreen(
         screenKey: String,
         platform: String? = null,
-        placeholders: Map<String, String> = emptyMap()
+        placeholders: Map<String, String> = emptyMap(),
     ) {
         _screenState.value = ScreenState.Loading
+
+        // Track recent screen access
+        recentScreenTracker?.recordAccess(screenKey)
+
+        // Update online status
+        updateOnlineStatus()
+
         when (val result = screenLoader.loadScreen(screenKey, platform)) {
             is Result.Success -> {
                 val formResolved = FormFieldsResolver.resolve(result.data)
@@ -73,7 +100,7 @@ class DynamicScreenViewModel(
                 val contract = contractRegistry.find(screenKey)
                 val context = EventContext(
                     screenKey = screenKey,
-                    params = placeholders
+                    params = placeholders,
                 )
                 val endpoint = contract?.endpointFor(ScreenEvent.LOAD_DATA, context)
                 if (endpoint != null) {
@@ -82,7 +109,7 @@ class DynamicScreenViewModel(
                     if (resolved.pattern == com.edugo.kmp.dynamicui.model.ScreenPattern.FORM && placeholders.containsKey("id")) {
                         loadFormData(endpoint, config)
                     } else {
-                        loadData(endpoint, config)
+                        loadDataWithStaleness(endpoint, config, screenKey = screenKey, screenPattern = resolved.pattern)
                     }
                 }
             }
@@ -98,7 +125,7 @@ class DynamicScreenViewModel(
     suspend fun loadData(
         endpoint: String,
         config: DataConfig,
-        extraParams: Map<String, String> = emptyMap()
+        extraParams: Map<String, String> = emptyMap(),
     ) {
         _dataState.value = DataState.Loading
         when (val result = dataLoader.loadData(endpoint, config, extraParams)) {
@@ -107,7 +134,7 @@ class DynamicScreenViewModel(
                 _allItems = items
                 _dataState.value = DataState.Success(
                     items = items,
-                    hasMore = result.data.hasMore
+                    hasMore = result.data.hasMore,
                 )
             }
             is Result.Failure -> {
@@ -116,6 +143,37 @@ class DynamicScreenViewModel(
             is Result.Loading -> {
                 // Already in loading state
             }
+        }
+    }
+
+    private suspend fun loadDataWithStaleness(
+        endpoint: String,
+        config: DataConfig,
+        extraParams: Map<String, String> = emptyMap(),
+        screenKey: String? = null,
+        screenPattern: com.edugo.kmp.dynamicui.model.ScreenPattern? = null,
+    ) {
+        _dataState.value = DataState.Loading
+
+        val cachedLoader = dataLoader as? CachedDataLoader
+        if (cachedLoader != null) {
+            when (val result = cachedLoader.loadDataWithStaleness(endpoint, config, extraParams, screenPattern, screenKey)) {
+                is Result.Success -> {
+                    val items = applyFieldMapping(result.data.data.items, config.fieldMapping)
+                    _allItems = items
+                    _dataState.value = DataState.Success(
+                        items = items,
+                        hasMore = result.data.data.hasMore,
+                        isStale = result.data.isStale,
+                    )
+                }
+                is Result.Failure -> {
+                    _dataState.value = DataState.Error(result.error)
+                }
+                is Result.Loading -> { }
+            }
+        } else {
+            loadData(endpoint, config, extraParams)
         }
     }
 
@@ -142,7 +200,7 @@ class DynamicScreenViewModel(
                 _allItems = combined
                 _dataState.value = DataState.Success(
                     items = combined,
-                    hasMore = result.data.hasMore
+                    hasMore = result.data.hasMore,
                 )
             }
             is Result.Failure -> {
@@ -155,7 +213,7 @@ class DynamicScreenViewModel(
     suspend fun executeEvent(
         screenKey: String,
         event: ScreenEvent,
-        context: EventContext
+        context: EventContext,
     ): EventResult {
         return orchestrator.execute(screenKey, event, context)
     }
@@ -163,7 +221,7 @@ class DynamicScreenViewModel(
     suspend fun executeCustomEvent(
         screenKey: String,
         eventId: String,
-        context: EventContext
+        context: EventContext,
     ): EventResult {
         return orchestrator.executeCustom(screenKey, eventId, context)
     }
@@ -200,7 +258,7 @@ class DynamicScreenViewModel(
     suspend fun submitForm(
         endpoint: String,
         method: String,
-        fieldValues: Map<String, String>
+        fieldValues: Map<String, String>,
     ): EventResult {
         // Get form field keys from the screen definition to filter only editable fields
         val screen = (_screenState.value as? ScreenState.Ready)?.screen
@@ -228,7 +286,14 @@ class DynamicScreenViewModel(
         })
 
         return when (val result = dataLoader.submitData(endpoint, body, method)) {
-            is Result.Success -> EventResult.Success(message = "Guardado exitosamente")
+            is Result.Success -> {
+                if (result.data == null) {
+                    // null signals "queued offline"
+                    EventResult.Success(message = "Guardado localmente, se sincronizará al reconectar")
+                } else {
+                    EventResult.Success(message = "Guardado exitosamente")
+                }
+            }
             is Result.Failure -> EventResult.Error(result.error)
             is Result.Loading -> EventResult.Error("Unexpected loading state")
         }
@@ -250,7 +315,7 @@ class DynamicScreenViewModel(
                 _dataState.value = DataState.Success(
                     items = _allItems,
                     hasMore = false,
-                    isOfflineFiltered = false
+                    isOfflineFiltered = false,
                 )
             } else {
                 loadData(endpoint, config)
@@ -274,7 +339,7 @@ class DynamicScreenViewModel(
             _dataState.value = DataState.Success(
                 items = localFiltered,
                 hasMore = false,
-                isOfflineFiltered = true
+                isOfflineFiltered = true,
             )
         }
 
@@ -287,7 +352,7 @@ class DynamicScreenViewModel(
         } else {
             mapOf(
                 "search" to query,
-                "search_fields" to searchFields.joinToString(",")
+                "search_fields" to searchFields.joinToString(","),
             )
         }
 
@@ -297,7 +362,7 @@ class DynamicScreenViewModel(
             _dataState.value = DataState.Success(
                 items = items,
                 hasMore = result.data.hasMore,
-                isOfflineFiltered = false
+                isOfflineFiltered = false,
             )
         }
         // If server fails → the local-filtered results from Step 1 remain visible (orange indicator)
@@ -312,6 +377,12 @@ class DynamicScreenViewModel(
         _fieldErrors.value = emptyMap()
     }
 
+    private fun updateOnlineStatus() {
+        if (networkObserver != null) {
+            (isOnline as? MutableStateFlow)?.value = networkObserver.isOnline
+        }
+    }
+
     /**
      * Applies field mapping to transform API response field names to template-expected field names.
      * Mapping is "templateField" -> "apiField", e.g., "title" -> "full_name".
@@ -319,7 +390,7 @@ class DynamicScreenViewModel(
      */
     private fun applyFieldMapping(
         items: List<JsonObject>,
-        mapping: Map<String, String>
+        mapping: Map<String, String>,
     ): List<JsonObject> {
         if (mapping.isEmpty()) return items
         return items.map { item ->

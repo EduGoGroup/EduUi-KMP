@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.edugo.kmp.auth.model.MenuItem
 import com.edugo.kmp.auth.model.UserContext
-import com.edugo.kmp.auth.repository.MenuRepository
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.auth.service.AuthState
 import com.edugo.kmp.design.components.progress.DSLinearProgress
@@ -42,6 +41,7 @@ import com.edugo.kmp.dynamicui.model.NavigationItem
 import com.edugo.kmp.dynamicui.model.findByKey
 import com.edugo.kmp.dynamicui.model.findParentKey
 import com.edugo.kmp.dynamicui.model.firstLeaf
+import com.edugo.kmp.dynamicui.sync.DataSyncService
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.screens.dynamic.AdaptiveNavigationLayout
@@ -66,53 +66,49 @@ fun MainScreen(
     contentParams: Map<String, String> = emptyMap(),
     onBack: (() -> Unit)? = null,
 ) {
-    val menuRepository = koinInject<MenuRepository>()
     val authService = koinInject<AuthService>()
+    val dataSyncService = koinInject<DataSyncService>()
     val authState by authService.authState.collectAsState()
+    val bundle by dataSyncService.currentBundle.collectAsState()
     val scope = rememberCoroutineScope()
     val koin = getKoin()
 
     var allItems by remember { mutableStateOf<List<NavigationItem>>(emptyList()) }
     var selectedKey by remember { mutableStateOf<String?>(null) }
     var expandedKeys by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var isLoading by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(bundle == null) }
     var showContextPicker by remember { mutableStateOf(false) }
     var availableContexts by remember { mutableStateOf<List<UserContext>>(emptyList()) }
 
-    // Extract active context for reactive menu loading
-    val activeContext = (authState as? AuthState.Authenticated)?.activeContext
+    // Rebuild navigation whenever the bundle changes (after sync or delta sync)
+    LaunchedEffect(bundle) {
+        val currentBundle = bundle
+        if (currentBundle != null) {
+            val navItems = currentBundle.menu.items.map { it.toNavigationItem() }
+            allItems = navItems
+            availableContexts = currentBundle.availableContexts
 
-    // Reactive: reload menu + contexts whenever active context changes (school/role switch)
-    LaunchedEffect(activeContext?.schoolId, activeContext?.roleId) {
-        isLoading = true
-        // Load available contexts for school switching
-        when (val ctxResult = authService.getAvailableContexts()) {
-            is Result.Success -> availableContexts = ctxResult.data.available
-            else -> { /* keep empty */ }
-        }
-
-        when (val result = menuRepository.getMenu()) {
-            is Result.Success -> {
-                val navItems = result.data.items.map { it.toNavigationItem() }
-                allItems = navItems
-                // Auto-select first leaf item
+            // Auto-select first leaf item if none selected
+            if (selectedKey == null || navItems.findByKey(selectedKey!!) == null) {
                 val firstLeaf = navItems.firstLeaf()
                 if (firstLeaf != null) {
                     selectedKey = firstLeaf.key
-                    // Auto-expand parent of the selected item
                     val parentKey = navItems.findParentKey(firstLeaf.key)
                     if (parentKey != null) {
                         expandedKeys = setOf(parentKey)
                     }
                 }
             }
-            is Result.Failure -> {
+            isLoading = false
+        } else {
+            // No bundle yet - try restoring from local or use fallback
+            val restored = dataSyncService.restoreFromLocal()
+            if (restored == null) {
                 allItems = fallbackItems()
                 selectedKey = allItems.firstLeaf()?.key
+                isLoading = false
             }
-            is Result.Loading -> { /* already loading */ }
         }
-        isLoading = false
     }
 
     if (isLoading) {
@@ -218,7 +214,7 @@ fun MainScreen(
                             SchoolSelectorScreen(
                                 onSchoolSelected = { _, _ ->
                                     isLoading = true
-                                    // Menu reloads automatically via reactive LaunchedEffect
+                                    scope.launch { dataSyncService.fullSync() }
                                 },
                                 modifier = paddingModifier,
                             )
@@ -250,7 +246,7 @@ fun MainScreen(
                         onSchoolSelected = { _, _ ->
                             showContextPicker = false
                             isLoading = true
-                            // Menu reloads automatically via reactive LaunchedEffect
+                            scope.launch { dataSyncService.fullSync() }
                         },
                         modifier = Modifier.heightIn(max = 500.dp),
                     )
@@ -270,10 +266,12 @@ fun MainScreen(
                             }
                             when (authService.switchContext(schoolId)) {
                                 is Result.Success -> {
-                                    // Menu + contexts reload automatically via reactive LaunchedEffect
+                                    // Re-sync to get menu/screens for new context
+                                    dataSyncService.fullSync()
+                                    // Bundle updates trigger LaunchedEffect(bundle) above
                                 }
                                 is Result.Failure -> {
-                                    isLoading = false // Context didn't change, reset loading
+                                    isLoading = false
                                 }
                                 is Result.Loading -> {}
                             }

@@ -4,6 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class SlotOption(
+    val label: String,
+    val value: String,
+)
+
+@Serializable
 data class Slot(
     val id: String,
     val controlType: ControlType,
@@ -18,7 +24,8 @@ data class Slot(
     val readOnly: Boolean = false,
     val width: String? = null,
     val weight: Float? = null,
-    @SerialName("event_id") val eventId: String? = null
+    @SerialName("event_id") val eventId: String? = null,
+    val options: List<SlotOption>? = null,
 )
 
 @Serializable
