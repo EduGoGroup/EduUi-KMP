@@ -48,6 +48,7 @@ import com.edugo.kmp.screens.dynamic.AdaptiveNavigationLayout
 import com.edugo.kmp.screens.dynamic.DynamicScreen
 import com.edugo.kmp.screens.dynamic.UserMenuHeader
 import kotlinx.coroutines.launch
+import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 
 /**
@@ -69,6 +70,7 @@ fun MainScreen(
     val authService = koinInject<AuthService>()
     val authState by authService.authState.collectAsState()
     val scope = rememberCoroutineScope()
+    val koin = getKoin()
 
     var allItems by remember { mutableStateOf<List<NavigationItem>>(emptyList()) }
     var selectedKey by remember { mutableStateOf<String?>(null) }
@@ -77,8 +79,12 @@ fun MainScreen(
     var showContextPicker by remember { mutableStateOf(false) }
     var availableContexts by remember { mutableStateOf<List<UserContext>>(emptyList()) }
 
-    // Load menu + check available contexts
-    LaunchedEffect(Unit) {
+    // Extract active context for reactive menu loading
+    val activeContext = (authState as? AuthState.Authenticated)?.activeContext
+
+    // Reactive: reload menu + contexts whenever active context changes (school/role switch)
+    LaunchedEffect(activeContext?.schoolId, activeContext?.roleId) {
+        isLoading = true
         // Load available contexts for school switching
         when (val ctxResult = authService.getAvailableContexts()) {
             is Result.Success -> availableContexts = ctxResult.data.available
@@ -166,7 +172,7 @@ fun MainScreen(
         ) { paddingModifier ->
             // If there's a content override (e.g., form/detail from Route.Dynamic), render that
             if (contentOverride != null) {
-                val overrideViewModel = koinInject<DynamicScreenViewModel>()
+                val overrideViewModel = remember(contentOverride) { koin.get<DynamicScreenViewModel>() }
                 DynamicScreen(
                     screenKey = contentOverride,
                     viewModel = overrideViewModel,
@@ -211,22 +217,14 @@ fun MainScreen(
                         if (needsSchoolSelector) {
                             SchoolSelectorScreen(
                                 onSchoolSelected = { _, _ ->
-                                    // Reload menu after school selection
-                                    scope.launch {
-                                        isLoading = true
-                                        reloadMenu(menuRepository) { navItems, firstKey, parentKeys ->
-                                            allItems = navItems
-                                            selectedKey = firstKey
-                                            expandedKeys = parentKeys
-                                        }
-                                        isLoading = false
-                                    }
+                                    isLoading = true
+                                    // Menu reloads automatically via reactive LaunchedEffect
                                 },
                                 modifier = paddingModifier,
                             )
                         } else {
                             // Generic dynamic screen for any other tab
-                            val viewModel = koinInject<DynamicScreenViewModel>()
+                            val viewModel = remember(currentScreenKey) { koin.get<DynamicScreenViewModel>() }
                             DynamicScreen(
                                 screenKey = currentScreenKey,
                                 viewModel = viewModel,
@@ -251,15 +249,8 @@ fun MainScreen(
                     SchoolSelectorScreen(
                         onSchoolSelected = { _, _ ->
                             showContextPicker = false
-                            scope.launch {
-                                isLoading = true
-                                reloadMenu(menuRepository) { navItems, firstKey, parentKeys ->
-                                    allItems = navItems
-                                    selectedKey = firstKey
-                                    expandedKeys = parentKeys
-                                }
-                                isLoading = false
-                            }
+                            isLoading = true
+                            // Menu reloads automatically via reactive LaunchedEffect
                         },
                         modifier = Modifier.heightIn(max = 500.dp),
                     )
@@ -273,23 +264,19 @@ fun MainScreen(
                         showContextPicker = false
                         scope.launch {
                             isLoading = true
-                            val schoolId = context.schoolId ?: return@launch
+                            val schoolId = context.schoolId ?: run {
+                                isLoading = false
+                                return@launch
+                            }
                             when (authService.switchContext(schoolId)) {
                                 is Result.Success -> {
-                                    when (val ctxResult = authService.getAvailableContexts()) {
-                                        is Result.Success -> availableContexts = ctxResult.data.available
-                                        else -> {}
-                                    }
-                                    reloadMenu(menuRepository) { navItems, firstKey, parentKeys ->
-                                        allItems = navItems
-                                        selectedKey = firstKey
-                                        expandedKeys = parentKeys
-                                    }
+                                    // Menu + contexts reload automatically via reactive LaunchedEffect
                                 }
-                                is Result.Failure -> { /* stay on current */ }
+                                is Result.Failure -> {
+                                    isLoading = false // Context didn't change, reset loading
+                                }
                                 is Result.Loading -> {}
                             }
-                            isLoading = false
                         }
                     },
                     onDismiss = { showContextPicker = false },
@@ -314,28 +301,6 @@ private fun fallbackItems() = listOf(
     NavigationItem(key = "materials", label = "Materials", icon = "folder", screenKey = "materials-list"),
     NavigationItem(key = "settings", label = "Settings", icon = "settings", screenKey = "app-settings"),
 )
-
-/** Reload menu from backend and invoke [onResult] with the updated navigation state. */
-private suspend fun reloadMenu(
-    menuRepository: MenuRepository,
-    onResult: (navItems: List<NavigationItem>, firstKey: String?, expandedKeys: Set<String>) -> Unit,
-) {
-    when (val result = menuRepository.getMenu()) {
-        is Result.Success -> {
-            val navItems = result.data.items.map { it.toNavigationItem() }
-            val firstLeaf = navItems.firstLeaf()
-            val parentKeys = firstLeaf?.key?.let { key ->
-                navItems.findParentKey(key)?.let { setOf(it) }
-            } ?: emptySet()
-            onResult(navItems, firstLeaf?.key, parentKeys)
-        }
-        is Result.Failure -> {
-            val items = fallbackItems()
-            onResult(items, items.firstLeaf()?.key, emptySet())
-        }
-        is Result.Loading -> {}
-    }
-}
 
 /** Scrim overlay with a centered dismissible card. */
 @Composable

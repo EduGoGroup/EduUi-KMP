@@ -96,6 +96,7 @@ class RemoteDataLoader(
 
         val result: Result<String> = when (method.uppercase()) {
             "PUT" -> httpClient.putSafe(url, body)
+            "DELETE" -> httpClient.deleteSafe(url)
             else -> httpClient.postSafe(url, body)
         }
 

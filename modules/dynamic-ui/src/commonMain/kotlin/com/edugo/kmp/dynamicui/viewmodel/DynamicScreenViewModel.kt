@@ -50,7 +50,8 @@ class DynamicScreenViewModel(
         data class Success(
             val items: List<JsonObject>,
             val hasMore: Boolean,
-            val loadingMore: Boolean = false
+            val loadingMore: Boolean = false,
+            val isOfflineFiltered: Boolean = false
         ) : DataState()
         data class Error(val message: String) : DataState()
     }
@@ -103,6 +104,7 @@ class DynamicScreenViewModel(
         when (val result = dataLoader.loadData(endpoint, config, extraParams)) {
             is Result.Success -> {
                 val items = applyFieldMapping(result.data.items, config.fieldMapping)
+                _allItems = items
                 _dataState.value = DataState.Success(
                     items = items,
                     hasMore = result.data.hasMore
@@ -136,8 +138,10 @@ class DynamicScreenViewModel(
         when (val result = dataLoader.loadData(endpoint, config, extraParams)) {
             is Result.Success -> {
                 val items = applyFieldMapping(result.data.items, config.fieldMapping)
+                val combined = currentState.items + items
+                _allItems = combined
                 _dataState.value = DataState.Success(
-                    items = currentState.items + items,
+                    items = combined,
                     hasMore = result.data.hasMore
                 )
             }
@@ -228,6 +232,75 @@ class DynamicScreenViewModel(
             is Result.Failure -> EventResult.Error(result.error)
             is Result.Loading -> EventResult.Error("Unexpected loading state")
         }
+    }
+
+    // Stores the full unfiltered dataset for client-side fallback filtering
+    private var _allItems: List<JsonObject> = emptyList()
+
+    suspend fun search(query: String) {
+        val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
+        val contract = contractRegistry.find(screen.screenKey) ?: return
+        val context = EventContext(screenKey = screen.screenKey)
+        val endpoint = contract.endpointFor(ScreenEvent.SEARCH, context) ?: return
+        val config = contract.dataConfig()
+
+        // Empty query → reload all data, restore full dataset
+        if (query.isBlank()) {
+            if (_allItems.isNotEmpty()) {
+                _dataState.value = DataState.Success(
+                    items = _allItems,
+                    hasMore = false,
+                    isOfflineFiltered = false
+                )
+            } else {
+                loadData(endpoint, config)
+            }
+            return
+        }
+
+        // Step 1: Immediately show client-side filtered results (instant feedback)
+        val baseline = _allItems.ifEmpty {
+            (_dataState.value as? DataState.Success)?.items ?: emptyList()
+        }
+        if (baseline.isNotEmpty()) {
+            val lowerQuery = query.lowercase()
+            val localFiltered = baseline.filter { item ->
+                item.values.any { value ->
+                    value is kotlinx.serialization.json.JsonPrimitive &&
+                        value.isString &&
+                        value.content.lowercase().contains(lowerQuery)
+                }
+            }
+            _dataState.value = DataState.Success(
+                items = localFiltered,
+                hasMore = false,
+                isOfflineFiltered = true
+            )
+        }
+
+        // Step 2: Try server-side search (upgrades results if successful)
+        val searchFields = config.searchFields
+            ?: config.fieldMapping.values.toList().ifEmpty { null }
+
+        val extraParams = if (searchFields.isNullOrEmpty()) {
+            emptyMap()
+        } else {
+            mapOf(
+                "search" to query,
+                "search_fields" to searchFields.joinToString(",")
+            )
+        }
+
+        val result = dataLoader.loadData(endpoint, config, extraParams)
+        if (result is Result.Success) {
+            val items = applyFieldMapping(result.data.items, config.fieldMapping)
+            _dataState.value = DataState.Success(
+                items = items,
+                hasMore = result.data.hasMore,
+                isOfflineFiltered = false
+            )
+        }
+        // If server fails → the local-filtered results from Step 1 remain visible (orange indicator)
     }
 
     fun canExecute(screenKey: String, event: ScreenEvent): Boolean {

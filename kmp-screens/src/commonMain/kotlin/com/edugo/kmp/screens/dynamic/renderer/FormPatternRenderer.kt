@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,7 +30,9 @@ fun FormPatternRenderer(
     modifier: Modifier = Modifier,
 ) {
     // Filter out the action-group zone (submit/cancel buttons) since toolbar handles those now
-    val zones = screen.template.zones.filter { it.type != ZoneType.ACTION_GROUP }
+    val zones = remember(screen.template.zones) {
+        screen.template.zones.filter { it.type != ZoneType.ACTION_GROUP }
+    }
 
     Column(
         modifier = modifier
