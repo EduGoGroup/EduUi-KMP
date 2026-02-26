@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.edugo.kmp.auth.model.LoginCredentials
 import com.edugo.kmp.auth.model.LoginResult
+import com.edugo.kmp.auth.model.SchoolInfo
 import com.edugo.kmp.auth.service.AuthService
 import com.edugo.kmp.design.EduGoTheme
 import com.edugo.kmp.design.Spacing
@@ -47,7 +48,7 @@ import org.koin.compose.koinInject
  */
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (schools: List<SchoolInfo>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val authService = koinInject<AuthService>()
@@ -67,7 +68,7 @@ fun LoginScreen(
         isLoading = true
         scope.launch {
             when (val result = authService.login(LoginCredentials(email, password))) {
-                is LoginResult.Success -> onLoginSuccess()
+                is LoginResult.Success -> onLoginSuccess(result.response.schools)
                 is LoginResult.Error -> {
                     errorMessage = result.error.getUserFriendlyMessage()
                     isLoading = false

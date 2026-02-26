@@ -42,6 +42,22 @@
     <string name="message_info_title">Información</string>
     <string name="message_info_ok">Aceptar</string>
 
+    <!-- Toolbar -->
+    <string name="toolbar_back">Volver</string>
+    <string name="toolbar_new">Nuevo</string>
+    <string name="toolbar_save">Guardar</string>
+    <string name="toolbar_edit">Editar</string>
+
+    <!-- Menu -->
+    <string name="menu_switch_context">Cambiar contexto</string>
+    <string name="menu_logout">Cerrar sesión</string>
+
+    <!-- School selection -->
+    <string name="school_selection_title">Seleccionar escuela</string>
+    <string name="school_selection_subtitle">Selecciona una escuela para continuar</string>
+    <string name="school_selection_empty">No hay escuelas disponibles</string>
+    <string name="school_selection_error">Error cargando escuelas: %1$s</string>
+
     <!-- Common -->
     <string name="back_button">Volver</string>
     <string name="error_unknown">Ocurrió un error inesperado</string>

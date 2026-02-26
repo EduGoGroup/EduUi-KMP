@@ -38,6 +38,22 @@ actual object Strings {
     actual val message_info_title: String = "Información"
     actual val message_info_ok: String = "Aceptar"
 
+    // Toolbar
+    actual val toolbar_back: String = "Volver"
+    actual val toolbar_new: String = "Nuevo"
+    actual val toolbar_save: String = "Guardar"
+    actual val toolbar_edit: String = "Editar"
+
+    // Menu
+    actual val menu_switch_context: String = "Cambiar contexto"
+    actual val menu_logout: String = "Cerrar sesión"
+
+    // School selection
+    actual val school_selection_title: String = "Seleccionar escuela"
+    actual val school_selection_subtitle: String = "Selecciona una escuela para continuar"
+    actual val school_selection_empty: String = "No hay escuelas disponibles"
+    actual fun school_selection_error(error: String): String = "Error cargando escuelas: $error"
+
     actual val app_name: String = "EduGo"
     actual val back_button: String = "Volver"
     actual val error_unknown: String = "Ocurrió un error inesperado"

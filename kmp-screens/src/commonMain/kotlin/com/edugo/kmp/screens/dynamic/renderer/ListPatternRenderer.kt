@@ -35,6 +35,7 @@ import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ControlType
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.screens.dynamic.components.StaleDataIndicator
 import kotlinx.serialization.json.JsonObject
 import org.koin.compose.getKoin
 
@@ -48,6 +49,7 @@ fun ListPatternRenderer(
     onEvent: (ScreenEvent, JsonObject?) -> Unit,
     onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
+    isStale: Boolean = false,
 ) {
     val zones = screen.template.zones
     val koin = getKoin()
@@ -135,6 +137,9 @@ fun ListPatternRenderer(
                 )
             }
         }
+
+        // Stale data indicator
+        StaleDataIndicator(isStale = isStale)
 
         zones.forEach { zone ->
             ZoneRenderer(

@@ -27,6 +27,7 @@ fun PatternRouter(
     onCustomEvent: (String, JsonObject?) -> Unit,
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
+    isStale: Boolean = false,
 ) {
     when (screen.pattern) {
         ScreenPattern.LOGIN -> LoginPatternRenderer(
@@ -59,6 +60,7 @@ fun PatternRouter(
             onEvent = onEvent,
             onCustomEvent = onCustomEvent,
             modifier = modifier,
+            isStale = isStale,
         )
 
         ScreenPattern.DETAIL -> DetailPatternRenderer(

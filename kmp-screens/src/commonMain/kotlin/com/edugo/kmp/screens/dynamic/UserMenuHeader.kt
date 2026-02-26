@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.edugo.kmp.resources.Strings
 
 /**
  * Header component for the NavigationRail that displays user info
@@ -174,7 +175,7 @@ fun UserMenuHeader(
 
             if (onSwitchContext != null) {
                 DropdownMenuItem(
-                    text = { Text("Cambiar contexto") },
+                    text = { Text(Strings.menu_switch_context) },
                     onClick = {
                         showMenu = false
                         onSwitchContext()
@@ -186,7 +187,7 @@ fun UserMenuHeader(
             }
 
             DropdownMenuItem(
-                text = { Text("Cerrar sesion") },
+                text = { Text(Strings.menu_logout) },
                 onClick = {
                     showMenu = false
                     onLogout()
