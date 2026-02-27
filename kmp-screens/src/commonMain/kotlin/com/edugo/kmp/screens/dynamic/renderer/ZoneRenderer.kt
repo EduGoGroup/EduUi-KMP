@@ -18,6 +18,7 @@ import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.Distribution
 import com.edugo.kmp.dynamicui.model.Zone
 import com.edugo.kmp.dynamicui.model.ZoneType
+import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel.SelectOptionsState
 import kotlinx.serialization.json.JsonObject
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -33,6 +34,8 @@ fun ZoneRenderer(
     modifier: Modifier = Modifier,
     listItemRenderer: ListItemRenderer? = null,
     maxDepth: Int = 10,
+    selectOptionsMap: Map<String, SelectOptionsState> = emptyMap(),
+    onLoadSelectOptions: ((String, String, String, String) -> Unit)? = null,
 ) {
     // Guard against excessively deep zone nesting
     if (maxDepth <= 0) return
@@ -136,6 +139,8 @@ fun ZoneRenderer(
                                     fieldErrors = fieldErrors,
                                     onFieldChanged = onFieldChanged,
                                     onCustomEvent = onCustomEvent,
+                                    selectOptionsMap = selectOptionsMap,
+                                    onLoadSelectOptions = onLoadSelectOptions,
                                 )
                             }
                         }
@@ -153,6 +158,8 @@ fun ZoneRenderer(
                                             fieldErrors = fieldErrors,
                                             onFieldChanged = onFieldChanged,
                                             onCustomEvent = onCustomEvent,
+                                            selectOptionsMap = selectOptionsMap,
+                                            onLoadSelectOptions = onLoadSelectOptions,
                                         )
                                     }
                                 }
@@ -168,6 +175,8 @@ fun ZoneRenderer(
                                             onCustomEvent = onCustomEvent,
                                             listItemRenderer = listItemRenderer,
                                             maxDepth = maxDepth - 1,
+                                            selectOptionsMap = selectOptionsMap,
+                                            onLoadSelectOptions = onLoadSelectOptions,
                                         )
                                     }
                                 }
@@ -192,6 +201,8 @@ fun ZoneRenderer(
                                                     onFieldChanged = onFieldChanged,
                                                     onCustomEvent = onCustomEvent,
                                                     modifier = Modifier.fillMaxWidth(),
+                                                    selectOptionsMap = selectOptionsMap,
+                                                    onLoadSelectOptions = onLoadSelectOptions,
                                                 )
                                             }
                                         }
@@ -219,6 +230,8 @@ fun ZoneRenderer(
                                         fieldErrors = fieldErrors,
                                         onFieldChanged = onFieldChanged,
                                         onCustomEvent = onCustomEvent,
+                                        selectOptionsMap = selectOptionsMap,
+                                        onLoadSelectOptions = onLoadSelectOptions,
                                     )
                                 }
                             }
@@ -240,6 +253,8 @@ fun ZoneRenderer(
                         onCustomEvent = onCustomEvent,
                         listItemRenderer = listItemRenderer,
                         maxDepth = maxDepth - 1,
+                        selectOptionsMap = selectOptionsMap,
+                        onLoadSelectOptions = onLoadSelectOptions,
                     )
                 }
             }
@@ -255,6 +270,8 @@ private fun renderZoneContent(
     fieldErrors: Map<String, String>,
     onFieldChanged: (String, String) -> Unit,
     onCustomEvent: (String, JsonObject?) -> Unit,
+    selectOptionsMap: Map<String, SelectOptionsState> = emptyMap(),
+    onLoadSelectOptions: ((String, String, String, String) -> Unit)? = null,
 ) {
     zone.slots.forEach { slot ->
         SlotRenderer(
@@ -263,6 +280,8 @@ private fun renderZoneContent(
             fieldErrors = fieldErrors,
             onFieldChanged = onFieldChanged,
             onCustomEvent = onCustomEvent,
+            selectOptionsMap = selectOptionsMap,
+            onLoadSelectOptions = onLoadSelectOptions,
         )
     }
 }

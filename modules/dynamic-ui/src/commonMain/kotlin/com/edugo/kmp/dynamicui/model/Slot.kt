@@ -26,6 +26,9 @@ data class Slot(
     val weight: Float? = null,
     @SerialName("event_id") val eventId: String? = null,
     val options: List<SlotOption>? = null,
+    @SerialName("options_endpoint") val optionsEndpoint: String? = null,
+    @SerialName("option_label") val optionLabel: String? = null,
+    @SerialName("option_value") val optionValue: String? = null,
 )
 
 @Serializable
@@ -52,7 +55,8 @@ enum class ControlType {
     @SerialName("list-item-navigation") LIST_ITEM_NAVIGATION,
     @SerialName("metric-card") METRIC_CARD,
     @SerialName("chip") CHIP,
-    @SerialName("rating") RATING;
+    @SerialName("rating") RATING,
+    @SerialName("remote_select") REMOTE_SELECT;
 
     /**
      * Indica si este control usa el campo `label` como texto principal

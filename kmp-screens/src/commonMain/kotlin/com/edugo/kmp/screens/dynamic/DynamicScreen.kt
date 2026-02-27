@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
-import com.edugo.kmp.design.components.progress.DSLinearProgress
+import com.edugo.kmp.screens.dynamic.components.ListSkeleton
 import androidx.compose.material.icons.filled.CloudOff
 import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.EventResult
@@ -54,6 +54,7 @@ fun DynamicScreen(
     val fieldErrors by viewModel.fieldErrors.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
     val pendingCount by viewModel.pendingMutationCount.collectAsState()
+    val selectOptionsMap by viewModel.selectOptions.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var isProcessingEvent by remember { mutableStateOf(false) }
@@ -105,12 +106,7 @@ fun DynamicScreen(
     Box(modifier = modifier.fillMaxSize()) {
         when (val state = screenState) {
             is DynamicScreenViewModel.ScreenState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    DSLinearProgress(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.spacing8))
-                }
+                ListSkeleton(modifier = Modifier.fillMaxSize())
             }
 
             is DynamicScreenViewModel.ScreenState.Ready -> {
@@ -225,6 +221,8 @@ fun DynamicScreen(
                         onNavigate = onNavigate,
                         modifier = Modifier.weight(1f),
                         isStale = isStale,
+                        selectOptionsMap = selectOptionsMap,
+                        onLoadSelectOptions = viewModel::loadSelectOptions,
                     )
                 }
             }
