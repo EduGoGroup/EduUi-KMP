@@ -66,6 +66,24 @@ expect object Strings {
     val school_selection_empty: String
     fun school_selection_error(error: String): String
 
+    // Connectivity
+    val offline_banner: String
+    fun offline_syncing(current: Int, total: Int): String
+    fun offline_pending(count: Int): String
+    val stale_data_indicator: String
+
+    // School selection (extra)
+    val school_selection_description: String
+    val syncing_data: String
+
+    // Form validation
+    val form_field_required: String
+    val form_fix_errors: String
+
+    // Remote select
+    val select_loading: String
+    val select_load_error: String
+
     // Common
     val app_name: String
     val back_button: String

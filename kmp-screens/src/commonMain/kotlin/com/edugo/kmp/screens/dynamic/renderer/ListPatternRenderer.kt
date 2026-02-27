@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
 import com.edugo.kmp.design.components.progress.DSLinearProgress
+import com.edugo.kmp.screens.dynamic.components.ListSkeleton
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ControlType
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
@@ -104,7 +105,7 @@ fun ListPatternRenderer(
         verticalArrangement = Arrangement.spacedBy(Spacing.spacing2),
     ) {
         if (dataState is DynamicScreenViewModel.DataState.Loading) {
-            DSLinearProgress(modifier = Modifier.fillMaxWidth())
+            ListSkeleton()
         }
 
         if (dataState is DynamicScreenViewModel.DataState.Error) {

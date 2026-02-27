@@ -54,6 +54,21 @@ actual object Strings {
     actual val school_selection_empty: String = "No hay escuelas disponibles"
     actual fun school_selection_error(error: String): String = "Error cargando escuelas: $error"
 
+    // Connectivity
+    actual val offline_banner: String = "Sin conexión - usando datos guardados"
+    actual fun offline_syncing(current: Int, total: Int): String = "Sincronizando $current/$total..."
+    actual fun offline_pending(count: Int): String = "Sincronizando $count cambios pendientes..."
+    actual val stale_data_indicator: String = "Datos en caché"
+
+    // School selection (extra)
+    actual val school_selection_description: String = "Selecciona la escuela con la que deseas trabajar"
+    actual val syncing_data: String = "Sincronizando datos..."
+
+    actual val form_field_required: String = "Este campo es obligatorio"
+    actual val form_fix_errors: String = "Corrige los campos marcados"
+    actual val select_loading: String = "Cargando..."
+    actual val select_load_error: String = "Error al cargar opciones"
+
     actual val app_name: String = "EduGo"
     actual val back_button: String = "Volver"
     actual val error_unknown: String = "Ocurrió un error inesperado"

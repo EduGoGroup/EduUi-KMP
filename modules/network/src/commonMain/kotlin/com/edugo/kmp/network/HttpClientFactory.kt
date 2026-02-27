@@ -2,6 +2,7 @@ package com.edugo.kmp.network
 
 import io.ktor.client.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.compression.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.*
@@ -81,6 +82,11 @@ public object HttpClientFactory {
                 json(json)
             }
 
+            install(ContentEncoding) {
+                gzip()
+                deflate()
+            }
+
             // Only install logging if explicitly requested
             if (logLevel != LogLevel.NONE) {
                 install(Logging) {
@@ -132,6 +138,11 @@ public object HttpClientFactory {
         return HttpClient(createPlatformEngine()) {
             install(ContentNegotiation) {
                 json(json)
+            }
+
+            install(ContentEncoding) {
+                gzip()
+                deflate()
             }
 
             install(HttpTimeout) {

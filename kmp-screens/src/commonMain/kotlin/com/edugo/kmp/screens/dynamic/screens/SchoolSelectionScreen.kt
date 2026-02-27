@@ -77,7 +77,7 @@ fun SchoolSelectionScreen(
             Spacer(Modifier.height(8.dp))
 
             Text(
-                text = "Selecciona la escuela con la que deseas trabajar",
+                text = Strings.school_selection_description,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -93,7 +93,7 @@ fun SchoolSelectionScreen(
                         DSLinearProgress()
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            text = "Sincronizando datos...",
+                            text = Strings.syncing_data,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

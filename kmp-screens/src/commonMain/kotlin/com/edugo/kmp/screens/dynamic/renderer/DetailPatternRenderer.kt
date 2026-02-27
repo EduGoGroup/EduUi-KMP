@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
-import com.edugo.kmp.design.components.progress.DSLinearProgress
+import com.edugo.kmp.screens.dynamic.components.FormSkeleton
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
@@ -46,7 +46,7 @@ fun DetailPatternRenderer(
     ) {
         when (dataState) {
             is DynamicScreenViewModel.DataState.Loading -> {
-                DSLinearProgress(modifier = Modifier.fillMaxWidth())
+                FormSkeleton()
             }
 
             is DynamicScreenViewModel.DataState.Error -> {

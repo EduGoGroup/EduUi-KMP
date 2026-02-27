@@ -17,6 +17,7 @@ import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.model.ZoneType
+import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel.SelectOptionsState
 import kotlinx.serialization.json.JsonObject
 
 @Composable
@@ -28,6 +29,8 @@ fun FormPatternRenderer(
     onEvent: (ScreenEvent, JsonObject?) -> Unit,
     onCustomEvent: (String, JsonObject?) -> Unit,
     modifier: Modifier = Modifier,
+    selectOptionsMap: Map<String, SelectOptionsState> = emptyMap(),
+    onLoadSelectOptions: ((String, String, String, String) -> Unit)? = null,
 ) {
     // Filter out the action-group zone (submit/cancel buttons) since toolbar handles those now
     val zones = remember(screen.template.zones) {
@@ -55,6 +58,8 @@ fun FormPatternRenderer(
                     onEvent = onEvent,
                     onCustomEvent = onCustomEvent,
                     modifier = Modifier.fillMaxWidth(),
+                    selectOptionsMap = selectOptionsMap,
+                    onLoadSelectOptions = onLoadSelectOptions,
                 )
             }
         }

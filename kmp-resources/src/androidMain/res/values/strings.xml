@@ -58,6 +58,24 @@
     <string name="school_selection_empty">No hay escuelas disponibles</string>
     <string name="school_selection_error">Error cargando escuelas: %1$s</string>
 
+    <!-- Connectivity -->
+    <string name="offline_banner">Sin conexión - usando datos guardados</string>
+    <string name="offline_syncing">Sincronizando %1$d/%2$d…</string>
+    <string name="offline_pending">Sincronizando %1$d cambios pendientes…</string>
+    <string name="stale_data_indicator">Datos en caché</string>
+
+    <!-- School selection (extra) -->
+    <string name="school_selection_description">Selecciona la escuela con la que deseas trabajar</string>
+    <string name="syncing_data">Sincronizando datos…</string>
+
+    <!-- Form validation -->
+    <string name="form_field_required">Este campo es obligatorio</string>
+    <string name="form_fix_errors">Corrige los campos marcados</string>
+
+    <!-- Remote select -->
+    <string name="select_loading">Cargando…</string>
+    <string name="select_load_error">Error al cargar opciones</string>
+
     <!-- Common -->
     <string name="back_button">Volver</string>
     <string name="error_unknown">Ocurrió un error inesperado</string>
