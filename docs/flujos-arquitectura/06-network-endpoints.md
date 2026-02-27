@@ -177,7 +177,9 @@ sequenceDiagram
     IAM-->>Http: DeltaSyncResponse { changed: Map, unchanged: List }
     Http-->>Repo: Result.Success(DeltaSyncResponse)
     Repo-->>App: Result.Success(...)
-    App->>App: applyDelta(changed) - solo buckets modificados
+    App->>App: applyDeltaToBundle(base, changed, now) — construye bundle actualizado en memoria
+    App->>App: persistDeltaChanges(changed) — persiste solo los buckets modificados a storage
+    App->>App: seedScreenLoader(changedScreens) — solo screens que cambiaron
 ```
 
 ### Endpoints de sync registrados
@@ -187,6 +189,101 @@ sequenceDiagram
 | `/api/v1/sync/bundle` | GET | IAM Platform | Bundle completo: menu, permisos, screens, contextos disponibles, hashes por bucket |
 | `/api/v1/sync/delta` | POST | IAM Platform | Sync delta: envia `{ hashes: Map<String, String> }` con hashes locales. Retorna solo buckets que cambiaron |
 | `/screen-config/version/{key}` | GET | IAM Platform | Verificacion ligera de version de un screen (retorna version + updatedAt) |
+
+### Parametros de los endpoints de sync
+
+#### GET `/api/v1/sync/bundle`
+| Header | Tipo | Requerido | Descripcion |
+|--------|------|:---------:|-------------|
+| `Authorization` | `Bearer {jwt}` | Si | Token JWT del usuario autenticado |
+
+**Respuesta:** `SyncBundleResponse`
+```json
+{
+  "menu": [
+    { "name": "Escuelas", "icon": "school", "screen_key": "schools-list", "permissions": ["schools.read"], "children": [] }
+  ],
+  "permissions": ["schools.read", "schools.write", "students.read"],
+  "screens": {
+    "schools-list": {
+      "screen_key": "schools-list",
+      "screen_name": "Lista de Escuelas",
+      "pattern": "list",
+      "version": 3,
+      "template": { "zones": ["..."] },
+      "slot_data": { "page_title": "Escuelas" },
+      "data_config": { "endpoint": "admin:/api/v1/schools", "field_mapping": {}, "pagination": {} },
+      "handler_key": "schools",
+      "updated_at": "2026-02-25T10:30:00Z"
+    }
+  },
+  "available_contexts": [
+    { "role_id": "uuid", "role_name": "admin", "school_id": "uuid", "school_name": "Colegio ABC", "permissions": ["..."] }
+  ],
+  "hashes": {
+    "menu": "a1b2c3...",
+    "permissions": "d4e5f6...",
+    "screen:schools-list": "g7h8i9...",
+    "available_contexts": "j0k1l2..."
+  }
+}
+```
+
+**Nota:** El backend construye el bundle en paralelo (errgroup de Go) con 4 goroutines: menu, permisos, contextos, y screens. Las screens se resuelven secuencialmente dentro de su goroutine.
+
+#### POST `/api/v1/sync/delta`
+| Header | Tipo | Requerido | Descripcion |
+|--------|------|:---------:|-------------|
+| `Authorization` | `Bearer {jwt}` | Si | Token JWT del usuario autenticado |
+
+**Request body:**
+```json
+{
+  "hashes": {
+    "menu": "a1b2c3...",
+    "permissions": "d4e5f6...",
+    "screen:schools-list": "g7h8i9...",
+    "screen:schools-form": "m3n4o5...",
+    "available_contexts": "j0k1l2..."
+  }
+}
+```
+
+**Respuesta:** `DeltaSyncResponse`
+```json
+{
+  "changed": {
+    "menu": {
+      "data": [{ "name": "Escuelas" }],
+      "hash": "x1y2z3..."
+    },
+    "screen:schools-list": {
+      "data": { "screen_key": "schools-list", "pattern": "list" },
+      "hash": "p6q7r8..."
+    }
+  },
+  "unchanged": ["permissions", "available_contexts", "screen:schools-form"]
+}
+```
+
+**Nota:** Solo retorna en `changed` los buckets cuyo hash difiere. El servidor recalcula el bundle completo internamente y compara hashes SHA256.
+
+#### GET `/api/v1/screen-config/version/{screenKey}`
+| Header | Tipo | Requerido | Descripcion |
+|--------|------|:---------:|-------------|
+| `Authorization` | `Bearer {jwt}` | Si | Token JWT del usuario autenticado |
+
+| Path param | Tipo | Descripcion |
+|------------|------|-------------|
+| `screenKey` | `String` | Clave unica del screen (ej: `schools-list`) |
+
+**Respuesta:**
+```json
+{
+  "version": 3,
+  "updated_at": "2026-02-25T10:30:00Z"
+}
+```
 
 ### Modelo de respuesta del bundle
 

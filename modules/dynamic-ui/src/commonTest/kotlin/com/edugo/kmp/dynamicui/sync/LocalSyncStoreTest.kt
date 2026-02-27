@@ -10,6 +10,7 @@ import com.edugo.kmp.dynamicui.sync.model.UserDataBundle
 import com.edugo.kmp.storage.EduGoStorage
 import com.edugo.kmp.storage.SafeEduGoStorage
 import com.russhwolf.settings.MapSettings
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -73,7 +74,7 @@ class LocalSyncStoreTest {
     }
 
     @Test
-    fun saveBundle_and_loadBundle_roundtrip() {
+    fun saveBundle_and_loadBundle_roundtrip() = runTest {
         val bundle = createTestBundle()
         store.saveBundle(bundle)
 
@@ -87,13 +88,13 @@ class LocalSyncStoreTest {
     }
 
     @Test
-    fun loadBundle_returns_null_when_empty() {
+    fun loadBundle_returns_null_when_empty() = runTest {
         val loaded = store.loadBundle()
         assertNull(loaded)
     }
 
     @Test
-    fun getHashes_returns_saved_hashes() {
+    fun getHashes_returns_saved_hashes() = runTest {
         val bundle = createTestBundle()
         store.saveBundle(bundle)
 
@@ -104,7 +105,7 @@ class LocalSyncStoreTest {
     }
 
     @Test
-    fun updateMenu_updates_menu_and_hash() {
+    fun updateMenu_updates_menu_and_hash() = runTest {
         val bundle = createTestBundle()
         store.saveBundle(bundle)
 
@@ -121,7 +122,7 @@ class LocalSyncStoreTest {
     }
 
     @Test
-    fun updatePermissions_updates_permissions_and_hash() {
+    fun updatePermissions_updates_permissions_and_hash() = runTest {
         val bundle = createTestBundle()
         store.saveBundle(bundle)
 
@@ -134,7 +135,7 @@ class LocalSyncStoreTest {
     }
 
     @Test
-    fun updateScreen_adds_new_screen() {
+    fun updateScreen_adds_new_screen() = runTest {
         val bundle = createTestBundle()
         store.saveBundle(bundle)
 
@@ -153,7 +154,7 @@ class LocalSyncStoreTest {
     }
 
     @Test
-    fun removeScreen_removes_screen_and_hash() {
+    fun removeScreen_removes_screen_and_hash() = runTest {
         val bundle = createTestBundle()
         store.saveBundle(bundle)
 
@@ -168,7 +169,7 @@ class LocalSyncStoreTest {
     }
 
     @Test
-    fun clearAll_removes_everything() {
+    fun clearAll_removes_everything() = runTest {
         val bundle = createTestBundle()
         store.saveBundle(bundle)
 
