@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.media.DSDivider
@@ -40,94 +42,180 @@ fun ZoneRenderer(
     val condition = zone.condition
     if (condition != null && !evaluateCondition(condition, data)) return
 
-    Column(modifier = modifier.padding(vertical = Spacing.spacing1)) {
-        when {
-            // List zones render items with itemLayout
-            zone.type == ZoneType.SIMPLE_LIST && zone.itemLayout != null -> {
-                // Render zone header slots first
-                zone.slots.forEach { slot ->
-                    SlotRenderer(
-                        slot = slot,
-                        fieldValues = fieldValues,
-                        fieldErrors = fieldErrors,
-                        onFieldChanged = onFieldChanged,
-                        onCustomEvent = onCustomEvent,
-                    )
+    ZoneErrorBoundary(zoneId = zone.id, modifier = modifier) {
+        val errorState = LocalZoneError.current
+
+        // Pre-validate zone data integrity (non-composable, safe to try-catch)
+        val validationError = remember(zone, data) {
+            runCatching {
+                zone.type
+                zone.slots.size
+                zone.zones.size
+                zone.distribution
+                zone.itemLayout?.slots?.size
+                data.size
+            }.exceptionOrNull()
+        }
+
+        if (validationError != null) {
+            SideEffect { errorState?.error = validationError }
+            return@ZoneErrorBoundary
+        }
+
+        Column(modifier = Modifier.padding(vertical = Spacing.spacing1)) {
+            when {
+                // List zones render items with itemLayout
+                zone.type == ZoneType.SIMPLE_LIST && zone.itemLayout != null -> {
+                    // Render zone header slots first
+                    zone.slots.forEach { slot ->
+                        SlotRenderer(
+                            slot = slot,
+                            fieldValues = fieldValues,
+                            fieldErrors = fieldErrors,
+                            onFieldChanged = onFieldChanged,
+                            onCustomEvent = onCustomEvent,
+                        )
+                    }
+                    // Render list items
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        data.forEachIndexed { index, item ->
+                            if (listItemRenderer != null) {
+                                listItemRenderer(item, onEvent, onCustomEvent, Modifier.fillMaxWidth())
+                            } else {
+                                DefaultListItemRenderer(
+                                    item = item,
+                                    itemLayout = zone.itemLayout,
+                                    onEvent = onEvent,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                            if (index < data.lastIndex) {
+                                DSDivider()
+                            }
+                        }
+                    }
                 }
-                // Render list items
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    data.forEachIndexed { index, item ->
-                        if (listItemRenderer != null) {
-                            listItemRenderer(item, onEvent, onCustomEvent, Modifier.fillMaxWidth())
-                        } else {
-                            DefaultListItemRenderer(
-                                item = item,
-                                itemLayout = zone.itemLayout,
-                                onEvent = onEvent,
+
+                zone.type == ZoneType.GROUPED_LIST && zone.itemLayout != null -> {
+                    zone.slots.forEach { slot ->
+                        SlotRenderer(
+                            slot = slot,
+                            fieldValues = fieldValues,
+                            fieldErrors = fieldErrors,
+                            onFieldChanged = onFieldChanged,
+                            onCustomEvent = onCustomEvent,
+                        )
+                    }
+                    data.forEach { item ->
+                        Column(modifier = Modifier.fillMaxWidth().clickable { onEvent(ScreenEvent.SELECT_ITEM, item) }) {
+                            zone.itemLayout!!.slots.forEach { slot ->
+                                SlotRenderer(
+                                    slot = slot,
+                                    fieldValues = fieldValues,
+                                    fieldErrors = fieldErrors,
+                                    onFieldChanged = onFieldChanged,
+                                    onCustomEvent = onCustomEvent,
+                                    itemData = item,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Standard distribution-based rendering
+                else -> {
+                    when (zone.distribution) {
+                        Distribution.STACKED -> {
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                            )
+                                verticalArrangement = Arrangement.spacedBy(Spacing.spacing2),
+                            ) {
+                                renderZoneContent(
+                                    zone = zone,
+                                    data = data,
+                                    fieldValues = fieldValues,
+                                    fieldErrors = fieldErrors,
+                                    onFieldChanged = onFieldChanged,
+                                    onCustomEvent = onCustomEvent,
+                                )
+                            }
                         }
-                        if (index < data.lastIndex) {
-                            DSDivider()
-                        }
-                    }
-                }
-            }
 
-            zone.type == ZoneType.GROUPED_LIST && zone.itemLayout != null -> {
-                zone.slots.forEach { slot ->
-                    SlotRenderer(
-                        slot = slot,
-                        fieldValues = fieldValues,
-                        fieldErrors = fieldErrors,
-                        onFieldChanged = onFieldChanged,
-                        onCustomEvent = onCustomEvent,
-                    )
-                }
-                data.forEach { item ->
-                    Column(modifier = Modifier.fillMaxWidth().clickable { onEvent(ScreenEvent.SELECT_ITEM, item) }) {
-                        zone.itemLayout!!.slots.forEach { slot ->
-                            SlotRenderer(
-                                slot = slot,
-                                fieldValues = fieldValues,
-                                fieldErrors = fieldErrors,
-                                onFieldChanged = onFieldChanged,
-                                onCustomEvent = onCustomEvent,
-                                itemData = item,
-                            )
+                        Distribution.SIDE_BY_SIDE -> {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
+                            ) {
+                                zone.slots.forEach { slot ->
+                                    Box(modifier = Modifier.weight(slot.weight ?: 1f)) {
+                                        SlotRenderer(
+                                            slot = slot,
+                                            fieldValues = fieldValues,
+                                            fieldErrors = fieldErrors,
+                                            onFieldChanged = onFieldChanged,
+                                            onCustomEvent = onCustomEvent,
+                                        )
+                                    }
+                                }
+                                zone.zones.forEach { childZone ->
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        ZoneRenderer(
+                                            zone = childZone,
+                                            data = data,
+                                            fieldValues = fieldValues,
+                                            fieldErrors = fieldErrors,
+                                            onFieldChanged = onFieldChanged,
+                                            onEvent = onEvent,
+                                            onCustomEvent = onCustomEvent,
+                                            listItemRenderer = listItemRenderer,
+                                            maxDepth = maxDepth - 1,
+                                        )
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
-            }
 
-            // Standard distribution-based rendering
-            else -> {
-                when (zone.distribution) {
-                    Distribution.STACKED -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.spacing2),
-                        ) {
-                            renderZoneContent(
-                                zone = zone,
-                                data = data,
-                                fieldValues = fieldValues,
-                                fieldErrors = fieldErrors,
-                                onFieldChanged = onFieldChanged,
-                                onCustomEvent = onCustomEvent,
-                            )
+                        Distribution.GRID -> {
+                            val columns = if (zone.type == ZoneType.METRIC_GRID) 2 else 2
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                val chunked = zone.slots.chunked(columns)
+                                chunked.forEach { rowSlots ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
+                                    ) {
+                                        rowSlots.forEach { slot ->
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                SlotRenderer(
+                                                    slot = slot,
+                                                    fieldValues = fieldValues,
+                                                    fieldErrors = fieldErrors,
+                                                    onFieldChanged = onFieldChanged,
+                                                    onCustomEvent = onCustomEvent,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                )
+                                            }
+                                        }
+                                        // Fill remaining space if odd number of items
+                                        if (rowSlots.size < columns) {
+                                            repeat(columns - rowSlots.size) {
+                                                Box(modifier = Modifier.weight(1f))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
 
-                    Distribution.SIDE_BY_SIDE -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
-                        ) {
-                            zone.slots.forEach { slot ->
-                                Box(modifier = Modifier.weight(slot.weight ?: 1f)) {
+                        Distribution.FLOW_ROW -> {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.spacing2),
+                            ) {
+                                zone.slots.forEach { slot ->
                                     SlotRenderer(
                                         slot = slot,
                                         fieldValues = fieldValues,
@@ -137,91 +225,26 @@ fun ZoneRenderer(
                                     )
                                 }
                             }
-                            zone.zones.forEach { childZone ->
-                                Box(modifier = Modifier.weight(1f)) {
-                                    ZoneRenderer(
-                                        zone = childZone,
-                                        data = data,
-                                        fieldValues = fieldValues,
-                                        fieldErrors = fieldErrors,
-                                        onFieldChanged = onFieldChanged,
-                                        onEvent = onEvent,
-                                        onCustomEvent = onCustomEvent,
-                                        listItemRenderer = listItemRenderer,
-                                        maxDepth = maxDepth - 1,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Distribution.GRID -> {
-                        val columns = if (zone.type == ZoneType.METRIC_GRID) 2 else 2
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            val chunked = zone.slots.chunked(columns)
-                            chunked.forEach { rowSlots ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
-                                ) {
-                                    rowSlots.forEach { slot ->
-                                        Box(modifier = Modifier.weight(1f)) {
-                                            SlotRenderer(
-                                                slot = slot,
-                                                fieldValues = fieldValues,
-                                                fieldErrors = fieldErrors,
-                                                onFieldChanged = onFieldChanged,
-                                                onCustomEvent = onCustomEvent,
-                                                modifier = Modifier.fillMaxWidth(),
-                                            )
-                                        }
-                                    }
-                                    // Fill remaining space if odd number of items
-                                    if (rowSlots.size < columns) {
-                                        repeat(columns - rowSlots.size) {
-                                            Box(modifier = Modifier.weight(1f))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Distribution.FLOW_ROW -> {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.spacing2),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.spacing2),
-                        ) {
-                            zone.slots.forEach { slot ->
-                                SlotRenderer(
-                                    slot = slot,
-                                    fieldValues = fieldValues,
-                                    fieldErrors = fieldErrors,
-                                    onFieldChanged = onFieldChanged,
-                                    onCustomEvent = onCustomEvent,
-                                )
-                            }
                         }
                     }
                 }
             }
-        }
 
-        // Render nested zones
-        if (zone.type != ZoneType.SIMPLE_LIST && zone.type != ZoneType.GROUPED_LIST) {
-            zone.zones.forEach { childZone ->
-                ZoneRenderer(
-                    zone = childZone,
-                    data = data,
-                    fieldValues = fieldValues,
-                    fieldErrors = fieldErrors,
-                    onFieldChanged = onFieldChanged,
-                    onEvent = onEvent,
-                    onCustomEvent = onCustomEvent,
-                    listItemRenderer = listItemRenderer,
-                    maxDepth = maxDepth - 1,
-                )
+            // Render nested zones
+            if (zone.type != ZoneType.SIMPLE_LIST && zone.type != ZoneType.GROUPED_LIST) {
+                zone.zones.forEach { childZone ->
+                    ZoneRenderer(
+                        zone = childZone,
+                        data = data,
+                        fieldValues = fieldValues,
+                        fieldErrors = fieldErrors,
+                        onFieldChanged = onFieldChanged,
+                        onEvent = onEvent,
+                        onCustomEvent = onCustomEvent,
+                        listItemRenderer = listItemRenderer,
+                        maxDepth = maxDepth - 1,
+                    )
+                }
             }
         }
     }
@@ -248,45 +271,53 @@ private fun renderZoneContent(
 }
 
 internal fun evaluateCondition(condition: String, data: List<JsonObject>): Boolean {
-    return when (condition) {
-        "data.isEmpty" -> data.isEmpty()
-        "!data.isEmpty" -> data.isNotEmpty()
-        "data.isNotEmpty" -> data.isNotEmpty()
-        else -> {
-            // For conditions like "data.summary != null", check if field exists
-            if (condition.contains("!= null")) {
-                val field = condition.substringBefore("!=").trim()
-                    .removePrefix("data.")
-                if (data.isNotEmpty()) {
-                    resolveFieldExists(field, data.first())
+    return try {
+        when (condition) {
+            "data.isEmpty" -> data.isEmpty()
+            "!data.isEmpty" -> data.isNotEmpty()
+            "data.isNotEmpty" -> data.isNotEmpty()
+            else -> {
+                // For conditions like "data.summary != null", check if field exists
+                if (condition.contains("!= null")) {
+                    val field = condition.substringBefore("!=").trim()
+                        .removePrefix("data.")
+                    if (data.isNotEmpty()) {
+                        resolveFieldExists(field, data.first())
+                    } else {
+                        false
+                    }
+                } else if (condition.contains("== null")) {
+                    val field = condition.substringBefore("==").trim()
+                        .removePrefix("data.")
+                    if (data.isNotEmpty()) {
+                        !resolveFieldExists(field, data.first())
+                    } else {
+                        true
+                    }
                 } else {
-                    false
+                    true // Default: show zone
                 }
-            } else if (condition.contains("== null")) {
-                val field = condition.substringBefore("==").trim()
-                    .removePrefix("data.")
-                if (data.isNotEmpty()) {
-                    !resolveFieldExists(field, data.first())
-                } else {
-                    true
-                }
-            } else {
-                true // Default: show zone
             }
         }
+    } catch (_: Throwable) {
+        true // Show zone by default on error
     }
 }
 
 private fun resolveFieldExists(field: String, data: JsonObject): Boolean {
-    val parts = field.split(".")
-    var current: kotlinx.serialization.json.JsonElement = data
-    for (part in parts) {
-        when (current) {
-            is JsonObject -> {
-                current = (current as JsonObject)[part] ?: return false
+    return try {
+        val parts = field.split(".")
+        var current: kotlinx.serialization.json.JsonElement = data
+        for (part in parts) {
+            when (current) {
+                is JsonObject -> {
+                    current = (current as JsonObject)[part] ?: return false
+                }
+                else -> return false
             }
-            else -> return false
         }
+        current !is kotlinx.serialization.json.JsonNull
+    } catch (_: Throwable) {
+        false
     }
-    return current !is kotlinx.serialization.json.JsonNull
 }
