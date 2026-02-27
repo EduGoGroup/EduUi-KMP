@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.feedback.DSEmptyState
 import com.edugo.kmp.design.components.progress.DSLinearProgress
+import androidx.compose.material.icons.filled.CloudOff
 import com.edugo.kmp.dynamicui.contract.EventContext
 import com.edugo.kmp.dynamicui.contract.EventResult
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
@@ -219,17 +220,31 @@ fun DynamicScreen(
                     modifier = Modifier.fillMaxSize().padding(Spacing.spacing4),
                     contentAlignment = Alignment.Center,
                 ) {
-                    DSEmptyState(
-                        icon = Icons.Default.Warning,
-                        title = "Error loading screen",
-                        description = state.message,
-                        actionLabel = "Retry",
-                        onAction = {
-                            scope.launch {
-                                viewModel.loadScreen(screenKey)
-                            }
-                        },
-                    )
+                    if (state.message == DynamicScreenViewModel.OFFLINE_NOT_AVAILABLE) {
+                        DSEmptyState(
+                            icon = Icons.Default.CloudOff,
+                            title = "No disponible sin conexión",
+                            description = "Esta pantalla no está disponible sin conexión. Conéctate a internet para cargarla.",
+                            actionLabel = "Reintentar",
+                            onAction = {
+                                scope.launch {
+                                    viewModel.loadScreen(screenKey)
+                                }
+                            },
+                        )
+                    } else {
+                        DSEmptyState(
+                            icon = Icons.Default.Warning,
+                            title = "Error loading screen",
+                            description = state.message,
+                            actionLabel = "Retry",
+                            onAction = {
+                                scope.launch {
+                                    viewModel.loadScreen(screenKey)
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }

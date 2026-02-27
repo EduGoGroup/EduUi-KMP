@@ -18,11 +18,12 @@ import com.edugo.kmp.dynamicui.resolver.SlotBindingResolver
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.network.connectivity.NetworkObserver
 import com.edugo.kmp.network.connectivity.NetworkStatus
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -48,9 +49,17 @@ class DynamicScreenViewModel(
     private val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
     val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
 
+    @OptIn(kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi::class)
     val isOnline: StateFlow<Boolean> = networkObserver?.let { observer ->
-        MutableStateFlow(observer.isOnline).also { flow ->
-            // Will be collected by the UI; updates derived from networkObserver.status
+        object : StateFlow<Boolean> {
+            override val value: Boolean get() = observer.isOnline
+            override val replayCache: List<Boolean> get() = listOf(value)
+            override suspend fun collect(collector: FlowCollector<Boolean>): Nothing {
+                observer.status.map { it == NetworkStatus.AVAILABLE }
+                    .distinctUntilChanged()
+                    .collect(collector)
+                error("StateFlow collection should never complete")
+            }
         }
     } ?: MutableStateFlow(true)
 
@@ -61,6 +70,10 @@ class DynamicScreenViewModel(
         data object Loading : ScreenState()
         data class Ready(val screen: ScreenDefinition) : ScreenState()
         data class Error(val message: String) : ScreenState()
+    }
+
+    companion object {
+        const val OFFLINE_NOT_AVAILABLE = "OFFLINE_NOT_AVAILABLE"
     }
 
     sealed class DataState {
@@ -82,12 +95,10 @@ class DynamicScreenViewModel(
         placeholders: Map<String, String> = emptyMap(),
     ) {
         _screenState.value = ScreenState.Loading
+        _screenParams = placeholders
 
         // Track recent screen access
         recentScreenTracker?.recordAccess(screenKey)
-
-        // Update online status
-        updateOnlineStatus()
 
         when (val result = screenLoader.loadScreen(screenKey, platform)) {
             is Result.Success -> {
@@ -114,7 +125,12 @@ class DynamicScreenViewModel(
                 }
             }
             is Result.Failure -> {
-                _screenState.value = ScreenState.Error(result.error)
+                val isOffline = networkObserver != null && !networkObserver.isOnline
+                _screenState.value = if (isOffline) {
+                    ScreenState.Error(OFFLINE_NOT_AVAILABLE)
+                } else {
+                    ScreenState.Error(result.error)
+                }
             }
             is Result.Loading -> {
                 // Already in loading state
@@ -183,7 +199,7 @@ class DynamicScreenViewModel(
 
         val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
         val contract = contractRegistry.find(screen.screenKey) ?: return
-        val context = EventContext(screenKey = screen.screenKey)
+        val context = EventContext(screenKey = screen.screenKey, params = _screenParams)
         val endpoint = contract.endpointFor(ScreenEvent.LOAD_MORE, context) ?: return
         val config = contract.dataConfig()
         val pagination = config.pagination ?: return
@@ -299,13 +315,16 @@ class DynamicScreenViewModel(
         }
     }
 
+    // Stores the navigation params so search/loadMore can build correct contexts
+    private var _screenParams: Map<String, String> = emptyMap()
+
     // Stores the full unfiltered dataset for client-side fallback filtering
     private var _allItems: List<JsonObject> = emptyList()
 
     suspend fun search(query: String) {
         val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
         val contract = contractRegistry.find(screen.screenKey) ?: return
-        val context = EventContext(screenKey = screen.screenKey)
+        val context = EventContext(screenKey = screen.screenKey, params = _screenParams)
         val endpoint = contract.endpointFor(ScreenEvent.SEARCH, context) ?: return
         val config = contract.dataConfig()
 
@@ -375,12 +394,6 @@ class DynamicScreenViewModel(
     fun resetFields() {
         _fieldValues.value = emptyMap()
         _fieldErrors.value = emptyMap()
-    }
-
-    private fun updateOnlineStatus() {
-        if (networkObserver != null) {
-            (isOnline as? MutableStateFlow)?.value = networkObserver.isOnline
-        }
     }
 
     /**

@@ -125,14 +125,11 @@ fun SchoolSelectionScreen(
                                 scope.launch {
                                     when (val switchResult = authService.switchContext(school.id)) {
                                         is Result.Success -> {
-                                            when (val syncResult = dataSyncService.fullSync()) {
-                                                is Result.Success -> onSyncComplete()
-                                                is Result.Failure -> {
-                                                    // Sync failed but context switched - go to dashboard anyway
-                                                    onSyncComplete()
-                                                }
-                                                is Result.Loading -> {}
-                                            }
+                                            // Light sync: menu+perms (~200ms) then navigate immediately
+                                            dataSyncService.syncMenuAndPermissions()
+                                            onSyncComplete()
+                                            // Screens load in background
+                                            dataSyncService.syncScreens()
                                         }
                                         is Result.Failure -> {
                                             isSyncing = false

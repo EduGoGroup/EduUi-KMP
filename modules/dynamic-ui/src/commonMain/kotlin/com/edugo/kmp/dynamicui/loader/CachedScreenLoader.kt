@@ -8,7 +8,10 @@ import com.edugo.kmp.network.connectivity.NetworkObserver
 import com.edugo.kmp.storage.SafeEduGoStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -194,13 +197,24 @@ class CachedScreenLoader(
      */
     suspend fun seedFromBundle(screens: Map<String, ScreenDefinition>) = mutex.withLock {
         val now = clock.now()
+        val nowMillis = now.toEpochMilliseconds()
+
+        // Phase 1: Seed memory cache (fast, sequential - HashMap not thread-safe)
         for ((key, screen) in screens) {
             putMemoryEntry(key, screen, now)
-            val entry = CacheEntry(screen, now.toEpochMilliseconds(), screen.version)
-            storage.putStringSafe(
-                "screen.cache.$key",
-                json.encodeToString(entry),
-            )
+        }
+
+        // Phase 2: Serialize & persist to storage in parallel (CPU-bound)
+        withContext(Dispatchers.Default) {
+            screens.map { (key, screen) ->
+                async {
+                    val entry = CacheEntry(screen, nowMillis, screen.version)
+                    storage.putStringSafe(
+                        "screen.cache.$key",
+                        json.encodeToString(entry),
+                    )
+                }
+            }.awaitAll()
         }
     }
 
