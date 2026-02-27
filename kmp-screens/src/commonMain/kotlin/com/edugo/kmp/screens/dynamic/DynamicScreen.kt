@@ -91,7 +91,7 @@ fun DynamicScreen(
                     val snackbarResult = snackbarHostState.showSnackbar(
                         message = result.message,
                         actionLabel = "Deshacer",
-                        duration = SnackbarDuration.Short,
+                        duration = SnackbarDuration.Long,
                     )
                     if (snackbarResult == SnackbarResult.ActionPerformed) {
                         viewModel.cancelPendingDelete()

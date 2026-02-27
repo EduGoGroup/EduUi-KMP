@@ -361,7 +361,9 @@ class DynamicScreenViewModel(
     suspend fun executePendingDelete(itemId: String, endpoint: String, method: String) {
         val body = JsonObject(emptyMap())
         val result = dataLoader.submitData(endpoint, body, method)
-        if (result is Result.Success) {
+        // Only emit DataDeleted when the delete was actually executed (data != null).
+        // Result.Success(null) means the mutation was queued offline, not yet executed.
+        if (result is Result.Success && result.data != null) {
             val screenKey = (screenState.value as? ScreenState.Ready)?.screen?.screenKey
             if (screenKey != null) {
                 val resource = contractRegistry.find(screenKey)?.resource
@@ -372,16 +374,16 @@ class DynamicScreenViewModel(
         }
     }
 
-    private var _eventBusSubscribed = false
+    private var eventBusJob: Job? = null
 
-    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun subscribeToEventBus(screenKey: String, placeholders: Map<String, String>) {
-        if (_eventBusSubscribed || screenEventBus == null) return
+        if (screenEventBus == null) return
         val contract = contractRegistry.find(screenKey) ?: return
         val myResource = contract.resource
-        _eventBusSubscribed = true
 
-        kotlinx.coroutines.GlobalScope.launch {
+        // Cancel previous subscription when screenKey changes
+        eventBusJob?.cancel()
+        eventBusJob = pendingDeleteScope.launch {
             screenEventBus.events.collect { event ->
                 val matchesResource = when (event) {
                     is ScreenDataEvent.DataChanged -> event.resource == myResource

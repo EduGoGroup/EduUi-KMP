@@ -73,12 +73,16 @@ class EventOrchestrator(
                 "DELETE" -> {
                     val itemId = context.selectedItem?.get("id")?.let {
                         (it as? JsonPrimitive)?.content
-                    } ?: ""
-                    EventResult.PendingDelete(
-                        itemId = itemId,
-                        endpoint = requestConfig.url,
-                        method = "DELETE"
-                    )
+                    }
+                    if (itemId.isNullOrEmpty()) {
+                        EventResult.Error("No se pudo identificar el elemento a eliminar")
+                    } else {
+                        EventResult.PendingDelete(
+                            itemId = itemId,
+                            endpoint = requestConfig.url,
+                            method = "DELETE"
+                        )
+                    }
                 }
                 else -> EventResult.Error("Unsupported method: $method")
             }
