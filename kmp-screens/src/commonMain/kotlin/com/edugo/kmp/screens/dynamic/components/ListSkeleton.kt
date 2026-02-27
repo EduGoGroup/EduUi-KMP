@@ -18,7 +18,7 @@ import com.edugo.kmp.design.components.progress.DSSkeleton
 @Composable
 fun ListSkeleton(modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(Spacing.spacing4),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.spacing3),
     ) {
         repeat(5) {

@@ -76,6 +76,14 @@ expect object Strings {
     val school_selection_description: String
     val syncing_data: String
 
+    // Form validation
+    val form_field_required: String
+    val form_fix_errors: String
+
+    // Remote select
+    val select_loading: String
+    val select_load_error: String
+
     // Common
     val app_name: String
     val back_button: String

@@ -286,16 +286,26 @@ class DynamicScreenViewModel(
         }
     }
 
-    private fun validateFormFields(): Map<String, String> {
+    private fun validateFormFields(fieldValues: Map<String, String>): Map<String, String> {
         val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return emptyMap()
         val errors = mutableMapOf<String, String>()
 
-        screen.template.zones
-            .filter { it.type == ZoneType.FORM_SECTION }
-            .flatMap { it.slots }
+        // Recursive collection of slots from all FORM_SECTION zones (including nested)
+        fun collectFormSlots(zones: List<com.edugo.kmp.dynamicui.model.Zone>): List<com.edugo.kmp.dynamicui.model.Slot> {
+            val result = mutableListOf<com.edugo.kmp.dynamicui.model.Slot>()
+            for (zone in zones) {
+                if (zone.type == ZoneType.FORM_SECTION) {
+                    result.addAll(zone.slots)
+                }
+                result.addAll(collectFormSlots(zone.zones))
+            }
+            return result
+        }
+
+        collectFormSlots(screen.template.zones)
             .filter { it.required && !it.readOnly }
             .forEach { slot ->
-                val value = _fieldValues.value[slot.id]
+                val value = fieldValues[slot.id]
                 if (value.isNullOrBlank()) {
                     errors[slot.id] = "Este campo es obligatorio"
                 }
@@ -310,7 +320,7 @@ class DynamicScreenViewModel(
         fieldValues: Map<String, String>,
     ): EventResult {
         // Client-side validation: check required fields before API call
-        val validationErrors = validateFormFields()
+        val validationErrors = validateFormFields(fieldValues)
         if (validationErrors.isNotEmpty()) {
             _fieldErrors.value = validationErrors
             return EventResult.Error("Corrige los campos marcados")
@@ -542,10 +552,13 @@ class DynamicScreenViewModel(
     private val _selectOptions = MutableStateFlow<Map<String, SelectOptionsState>>(emptyMap())
     val selectOptions: StateFlow<Map<String, SelectOptionsState>> = _selectOptions.asStateFlow()
 
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     fun loadSelectOptions(fieldKey: String, endpoint: String, labelField: String, valueField: String) {
-        if (_selectOptions.value.containsKey(fieldKey)) return
+        val currentState = _selectOptions.value[fieldKey]
+        if (currentState != null && currentState !is SelectOptionsState.Error) return
         _selectOptions.update { it + (fieldKey to SelectOptionsState.Loading) }
-        pendingDeleteScope.launch {
+        backgroundScope.launch {
             val result = dataLoader.loadData(endpoint, DataConfig(), emptyMap())
             if (result is Result.Success) {
                 val options = result.data.items.mapNotNull { item ->

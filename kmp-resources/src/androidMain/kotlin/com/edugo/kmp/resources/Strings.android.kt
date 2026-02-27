@@ -127,6 +127,11 @@ actual object Strings {
     actual val syncing_data: String get() = getString(R.string.syncing_data, "Sincronizando datos...")
 
     // Common
+    actual val form_field_required: String get() = getString(R.string.form_field_required, "Este campo es obligatorio")
+    actual val form_fix_errors: String get() = getString(R.string.form_fix_errors, "Corrige los campos marcados")
+    actual val select_loading: String get() = getString(R.string.select_loading, "Cargando...")
+    actual val select_load_error: String get() = getString(R.string.select_load_error, "Error al cargar opciones")
+
     actual val app_name: String get() = getString(R.string.app_name, "EduGo")
     actual val back_button: String get() = getString(R.string.back_button, "Volver")
     actual val error_unknown: String get() = getString(R.string.error_unknown, "Ocurrió un error inesperado")

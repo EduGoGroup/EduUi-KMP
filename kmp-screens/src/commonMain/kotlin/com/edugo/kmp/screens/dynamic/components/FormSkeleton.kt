@@ -13,7 +13,7 @@ import com.edugo.kmp.design.components.progress.DSSkeleton
 @Composable
 fun FormSkeleton(modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(Spacing.spacing4),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.spacing4),
     ) {
         repeat(3) {

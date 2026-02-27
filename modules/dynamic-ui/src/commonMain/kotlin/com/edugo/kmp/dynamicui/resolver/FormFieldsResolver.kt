@@ -63,6 +63,7 @@ object FormFieldsResolver {
 
             val optionsEndpoint = if (controlType == ControlType.REMOTE_SELECT) {
                 obj["options_endpoint"]?.jsonPrimitive?.contentOrNull
+                    ?: return@mapNotNull null // remote_select requires options_endpoint
             } else {
                 null
             }

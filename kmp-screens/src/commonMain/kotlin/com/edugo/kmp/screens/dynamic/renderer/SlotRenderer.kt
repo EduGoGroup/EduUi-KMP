@@ -267,22 +267,35 @@ fun SlotRenderer(
             val endpoint = slot.optionsEndpoint ?: ""
             val labelField = slot.optionLabel ?: "name"
             val valueField = slot.optionValue ?: "id"
-            RemoteSelectField(
-                fieldKey = slot.id,
-                label = slot.label,
-                placeholder = slot.placeholder,
-                selectedValue = fieldValues[slot.id] ?: "",
-                onValueChange = { onFieldChanged(slot.id, it) },
-                optionsState = selectOptionsMap[slot.id],
-                onLoadOptions = {
-                    if (endpoint.isNotEmpty()) {
-                        onLoadSelectOptions?.invoke(slot.id, endpoint, labelField, valueField)
-                    }
-                },
-                isError = fieldErrors.containsKey(slot.id),
-                supportingText = fieldErrors[slot.id],
-                modifier = modifier.fillMaxWidth(),
-            )
+            if (endpoint.isBlank() || onLoadSelectOptions == null) {
+                // Fallback to local select when remote endpoint is not configured
+                val options = slot.options ?: emptyList()
+                SelectField(
+                    label = slot.label,
+                    placeholder = slot.placeholder,
+                    options = options,
+                    selectedValue = fieldValues[slot.id] ?: "",
+                    onValueChange = { onFieldChanged(slot.id, it) },
+                    isError = fieldErrors.containsKey(slot.id),
+                    supportingText = fieldErrors[slot.id],
+                    modifier = modifier.fillMaxWidth(),
+                )
+            } else {
+                RemoteSelectField(
+                    fieldKey = slot.id,
+                    label = slot.label,
+                    placeholder = slot.placeholder,
+                    selectedValue = fieldValues[slot.id] ?: "",
+                    onValueChange = { onFieldChanged(slot.id, it) },
+                    optionsState = selectOptionsMap[slot.id],
+                    onLoadOptions = {
+                        onLoadSelectOptions.invoke(slot.id, endpoint, labelField, valueField)
+                    },
+                    isError = fieldErrors.containsKey(slot.id),
+                    supportingText = fieldErrors[slot.id],
+                    modifier = modifier.fillMaxWidth(),
+                )
+            }
         }
 
         ControlType.RADIO_GROUP, ControlType.RATING -> {

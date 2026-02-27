@@ -6,8 +6,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.edugo.kmp.dynamicui.model.SlotOption
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel.SelectOptionsState
+import com.edugo.kmp.resources.Strings
 
 @Composable
 fun RemoteSelectField(
@@ -32,7 +32,7 @@ fun RemoteSelectField(
                 value = "",
                 onValueChange = {},
                 label = label?.let { { Text(it) } },
-                placeholder = { Text("Cargando...") },
+                placeholder = { Text(Strings.select_loading) },
                 enabled = false,
                 readOnly = true,
                 modifier = modifier.fillMaxWidth(),
@@ -57,7 +57,7 @@ fun RemoteSelectField(
                 value = "",
                 onValueChange = {},
                 label = label?.let { { Text(it) } },
-                placeholder = { Text("Error al cargar opciones") },
+                placeholder = { Text(Strings.select_load_error) },
                 supportingText = { Text(optionsState.message) },
                 isError = true,
                 enabled = false,
