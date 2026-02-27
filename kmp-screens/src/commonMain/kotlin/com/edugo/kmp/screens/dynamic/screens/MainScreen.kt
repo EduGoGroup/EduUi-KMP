@@ -101,12 +101,14 @@ fun MainScreen(
             }
             isLoading = false
         } else {
-            // No bundle yet - try restoring from local or use fallback
-            val restored = dataSyncService.restoreFromLocal()
-            if (restored == null) {
-                allItems = fallbackItems()
-                selectedKey = allItems.firstLeaf()?.key
-                isLoading = false
+            // No bundle yet - only restore if still authenticated (avoid race on logout)
+            if (authState is AuthState.Authenticated) {
+                val restored = dataSyncService.restoreFromLocal()
+                if (restored == null) {
+                    allItems = fallbackItems()
+                    selectedKey = allItems.firstLeaf()?.key
+                    isLoading = false
+                }
             }
         }
     }
@@ -152,12 +154,7 @@ fun MainScreen(
                         userInitials = state.user.getInitials(),
                         userEmail = state.user.email,
                         schoolName = state.activeContext.schoolName,
-                        onLogout = {
-                            scope.launch {
-                                authService.logout()
-                                onLogout()
-                            }
-                        },
+                        onLogout = onLogout,
                         onSwitchContext = if (canSwitch) {
                             { showContextPicker = true }
                         } else null,

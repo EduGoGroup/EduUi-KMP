@@ -91,6 +91,7 @@ class DynamicScreenViewModel(
         placeholders: Map<String, String> = emptyMap(),
     ) {
         _screenState.value = ScreenState.Loading
+        _screenParams = placeholders
 
         // Track recent screen access
         recentScreenTracker?.recordAccess(screenKey)
@@ -189,7 +190,7 @@ class DynamicScreenViewModel(
 
         val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
         val contract = contractRegistry.find(screen.screenKey) ?: return
-        val context = EventContext(screenKey = screen.screenKey)
+        val context = EventContext(screenKey = screen.screenKey, params = _screenParams)
         val endpoint = contract.endpointFor(ScreenEvent.LOAD_MORE, context) ?: return
         val config = contract.dataConfig()
         val pagination = config.pagination ?: return
@@ -305,13 +306,16 @@ class DynamicScreenViewModel(
         }
     }
 
+    // Stores the navigation params so search/loadMore can build correct contexts
+    private var _screenParams: Map<String, String> = emptyMap()
+
     // Stores the full unfiltered dataset for client-side fallback filtering
     private var _allItems: List<JsonObject> = emptyList()
 
     suspend fun search(query: String) {
         val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
         val contract = contractRegistry.find(screen.screenKey) ?: return
-        val context = EventContext(screenKey = screen.screenKey)
+        val context = EventContext(screenKey = screen.screenKey, params = _screenParams)
         val endpoint = contract.endpointFor(ScreenEvent.SEARCH, context) ?: return
         val config = contract.dataConfig()
 

@@ -205,39 +205,6 @@ class DataSyncService(
         )
     }
 
-    private fun persistDeltaChanges(changed: Map<String, BucketData>) {
-        for ((key, bucketData) in changed) {
-            when {
-                key == "menu" -> {
-                    try {
-                        val items = json.decodeFromJsonElement<List<MenuItem>>(bucketData.data)
-                        store.updateMenu(MenuResponse(items = items), bucketData.hash)
-                    } catch (_: Exception) { }
-                }
-                key == "permissions" -> {
-                    try {
-                        val perms = json.decodeFromJsonElement<List<String>>(bucketData.data)
-                        store.updatePermissions(perms, bucketData.hash)
-                    } catch (_: Exception) { }
-                }
-                key == "available_contexts" -> {
-                    try {
-                        val contexts = json.decodeFromJsonElement<List<UserContext>>(bucketData.data)
-                        store.updateContexts(contexts, bucketData.hash)
-                    } catch (_: Exception) { }
-                }
-                key.startsWith("screen:") -> {
-                    val screenKey = key.removePrefix("screen:")
-                    try {
-                        val entry = json.decodeFromJsonElement<ScreenBundleEntry>(bucketData.data)
-                        val screen = mapScreenEntry(entry)
-                        store.updateScreen(screenKey, screen, bucketData.hash)
-                    } catch (_: Exception) { }
-                }
-            }
-        }
-    }
-
     private fun applyDeltaToBundle(
         base: UserDataBundle,
         changed: Map<String, BucketData>,
@@ -250,35 +217,44 @@ class DataSyncService(
         val hashes = base.hashes.toMutableMap()
 
         for ((key, bucketData) in changed) {
-            hashes[key] = bucketData.hash
             when {
                 key == "menu" -> {
                     try {
-                        menu = MenuResponse(items = json.decodeFromJsonElement<List<MenuItem>>(bucketData.data))
+                        val items = json.decodeFromJsonElement<List<MenuItem>>(bucketData.data)
+                        val newMenu = MenuResponse(items = items)
+                        menu = newMenu
+                        hashes[key] = bucketData.hash
+                        store.updateMenu(newMenu, bucketData.hash)
                     } catch (_: Exception) { }
                 }
                 key == "permissions" -> {
                     try {
-                        permissions = json.decodeFromJsonElement<List<String>>(bucketData.data)
+                        val perms = json.decodeFromJsonElement<List<String>>(bucketData.data)
+                        permissions = perms
+                        hashes[key] = bucketData.hash
+                        store.updatePermissions(perms, bucketData.hash)
                     } catch (_: Exception) { }
                 }
                 key == "available_contexts" -> {
                     try {
-                        contexts = json.decodeFromJsonElement<List<UserContext>>(bucketData.data)
+                        val ctxs = json.decodeFromJsonElement<List<UserContext>>(bucketData.data)
+                        contexts = ctxs
+                        hashes[key] = bucketData.hash
+                        store.updateContexts(ctxs, bucketData.hash)
                     } catch (_: Exception) { }
                 }
                 key.startsWith("screen:") -> {
                     val screenKey = key.removePrefix("screen:")
                     try {
                         val entry = json.decodeFromJsonElement<ScreenBundleEntry>(bucketData.data)
-                        screens[screenKey] = mapScreenEntry(entry)
+                        val screen = mapScreenEntry(entry)
+                        screens[screenKey] = screen
+                        hashes[key] = bucketData.hash
+                        store.updateScreen(screenKey, screen, bucketData.hash)
                     } catch (_: Exception) { }
                 }
             }
         }
-
-        // Persist changes to storage in the background
-        persistDeltaChanges(changed)
 
         return UserDataBundle(
             menu = menu,
