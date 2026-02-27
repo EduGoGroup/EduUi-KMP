@@ -31,4 +31,11 @@ sealed class EventResult {
         val method: String = "POST",
         val fieldValues: Map<String, String> = emptyMap()
     ) : EventResult()
+
+    data class PendingDelete(
+        val itemId: String,
+        val endpoint: String,
+        val method: String = "DELETE",
+        val message: String = "Elemento eliminado"
+    ) : EventResult()
 }

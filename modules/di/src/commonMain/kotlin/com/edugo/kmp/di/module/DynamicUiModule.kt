@@ -22,6 +22,7 @@ import com.edugo.kmp.dynamicui.sync.DataSyncService
 import com.edugo.kmp.dynamicui.sync.LocalSyncStore
 import com.edugo.kmp.dynamicui.sync.SyncRepository
 import com.edugo.kmp.dynamicui.sync.SyncRepositoryImpl
+import com.edugo.kmp.dynamicui.event.ScreenEventBus
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
 import com.edugo.kmp.network.EduGoHttpClient
 import com.edugo.kmp.network.connectivity.NetworkObserver
@@ -93,6 +94,7 @@ val dynamicUiModule = module {
         )
     }
 
+    single { ScreenEventBus() }
     single { ScreenContractRegistry(getAll()) }
     single {
         val authService = get<AuthService>()
@@ -111,6 +113,7 @@ val dynamicUiModule = module {
             networkObserver = getOrNull<NetworkObserver>(),
             recentScreenTracker = get(),
             mutationQueue = get(),
+            screenEventBus = get(),
         )
     }
 }
