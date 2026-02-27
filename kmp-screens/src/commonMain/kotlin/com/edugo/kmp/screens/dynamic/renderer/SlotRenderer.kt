@@ -309,7 +309,7 @@ private fun resolveSlotValue(
 
         // 3. Static value (no fallback to label to avoid duplication)
         slot.value ?: ""
-    } catch (_: Throwable) {
+    } catch (_: Exception) {
         slot.value ?: ""
     }
 }
@@ -333,7 +333,7 @@ private fun resolveFieldFromJson(field: String, data: JsonObject): String? {
             }
             else -> current.toString()
         }
-    } catch (_: Throwable) {
+    } catch (_: Exception) {
         null
     }
 }

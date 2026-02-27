@@ -45,13 +45,13 @@ fun ZoneErrorBoundary(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val errorState = remember { ZoneErrorState() }
-    var retryCount by remember { mutableStateOf(0) }
+    val errorState = remember(zoneId) { ZoneErrorState() }
+    var retryCount by remember(zoneId) { mutableStateOf(0) }
 
     val currentError = errorState.error
     if (currentError != null) {
         LaunchedEffect(currentError) {
-            DefaultLogger.e("ZoneErrorBoundary", "Zone '$zoneId' failed: ${currentError.message}")
+            DefaultLogger.e("ZoneErrorBoundary", "Zone '$zoneId' failed: ${currentError.message}", currentError)
         }
         ZoneErrorPlaceholder(
             zoneId = zoneId,

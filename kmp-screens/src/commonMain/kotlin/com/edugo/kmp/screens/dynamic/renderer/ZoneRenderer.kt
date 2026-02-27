@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
 import com.edugo.kmp.design.components.media.DSDivider
@@ -46,23 +45,21 @@ fun ZoneRenderer(
         val errorState = LocalZoneError.current
 
         // Pre-validate zone data integrity (non-composable, safe to try-catch)
-        val validationError = remember(zone, data) {
-            runCatching {
-                zone.type
-                zone.slots.size
-                zone.zones.size
-                zone.distribution
-                zone.itemLayout?.slots?.size
-                data.size
-            }.exceptionOrNull()
-        }
+        val validationError = runCatching {
+            zone.type
+            zone.slots.size
+            zone.zones.size
+            zone.distribution
+            zone.itemLayout?.slots?.size
+            data.size
+        }.exceptionOrNull()
 
         if (validationError != null) {
             SideEffect { errorState?.error = validationError }
             return@ZoneErrorBoundary
         }
 
-        Column(modifier = Modifier.padding(vertical = Spacing.spacing1)) {
+        Column(modifier = modifier.padding(vertical = Spacing.spacing1)) {
             when {
                 // List zones render items with itemLayout
                 zone.type == ZoneType.SIMPLE_LIST && zone.itemLayout != null -> {
@@ -299,7 +296,7 @@ internal fun evaluateCondition(condition: String, data: List<JsonObject>): Boole
                 }
             }
         }
-    } catch (_: Throwable) {
+    } catch (_: Exception) {
         true // Show zone by default on error
     }
 }
@@ -317,7 +314,7 @@ private fun resolveFieldExists(field: String, data: JsonObject): Boolean {
             }
         }
         current !is kotlinx.serialization.json.JsonNull
-    } catch (_: Throwable) {
+    } catch (_: Exception) {
         false
     }
 }
