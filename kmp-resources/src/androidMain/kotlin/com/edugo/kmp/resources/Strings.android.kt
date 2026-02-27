@@ -102,6 +102,30 @@ actual object Strings {
         }
     }
 
+    // Connectivity
+    actual val offline_banner: String get() = getString(R.string.offline_banner, "Sin conexión - usando datos guardados")
+    actual fun offline_syncing(current: Int, total: Int): String {
+        if (!::appContext.isInitialized) return "Sincronizando $current/$total..."
+        return try {
+            appContext.getString(R.string.offline_syncing, current, total)
+        } catch (_: Resources.NotFoundException) {
+            "Sincronizando $current/$total..."
+        }
+    }
+    actual fun offline_pending(count: Int): String {
+        if (!::appContext.isInitialized) return "Sincronizando $count cambios pendientes..."
+        return try {
+            appContext.getString(R.string.offline_pending, count)
+        } catch (_: Resources.NotFoundException) {
+            "Sincronizando $count cambios pendientes..."
+        }
+    }
+    actual val stale_data_indicator: String get() = getString(R.string.stale_data_indicator, "Datos en caché")
+
+    // School selection (extra)
+    actual val school_selection_description: String get() = getString(R.string.school_selection_description, "Selecciona la escuela con la que deseas trabajar")
+    actual val syncing_data: String get() = getString(R.string.syncing_data, "Sincronizando datos...")
+
     // Common
     actual val app_name: String get() = getString(R.string.app_name, "EduGo")
     actual val back_button: String get() = getString(R.string.back_button, "Volver")

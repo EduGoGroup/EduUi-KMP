@@ -12,6 +12,7 @@ import com.edugo.kmp.dynamicui.event.ScreenEventBus
 import com.edugo.kmp.dynamicui.loader.ScreenLoader
 import com.edugo.kmp.dynamicui.model.DataConfig
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
+import com.edugo.kmp.dynamicui.model.ZoneType
 import com.edugo.kmp.dynamicui.offline.MutationQueue
 import com.edugo.kmp.dynamicui.orchestrator.EventOrchestrator
 import com.edugo.kmp.dynamicui.resolver.FormFieldsResolver
@@ -35,6 +36,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 class DynamicScreenViewModel(
     private val screenLoader: ScreenLoader,
@@ -283,11 +286,36 @@ class DynamicScreenViewModel(
         }
     }
 
+    private fun validateFormFields(): Map<String, String> {
+        val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return emptyMap()
+        val errors = mutableMapOf<String, String>()
+
+        screen.template.zones
+            .filter { it.type == ZoneType.FORM_SECTION }
+            .flatMap { it.slots }
+            .filter { it.required && !it.readOnly }
+            .forEach { slot ->
+                val value = _fieldValues.value[slot.id]
+                if (value.isNullOrBlank()) {
+                    errors[slot.id] = "Este campo es obligatorio"
+                }
+            }
+
+        return errors
+    }
+
     suspend fun submitForm(
         endpoint: String,
         method: String,
         fieldValues: Map<String, String>,
     ): EventResult {
+        // Client-side validation: check required fields before API call
+        val validationErrors = validateFormFields()
+        if (validationErrors.isNotEmpty()) {
+            _fieldErrors.value = validationErrors
+            return EventResult.Error("Corrige los campos marcados")
+        }
+
         // Get form field keys from the screen definition to filter only editable fields
         val screen = (_screenState.value as? ScreenState.Ready)?.screen
         val formFieldKeys = screen?.template?.zones
@@ -500,6 +528,39 @@ class DynamicScreenViewModel(
             }
             if (extra.isEmpty()) item
             else JsonObject(item + extra)
+        }
+    }
+
+    // ── Remote select options support ────────────────────────────────────
+
+    sealed class SelectOptionsState {
+        data object Loading : SelectOptionsState()
+        data class Success(val options: List<com.edugo.kmp.dynamicui.model.SlotOption>) : SelectOptionsState()
+        data class Error(val message: String) : SelectOptionsState()
+    }
+
+    private val _selectOptions = MutableStateFlow<Map<String, SelectOptionsState>>(emptyMap())
+    val selectOptions: StateFlow<Map<String, SelectOptionsState>> = _selectOptions.asStateFlow()
+
+    fun loadSelectOptions(fieldKey: String, endpoint: String, labelField: String, valueField: String) {
+        if (_selectOptions.value.containsKey(fieldKey)) return
+        _selectOptions.update { it + (fieldKey to SelectOptionsState.Loading) }
+        pendingDeleteScope.launch {
+            val result = dataLoader.loadData(endpoint, DataConfig(), emptyMap())
+            if (result is Result.Success) {
+                val options = result.data.items.mapNotNull { item ->
+                    val label = item[labelField]?.let { el ->
+                        (el as? JsonPrimitive)?.contentOrNull
+                    } ?: return@mapNotNull null
+                    val value = item[valueField]?.let { el ->
+                        (el as? JsonPrimitive)?.contentOrNull
+                    } ?: return@mapNotNull null
+                    com.edugo.kmp.dynamicui.model.SlotOption(label = label, value = value)
+                }
+                _selectOptions.update { it + (fieldKey to SelectOptionsState.Success(options)) }
+            } else if (result is Result.Failure) {
+                _selectOptions.update { it + (fieldKey to SelectOptionsState.Error(result.error)) }
+            }
         }
     }
 }

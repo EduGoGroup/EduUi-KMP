@@ -14,6 +14,7 @@ import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.model.ScreenPattern
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel.SelectOptionsState
 import kotlinx.serialization.json.JsonObject
 
 @Composable
@@ -28,6 +29,8 @@ fun PatternRouter(
     onNavigate: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
     isStale: Boolean = false,
+    selectOptionsMap: Map<String, SelectOptionsState> = emptyMap(),
+    onLoadSelectOptions: ((String, String, String, String) -> Unit)? = null,
 ) {
     when (screen.pattern) {
         ScreenPattern.LOGIN -> LoginPatternRenderer(
@@ -93,6 +96,8 @@ fun PatternRouter(
             onEvent = onEvent,
             onCustomEvent = onCustomEvent,
             modifier = modifier,
+            selectOptionsMap = selectOptionsMap,
+            onLoadSelectOptions = onLoadSelectOptions,
         )
 
         else -> UnsupportedPatternFallback(

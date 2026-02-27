@@ -24,6 +24,7 @@ import com.edugo.kmp.dynamicui.sync.SyncRepository
 import com.edugo.kmp.dynamicui.sync.SyncRepositoryImpl
 import com.edugo.kmp.dynamicui.event.ScreenEventBus
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
+import com.edugo.kmp.logger.Logger
 import com.edugo.kmp.network.EduGoHttpClient
 import com.edugo.kmp.network.connectivity.NetworkObserver
 import com.edugo.kmp.storage.SafeEduGoStorage
@@ -45,6 +46,7 @@ val dynamicUiModule = module {
             storage = get<SafeEduGoStorage>(),
             cacheConfig = get(),
             networkObserver = getOrNull<NetworkObserver>(),
+            logger = getOrNull<Logger>(),
         )
     }
     single<DataLoader> {
@@ -61,6 +63,7 @@ val dynamicUiModule = module {
             cacheConfig = get(),
             networkObserver = getOrNull<NetworkObserver>(),
             mutationQueue = get(),
+            logger = getOrNull<Logger>(),
         )
     }
 

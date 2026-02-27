@@ -5,6 +5,7 @@ import com.edugo.kmp.network.interceptor.*
 import com.edugo.kmp.network.retry.RetryConfig
 import io.ktor.client.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.compression.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.*
@@ -182,6 +183,11 @@ public class EduGoHttpClientBuilder {
         val httpClient = HttpClient(createPlatformEngine()) {
             install(ContentNegotiation) {
                 json(JsonConfig.Default)
+            }
+
+            install(ContentEncoding) {
+                gzip()
+                deflate()
             }
 
             install(HttpTimeout) {

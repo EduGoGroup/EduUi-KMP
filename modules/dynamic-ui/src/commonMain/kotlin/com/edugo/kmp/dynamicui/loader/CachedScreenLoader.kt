@@ -4,6 +4,7 @@ import com.edugo.kmp.dynamicui.cache.CacheConfig
 import com.edugo.kmp.dynamicui.model.NavigationDefinition
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.foundation.result.Result
+import com.edugo.kmp.logger.Logger
 import com.edugo.kmp.network.connectivity.NetworkObserver
 import com.edugo.kmp.storage.SafeEduGoStorage
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,7 @@ class CachedScreenLoader(
     private val cacheDuration: Duration = 1.hours,
     private val maxMemoryEntries: Int = cacheConfig.maxScreenMemoryEntries,
     private val clock: Clock = Clock.System,
+    private val logger: Logger? = null,
 ) : ScreenLoader {
 
     @Serializable
@@ -80,6 +82,7 @@ class CachedScreenLoader(
         // 1. Check memory cache
         memoryCache[screenKey]?.let { (screen, timestamp) ->
             if (isValid(timestamp, screenKey, screen.pattern)) {
+                logger?.d("EduGo.Cache.Screen", "L1 HIT: $screenKey")
                 launchVersionCheck(screenKey, screen.version)
                 return Result.Success(screen)
             } else {
@@ -95,6 +98,7 @@ class CachedScreenLoader(
                 val entry = json.decodeFromString<CacheEntry>(cached)
                 val cachedAt = Instant.fromEpochMilliseconds(entry.cachedAt)
                 if (isValid(cachedAt, screenKey, entry.screen.pattern)) {
+                    logger?.d("EduGo.Cache.Screen", "L2 HIT: $screenKey")
                     putMemoryEntry(screenKey, entry.screen, cachedAt)
                     launchVersionCheck(screenKey, entry.version)
                     return Result.Success(entry.screen)
@@ -108,11 +112,13 @@ class CachedScreenLoader(
         // 3. If offline, return stale cache if available
         if (networkObserver != null && !networkObserver.isOnline) {
             if (staleScreen != null) {
+                logger?.d("EduGo.Cache.Screen", "STALE (offline): $screenKey")
                 return Result.Success(staleScreen)
             }
         }
 
         // 4. Load from remote
+        logger?.d("EduGo.Cache.Screen", "REMOTE: $screenKey")
         val result = remote.loadScreen(screenKey, platform)
         if (result is Result.Success) {
             val screen = result.data
@@ -128,11 +134,13 @@ class CachedScreenLoader(
 
         // 5. Remote failed - try stale cache as fallback
         if (staleScreen != null) {
+            logger?.d("EduGo.Cache.Screen", "STALE FALLBACK: $screenKey")
             return Result.Success(staleScreen)
         }
 
         // Also check memory for any stale entry (may have been removed from the map above)
         // but we already removed it. Check storage one more time for any parseable data.
+        logger?.d("EduGo.Cache.Screen", "MISS: $screenKey")
         result
     }
 

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.edugo.kmp.resources.Strings
 
 @Composable
 fun StaleDataIndicator(
@@ -21,7 +22,7 @@ fun StaleDataIndicator(
         onClick = { },
         label = {
             Text(
-                text = "Datos en caché",
+                text = Strings.stale_data_indicator,
                 style = MaterialTheme.typography.labelSmall,
             )
         },

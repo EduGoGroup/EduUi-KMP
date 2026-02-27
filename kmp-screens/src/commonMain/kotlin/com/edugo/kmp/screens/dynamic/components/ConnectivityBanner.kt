@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.edugo.kmp.dynamicui.offline.SyncEngine
+import com.edugo.kmp.resources.Strings
 
 @Composable
 fun ConnectivityBanner(
@@ -41,15 +42,15 @@ fun ConnectivityBanner(
         when {
             !isOnline -> {
                 backgroundColor = Color(0xFFFFF3E0) // amber 50
-                text = "Sin conexión - usando datos guardados"
+                text = Strings.offline_banner
             }
             syncState is SyncEngine.SyncState.Syncing -> {
                 backgroundColor = Color(0xFFE3F2FD) // blue 50
-                text = "Sincronizando ${syncState.current}/${syncState.total}..."
+                text = Strings.offline_syncing(syncState.current, syncState.total)
             }
             pendingMutationCount > 0 -> {
                 backgroundColor = Color(0xFFE3F2FD) // blue 50
-                text = "Sincronizando $pendingMutationCount cambios pendientes..."
+                text = Strings.offline_pending(pendingMutationCount)
             }
             else -> {
                 backgroundColor = Color(0xFFE3F2FD)

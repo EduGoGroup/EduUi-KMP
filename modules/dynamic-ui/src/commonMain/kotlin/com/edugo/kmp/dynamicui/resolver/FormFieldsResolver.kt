@@ -46,6 +46,7 @@ object FormFieldsResolver {
                 "toggle", "boolean" -> ControlType.SWITCH
                 "checkbox" -> ControlType.CHECKBOX
                 "select" -> ControlType.SELECT
+                "remote_select" -> ControlType.REMOTE_SELECT
                 else -> ControlType.TEXT_INPUT
             }
 
@@ -60,6 +61,22 @@ object FormFieldsResolver {
                 null
             }
 
+            val optionsEndpoint = if (controlType == ControlType.REMOTE_SELECT) {
+                obj["options_endpoint"]?.jsonPrimitive?.contentOrNull
+            } else {
+                null
+            }
+            val optionLabel = if (controlType == ControlType.REMOTE_SELECT) {
+                obj["option_label"]?.jsonPrimitive?.contentOrNull ?: "name"
+            } else {
+                null
+            }
+            val optionValue = if (controlType == ControlType.REMOTE_SELECT) {
+                obj["option_value"]?.jsonPrimitive?.contentOrNull ?: "id"
+            } else {
+                null
+            }
+
             Slot(
                 id = key,
                 controlType = controlType,
@@ -68,6 +85,9 @@ object FormFieldsResolver {
                 required = required,
                 field = key,
                 options = options,
+                optionsEndpoint = optionsEndpoint,
+                optionLabel = optionLabel,
+                optionValue = optionValue,
             )
         }
 

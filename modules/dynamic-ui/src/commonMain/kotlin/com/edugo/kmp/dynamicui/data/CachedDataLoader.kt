@@ -7,6 +7,7 @@ import com.edugo.kmp.dynamicui.offline.MutationQueue
 import com.edugo.kmp.dynamicui.offline.MutationStatus
 import com.edugo.kmp.dynamicui.offline.PendingMutation
 import com.edugo.kmp.foundation.result.Result
+import com.edugo.kmp.logger.Logger
 import com.edugo.kmp.network.connectivity.NetworkObserver
 import com.edugo.kmp.storage.SafeEduGoStorage
 import kotlinx.coroutines.sync.Mutex
@@ -38,6 +39,7 @@ class CachedDataLoader(
     private val defaultCacheDuration: Duration = 5.minutes,
     private val maxMemoryEntries: Int = cacheConfig.maxDataMemoryEntries,
     private val clock: Clock = Clock.System,
+    private val logger: Logger? = null,
 ) : DataLoader {
 
     private data class CacheEntry(val data: DataPage, val timestamp: Instant)
@@ -62,18 +64,22 @@ class CachedDataLoader(
             if (networkObserver != null && !networkObserver.isOnline) {
                 val cached = memoryCache[key] ?: loadFromStorage(key)
                 if (cached != null) {
+                    logger?.d("EduGo.Cache.Data", "STALE (offline): $endpoint")
                     return@withLock Result.Success(CachedDataResult(cached.data, isStale = true))
                 }
+                logger?.d("EduGo.Cache.Data", "MISS (offline): $endpoint")
                 return@withLock Result.Failure("Sin conexión y sin datos en caché")
             }
 
             // 1. Memory cache (fresh)
             val cached = memoryCache[key]
             if (cached != null && (clock.now() - cached.timestamp) < ttl) {
+                logger?.d("EduGo.Cache.Data", "L1 HIT: $endpoint")
                 return@withLock Result.Success(CachedDataResult(cached.data, isStale = false))
             }
 
             // 2. Try remote
+            logger?.d("EduGo.Cache.Data", "REMOTE: $endpoint")
             val result = remote.loadData(endpoint, config, params)
             if (result is Result.Success) {
                 updateMemoryCache(key, result.data)
@@ -84,10 +90,12 @@ class CachedDataLoader(
             // 3. Network failed → stale cache (offline fallback)
             val stale = cached ?: loadFromStorage(key)
             if (stale != null) {
+                logger?.d("EduGo.Cache.Data", "STALE FALLBACK: $endpoint")
                 return@withLock Result.Success(CachedDataResult(stale.data, isStale = true))
             }
 
             // 4. No cache at all
+            logger?.d("EduGo.Cache.Data", "MISS: $endpoint")
             @Suppress("UNCHECKED_CAST")
             result as Result<CachedDataResult>
         }
@@ -106,18 +114,22 @@ class CachedDataLoader(
             if (networkObserver != null && !networkObserver.isOnline) {
                 val cached = memoryCache[key] ?: loadFromStorage(key)
                 if (cached != null) {
+                    logger?.d("EduGo.Cache.Data", "STALE (offline): $endpoint")
                     return@withLock Result.Success(cached.data)
                 }
+                logger?.d("EduGo.Cache.Data", "MISS (offline): $endpoint")
                 return@withLock Result.Failure("Sin conexión y sin datos en caché")
             }
 
             // 1. Memory cache (fresh)
             val cached = memoryCache[key]
             if (cached != null && (clock.now() - cached.timestamp) < ttl) {
+                logger?.d("EduGo.Cache.Data", "L1 HIT: $endpoint")
                 return@withLock Result.Success(cached.data)
             }
 
             // 2. Try remote
+            logger?.d("EduGo.Cache.Data", "REMOTE: $endpoint")
             val result = remote.loadData(endpoint, config, params)
             if (result is Result.Success) {
                 updateMemoryCache(key, result.data)
@@ -128,9 +140,11 @@ class CachedDataLoader(
             // 3. Network failed → stale cache (offline support)
             val stale = cached ?: loadFromStorage(key)
             if (stale != null) {
+                logger?.d("EduGo.Cache.Data", "STALE FALLBACK: $endpoint")
                 return@withLock Result.Success(stale.data)
             }
 
+            logger?.d("EduGo.Cache.Data", "MISS: $endpoint")
             result
         }
     }

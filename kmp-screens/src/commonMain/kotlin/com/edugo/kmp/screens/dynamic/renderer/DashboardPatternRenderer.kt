@@ -10,7 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.edugo.kmp.design.Spacing
-import com.edugo.kmp.design.components.progress.DSLinearProgress
+import com.edugo.kmp.screens.dynamic.components.DashboardSkeleton
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
 import com.edugo.kmp.dynamicui.viewmodel.DynamicScreenViewModel
@@ -42,7 +42,7 @@ fun DashboardPatternRenderer(
         verticalArrangement = Arrangement.spacedBy(Spacing.spacing4),
     ) {
         if (dataState is DynamicScreenViewModel.DataState.Loading) {
-            DSLinearProgress(modifier = Modifier.fillMaxWidth())
+            DashboardSkeleton()
         }
 
         zones.forEach { zone ->
