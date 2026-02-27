@@ -7,6 +7,8 @@ import com.edugo.kmp.dynamicui.contract.ScreenContractRegistry
 import com.edugo.kmp.dynamicui.contract.ScreenEvent
 import com.edugo.kmp.dynamicui.data.CachedDataLoader
 import com.edugo.kmp.dynamicui.data.DataLoader
+import com.edugo.kmp.dynamicui.event.ScreenDataEvent
+import com.edugo.kmp.dynamicui.event.ScreenEventBus
 import com.edugo.kmp.dynamicui.loader.ScreenLoader
 import com.edugo.kmp.dynamicui.model.DataConfig
 import com.edugo.kmp.dynamicui.model.ScreenDefinition
@@ -18,6 +20,11 @@ import com.edugo.kmp.dynamicui.resolver.SlotBindingResolver
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.network.connectivity.NetworkObserver
 import com.edugo.kmp.network.connectivity.NetworkStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -36,6 +44,7 @@ class DynamicScreenViewModel(
     private val networkObserver: NetworkObserver? = null,
     private val recentScreenTracker: RecentScreenTracker? = null,
     private val mutationQueue: MutationQueue? = null,
+    private val screenEventBus: ScreenEventBus? = null,
 ) {
     private val _screenState = MutableStateFlow<ScreenState>(ScreenState.Loading)
     val screenState: StateFlow<ScreenState> = _screenState.asStateFlow()
@@ -123,6 +132,9 @@ class DynamicScreenViewModel(
                         loadDataWithStaleness(endpoint, config, screenKey = screenKey, screenPattern = resolved.pattern)
                     }
                 }
+
+                // Subscribe to event bus for auto-reload on data changes
+                subscribeToEventBus(screenKey, placeholders)
             }
             is Result.Failure -> {
                 val isOffline = networkObserver != null && !networkObserver.isOnline
@@ -307,6 +319,14 @@ class DynamicScreenViewModel(
                     // null signals "queued offline"
                     EventResult.Success(message = "Guardado localmente, se sincronizará al reconectar")
                 } else {
+                    // Emit data changed event so related screens auto-reload
+                    val screenKey = (screenState.value as? ScreenState.Ready)?.screen?.screenKey
+                    if (screenKey != null) {
+                        val resource = contractRegistry.find(screenKey)?.resource
+                        if (resource != null) {
+                            screenEventBus?.emit(ScreenDataEvent.DataChanged(resource))
+                        }
+                    }
                     EventResult.Success(message = "Guardado exitosamente")
                 }
             }
@@ -320,6 +340,70 @@ class DynamicScreenViewModel(
 
     // Stores the full unfiltered dataset for client-side fallback filtering
     private var _allItems: List<JsonObject> = emptyList()
+
+    // Pending delete support: delays actual DELETE API call to allow undo
+    private val pendingDeleteScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var pendingDeleteJob: Job? = null
+
+    fun schedulePendingDelete(itemId: String, endpoint: String, method: String, delayMs: Long = 5000) {
+        pendingDeleteJob?.cancel()
+        pendingDeleteJob = pendingDeleteScope.launch {
+            delay(delayMs)
+            executePendingDelete(itemId, endpoint, method)
+        }
+    }
+
+    fun cancelPendingDelete() {
+        pendingDeleteJob?.cancel()
+        pendingDeleteJob = null
+    }
+
+    suspend fun executePendingDelete(itemId: String, endpoint: String, method: String) {
+        val body = JsonObject(emptyMap())
+        val result = dataLoader.submitData(endpoint, body, method)
+        // Only emit DataDeleted when the delete was actually executed (data != null).
+        // Result.Success(null) means the mutation was queued offline, not yet executed.
+        if (result is Result.Success && result.data != null) {
+            val screenKey = (screenState.value as? ScreenState.Ready)?.screen?.screenKey
+            if (screenKey != null) {
+                val resource = contractRegistry.find(screenKey)?.resource
+                if (resource != null) {
+                    screenEventBus?.emit(ScreenDataEvent.DataDeleted(resource, itemId))
+                }
+            }
+        }
+    }
+
+    private var eventBusJob: Job? = null
+
+    private fun subscribeToEventBus(screenKey: String, placeholders: Map<String, String>) {
+        if (screenEventBus == null) return
+        val contract = contractRegistry.find(screenKey) ?: return
+        val myResource = contract.resource
+
+        // Cancel previous subscription when screenKey changes
+        eventBusJob?.cancel()
+        eventBusJob = pendingDeleteScope.launch {
+            screenEventBus.events.collect { event ->
+                val matchesResource = when (event) {
+                    is ScreenDataEvent.DataChanged -> event.resource == myResource
+                    is ScreenDataEvent.DataDeleted -> event.resource == myResource
+                }
+                if (matchesResource) {
+                    val context = EventContext(screenKey = screenKey, params = placeholders)
+                    val endpoint = contract.endpointFor(ScreenEvent.LOAD_DATA, context)
+                    if (endpoint != null) {
+                        loadDataWithStaleness(
+                            endpoint,
+                            contract.dataConfig(),
+                            screenKey = screenKey,
+                            screenPattern = (screenState.value as? ScreenState.Ready)?.screen?.pattern,
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     suspend fun search(query: String) {
         val screen = (screenState.value as? ScreenState.Ready)?.screen ?: return
