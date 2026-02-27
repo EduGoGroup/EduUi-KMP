@@ -18,6 +18,7 @@ kotlin {
                 implementation(project(":modules:settings"))
                 implementation(project(":modules:network"))
                 implementation(project(":modules:dynamic-ui"))
+                implementation(project(":modules:logger"))
                 implementation(libs.kotlinx.datetime)
             }
         }
