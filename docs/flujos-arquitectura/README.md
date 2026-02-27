@@ -1,7 +1,8 @@
 # Flujos de Arquitectura — EduGo KMP
 
-> **Actualizado en febrero 2026** para reflejar la implementacion del Sprint 8:
-> Sync Bundle System, Arquitectura Offline-First y DynamicToolbar.
+> **Actualizado en febrero 2026** para reflejar la implementacion completa hasta Sprint 9:
+> Sync Bundle System, Arquitectura Offline-First, DynamicToolbar, catalogo expandido de
+> ScreenContracts (30+), SelectField, ThemeService, StorageMigrator y DynamicDashboard por rol.
 
 > Documentacion detallada de los procesos internos del proyecto multiplataforma EduGo.
 > Incluye diagramas secuenciales, de componentes, de estados y comparativas por plataforma.
@@ -16,14 +17,14 @@
 | 02 | [Permisos y RBAC](./02-permisos-rbac.md) | Sistema RBAC con ActiveContext, verificacion de permisos y switch de escuela |
 | 03 | [Carga de UI Dinamica (SDUI)](./03-carga-sdui.md) | Pipeline completo desde backend hasta renderizado de pantallas dinamicas |
 | 04 | [Acciones de la UI](./04-acciones-ui.md) | ScreenEvent → EventOrchestrator → EventResult, contratos y handlers |
-| 05 | [Almacenamiento Local](./05-storage-local.md) | SafeEduGoStorage, estrategia de cache multinivel y diferencias por plataforma |
+| 05 | [Almacenamiento Local](./05-storage-local.md) | SafeEduGoStorage, estrategia de cache multinivel, migraciones y diferencias por plataforma |
 | 06 | [Conexion a Endpoints](./06-network-endpoints.md) | Ktor, interceptores, multi-API routing y resiliencia |
 | 07 | [Conectado y Offline](./07-offline-conectividad.md) | Estrategias de cache, stale-while-revalidate y busqueda offline |
 | 08 | [Arquitectura Global y DI](./08-arquitectura-global.md) | Capas, modulos Koin, ciclo de vida y flujo completo de datos |
 | 09 | [Mejoras Propuestas](./09-mejoras-propuestas.md) | Analisis de gaps y propuestas de mejora tecnica |
 | 10 | [Multiidioma (i18n)](./10-multiidioma-i18n.md) | Arquitectura hibrida: composeResources + strings del servidor via sync bundle |
 | 11 | [Conceptos y Terminologia](./11-conceptos-terminologia.md) | Sistema de terminologia dinamica por institucion (concept_types + school_concepts) |
-| 12 | [SDUI Remote Select](./12-sdui-remote-select.md) | Dropdown dinamico para formularios: select (fijo) y remote_select (desde endpoint) |
+| 12 | [SDUI Remote Select](./12-sdui-remote-select.md) | Dropdown dinamico para formularios: select (implementado) y remote_select (pendiente) |
 
 ---
 
@@ -49,10 +50,16 @@ graph LR/TD    → Grafos de dependencias
 ├─────────────────────────────────────────────────────────┤
 │  kmp-screens: Composables + Navegacion + Contratos      │
 │               + DynamicToolbar + ConnectivityBanner      │
+│               + 30+ ScreenContracts (CRUD, Dashboard)   │
+│               + 22 ControlTypes (incl. SelectField)     │
+│               + DynamicDashboard (por rol)               │
+│               + DynamicSettings (ThemeService)           │
+│               + ZoneErrorBoundary (error por zona)       │
 ├─────────────────────────────────────────────────────────┤
 │  modules/dynamic-ui: SDUI ViewModel + Orchestrator      │
 │                      + DataSyncService + MutationQueue   │
 │                      + SyncEngine + CacheConfig          │
+│                      + SlotBindingResolver + FormFields   │
 ├─────────────────────────────────────────────────────────┤
 │  modules/auth: RBAC + JWT + Refresh (con rotacion)      │
 ├─────────────────────────────────────────────────────────┤
@@ -60,7 +67,13 @@ graph LR/TD    → Grafos de dependencias
 │                   + NetworkObserver multiplataforma      │
 ├─────────────────────────────────────────────────────────┤
 │  modules/storage: SafeStorage + multiplatform-settings  │
-│                   + LocalSyncStore                       │
+│                   + LocalSyncStore + StorageMigrator     │
+├─────────────────────────────────────────────────────────┤
+│  modules/settings: ThemeService + ThemeOption            │
+├─────────────────────────────────────────────────────────┤
+│  modules/validation: AccumulativeValidation             │
+├─────────────────────────────────────────────────────────┤
+│  modules/foundation: Result + DomainMapper + AppError   │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -128,16 +141,97 @@ Endpoint de versionado que permite al cliente verificar si las definiciones de p
 
 ---
 
+## Sprint 9 - Resumen de cambios
+
+### Catalogo expandido de ScreenContracts (30+)
+
+Se paso de ~5 contracts a mas de 30, cubriendo todos los flujos CRUD de la aplicacion:
+
+| Categoria | Contracts | Descripcion |
+|-----------|-----------|-------------|
+| **Auth** | `LoginContract` | Login SDUI con custom event `submit-login` |
+| **Settings** | `SettingsContract` | Logout, theme toggle, navigate back |
+| **Dashboard** | `DashboardSuperadminContract`, `DashboardSchooladminContract`, `DashboardTeacherContract`, `DashboardStudentContract`, `DashboardGuardianContract`, `ProgressDashboardContract`, `StatsDashboardContract` | 7 dashboards por rol, todos heredan de `BaseDashboardContract` |
+| **Escuelas** | `SchoolsListContract`, `SchoolsFormContract`, `SchoolCrudContract` (×2: create/edit) | CRUD completo de escuelas |
+| **Usuarios** | `UsersListContract`, `UserCrudContract` (×2: create/edit) | CRUD de usuarios con navegacion a detalle |
+| **Unidades Academicas** | `UnitsListContract`, `UnitCrudContract` (×2: create/edit) | CRUD anidado bajo escuelas (`/schools/{id}/units`) |
+| **Materias** | `SubjectsListContract`, `SubjectsFormContract` | Lista y formulario de materias |
+| **Memberships** | `MembershipsListContract`, `MembershipAddContract` | Asignacion de usuarios a unidades por rol |
+| **Materiales** | `MaterialsListContract`, `MaterialCreateContract`, `MaterialEditContract`, `MaterialDetailContract` | CRUD completo de material educativo |
+| **Evaluaciones** | `AssessmentsListContract`, `AssessmentTakeContract` | Lista y toma de evaluaciones |
+| **Roles/Permisos** | `RolesListContract`, `PermissionsListContract` | Listas de roles y permisos (solo lectura) |
+| **Guardian** | `GuardianContract` (×2: children-list, child-progress) | Pantallas de seguimiento para acudientes |
+
+### 22 ControlTypes SDUI
+
+Se expandio el catalogo de controles renderizables desde 6 a 22:
+
+```
+text-input, email-input, password-input, number-input, search-bar,
+select, checkbox, switch, radio-group, chip, rating,
+filled-button, outlined-button, text-button, icon-button,
+label, icon, avatar, image, divider,
+list-item, list-item-navigation, metric-card
+```
+
+### SelectField implementado
+
+Componente `SelectField.kt` implementado en `kmp-screens/dynamic/components/`. Soporta dropdown con opciones fijas (`select` controlType con `options` en el slot). El `remote_select` (opciones desde endpoint) queda pendiente.
+
+### DynamicDashboardScreen (Dashboard por rol)
+
+Pantalla que selecciona automaticamente el screenKey del dashboard segun el rol del usuario autenticado:
+- `super_admin` / `platform_admin` → `dashboard-superadmin`
+- `school_admin` / `school_director` → `dashboard-schooladmin`
+- `teacher` → `dashboard-teacher`
+- `guardian` → `dashboard-guardian`
+- default → `dashboard-student`
+
+Inyecta placeholders contextuales: `user.firstName`, `user.fullName`, `context.roleName`, `context.schoolName`, `today_date`.
+
+### DynamicSettingsScreen (Tema)
+
+Pantalla de settings integrada con `ThemeService`. Detecta cambios en el campo `dark_mode` y aplica el tema via `ThemeServiceImpl` (LIGHT, DARK, SYSTEM).
+
+### StorageMigrator
+
+Sistema de migraciones de esquema para storage local:
+- `StorageMigration` (interface): Define un `version` y `migrate(storage)`.
+- `StorageMigrator`: Ejecuta migraciones pendientes secuencialmente y persiste la version actual en `storage.schema.version`.
+- Crash-safe: cada migracion persiste su version inmediatamente.
+
+### DisplayValueFormatter
+
+Utilidad para formato automatico de valores mostrados:
+- Booleanos: `true` → "Activo", `false` → "Inactivo"
+- Fechas ISO: `2026-02-15T10:30:00Z` → "15/02/2026"
+
+### ListItemRendererRegistry
+
+Registro de renderers personalizados por `screenKey`. Permite que una lista use un renderer custom en vez del `DefaultListItemRenderer`. Actualmente vacio (todas las listas usan el renderer por defecto).
+
+### DI expandido
+
+KoinInitializer ahora agrupa modulos en 3 niveles:
+- **Core**: foundationModule + coreModule + loggerModule + validationModule
+- **Infrastructure**: storageModule + configModule + networkModule
+- **Domain**: authModule + settingsModule + dynamicUiModule
+
+---
+
 ## Estado de la Documentacion
 
-| Documento | Diagramas | Plataformas | Mejoras |
-|-----------|-----------|-------------|---------|
-| 01 Menu   | si        | si          | si      |
-| 02 RBAC   | si        | si          | si      |
-| 03 SDUI   | si        | si          | si      |
-| 04 Acciones | si      | si          | si      |
-| 05 Storage | si       | si          | si      |
-| 06 Network | si       | si          | si      |
-| 07 Offline | si       | si          | si      |
-| 08 Arquitectura | si  | si          | si      |
-| 09 Mejoras | si       | —           | si      |
+| Documento | Diagramas | Plataformas | Mejoras | Actualizado |
+|-----------|-----------|-------------|---------|-------------|
+| 01 Menu   | si        | si          | si      | Sprint 8    |
+| 02 RBAC   | si        | si          | si      | Sprint 8    |
+| 03 SDUI   | si        | si          | si      | Sprint 10   |
+| 04 Acciones | si      | si          | si      | Sprint 9    |
+| 05 Storage | si       | si          | si      | Sprint 9    |
+| 06 Network | si       | si          | si      | Sprint 8    |
+| 07 Offline | si       | si          | si      | Sprint 8    |
+| 08 Arquitectura | si  | si          | si      | Sprint 9    |
+| 09 Mejoras | si       | —           | si      | Sprint 10   |
+| 10 i18n    | si       | —           | si      | Sprint 8    |
+| 11 Conceptos | si     | —           | si      | Sprint 8    |
+| 12 Select  | si       | —           | si      | Sprint 9    |

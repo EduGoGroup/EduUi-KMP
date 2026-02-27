@@ -106,10 +106,36 @@ classDiagram
     }
 
     ScreenContract <|-- BaseCrudContract
+    ScreenContract <|-- BaseDashboardContract
     BaseCrudContract <|-- SchoolsListContract
     BaseCrudContract <|-- SchoolsFormContract
     BaseCrudContract <|-- SubjectsListContract
     BaseCrudContract <|-- SubjectsFormContract
+    BaseCrudContract <|-- UsersListContract
+    BaseCrudContract <|-- UnitsListContract
+    BaseCrudContract <|-- MembershipsListContract
+    BaseCrudContract <|-- MaterialsListContract
+    BaseCrudContract <|-- AssessmentsListContract
+    BaseCrudContract <|-- RolesListContract
+    BaseCrudContract <|-- PermissionsListContract
+    ScreenContract <|-- SchoolCrudContract
+    ScreenContract <|-- UserCrudContract
+    ScreenContract <|-- UnitCrudContract
+    ScreenContract <|-- MembershipAddContract
+    ScreenContract <|-- MaterialCreateContract
+    ScreenContract <|-- MaterialEditContract
+    ScreenContract <|-- MaterialDetailContract
+    ScreenContract <|-- AssessmentTakeContract
+    ScreenContract <|-- LoginContract
+    ScreenContract <|-- SettingsContract
+    ScreenContract <|-- GuardianContract
+    BaseDashboardContract <|-- DashboardSuperadminContract
+    BaseDashboardContract <|-- DashboardSchooladminContract
+    BaseDashboardContract <|-- DashboardTeacherContract
+    BaseDashboardContract <|-- DashboardStudentContract
+    BaseDashboardContract <|-- DashboardGuardianContract
+    BaseDashboardContract <|-- ProgressDashboardContract
+    BaseDashboardContract <|-- StatsDashboardContract
     ScreenContractRegistry "1" --> "*" ScreenContract
     EventOrchestrator --> ScreenContractRegistry
     EventOrchestrator --> EventResult : produce
@@ -350,67 +376,65 @@ flowchart TD
 
 ---
 
-## Contratos Existentes y sus Endpoints
+## Catalogo Completo de ScreenContracts (30+ implementados)
 
-```mermaid
-graph LR
-    subgraph Contratos ["ScreenContracts (kmp-screens)"]
-        SLC[SchoolsListContract\nschools-list]
-        SFC[SchoolsFormContract\nschools-form]
-        SubLC[SubjectsListContract\nsubjects-list]
-        SubFC[SubjectsFormContract\nsubjects-form]
-        DashC[DashboardContract\ndashboard-*]
-        SettC[SettingsContract\nsettings]
-    end
+### Contracts de Auth y Settings
 
-    subgraph Endpoints ["Endpoints Resueltos"]
-        E1["admin:/api/v1/schools"]
-        E2["admin:/api/v1/subjects"]
-        E3["iam:/api/v1/dashboard"]
-        E4["mobile:/api/v1/settings"]
-    end
+| Contract | screenKey | Custom Events | Permisos |
+|----------|-----------|---------------|----------|
+| `LoginContract` | `app-login` | `submit-login` → `authService.login(credentials)` → NavigateTo dashboard | Ninguno |
+| `SettingsContract` | `app-settings` | `logout` → `authService.logout()` → Logout; `navigate-back` → NavigateTo back; `theme-toggle` → Success | Ninguno |
 
-    SLC --> E1
-    SFC --> E1
-    SubLC --> E2
-    SubFC --> E2
-    DashC --> E3
-    SettC --> E4
-```
+### Contracts de Dashboard (7, heredan de BaseDashboardContract)
 
----
+| Contract | screenKey | Endpoint de datos |
+|----------|-----------|-------------------|
+| `DashboardSuperadminContract` | `dashboard-superadmin` | `admin:/api/v1/stats/global` |
+| `DashboardSchooladminContract` | `dashboard-schooladmin` | `admin:/api/v1/stats/global` |
+| `DashboardTeacherContract` | `dashboard-teacher` | `/api/v1/stats/global` |
+| `DashboardStudentContract` | `dashboard-student` | `/api/v1/stats/student` |
+| `DashboardGuardianContract` | `dashboard-guardian` | `/api/v1/guardians/me/stats` |
+| `ProgressDashboardContract` | `progress-dashboard` | `/api/v1/stats/progress` |
+| `StatsDashboardContract` | `stats-dashboard` | `admin:/api/v1/stats/global` |
 
-## Custom Event Handlers Registrados
+### Contracts de CRUD (heredan de BaseCrudContract o ScreenContract)
 
-```mermaid
-graph TD
-    subgraph SchoolsListContract
-        SL1["'select-item' → SelectItemHandler\n→ NavigateTo schools-form id=selectedItem.id\nrequires: schools:read"]
-        SL2["'navigate-to-form' → NavigateToFormHandler\n→ NavigateTo schools-form\nrequires: schools:create"]
-    end
+| Contract | screenKey(s) | Recurso | API Prefix | Custom Events |
+|----------|-------------|---------|------------|---------------|
+| `SchoolsListContract` | `schools-list` | schools | admin: | — (hereda BaseCrudContract) |
+| `SchoolsFormContract` | `schools-form` | schools | admin: | — (hereda BaseCrudContract) |
+| `SchoolCrudContract` | `school-create`, `school-edit` | schools | admin: | `submit-form` → POST/PUT `/api/v1/schools` → NavigateTo school-detail |
+| `UsersListContract` | `users-list` | users | admin: | `select-item` → NavigateTo user-detail con id |
+| `UserCrudContract` | `user-create`, `user-edit` | users | admin: | `submit-form` → POST/PUT `/api/v1/users` con validacion (first_name, last_name, email) |
+| `SubjectsListContract` | `subjects-list` | subjects | admin: | — |
+| `SubjectsFormContract` | `subjects-form` | subjects | admin: | — |
+| `UnitsListContract` | `units-list` | academic_units | admin: | Endpoint anidado: `/api/v1/schools/{schoolId}/units` |
+| `UnitCrudContract` | `unit-create`, `unit-edit` | academic_units | admin: | `submit-form` → POST/PUT anidado bajo school |
+| `MembershipsListContract` | `memberships-list` | memberships | admin: | Filtro por `unit_id` via params |
+| `MembershipAddContract` | `membership-add` | memberships | admin: | `submit-form` → POST con user_email + role |
+| `MaterialsListContract` | `materials-list` | materials | (ninguno) | — |
+| `MaterialCreateContract` | `material-create` | materials | (ninguno) | `submit-form` → POST `/api/v1/materials` |
+| `MaterialEditContract` | `material-edit` | materials | (ninguno) | `submit-form` → PUT `/api/v1/materials/{id}` |
+| `MaterialDetailContract` | `material-detail` | materials | (ninguno) | — (solo LOAD_DATA) |
+| `AssessmentsListContract` | `assessments-list` | assessments | (ninguno) | — |
+| `AssessmentTakeContract` | `assessment-take` | assessments | (ninguno) | `submit-assessment` → valida answers → Success |
+| `RolesListContract` | `roles-list` | roles | iam: | — (solo lectura) |
+| `PermissionsListContract` | `permissions-list` | permissions_mgmt | iam: | — (solo lectura) |
+| `GuardianContract` | `children-list`, `child-progress` | progress | (ninguno) | Resuelve endpoint segun screenKey |
 
-    subgraph SchoolsFormContract
-        SF1["'submit-form' → SubmitFormHandler\n→ SubmitTo admin:/api/v1/schools POST o PUT\nrequires: schools:create"]
-        SF2["'go-back' → GoBackHandler\n→ NavigateTo schools-list\nrequires: ninguno"]
-    end
+### Instanciacion por DI (Koin named qualifiers)
 
-    subgraph SubjectsListContract
-        SubL1["'navigate-to-form' → NavigateToFormHandler\n→ NavigateTo subjects-form\nrequires: subjects:create"]
-    end
+Contracts que se instancian multiples veces con distinto `screenKey` usan `named()`:
 
-    subgraph SubjectsFormContract
-        SubF1["hereda submit-form de BaseCrudContract\n→ SubmitTo admin:/api/v1/subjects POST o PUT"]
-    end
-
-    subgraph DashboardContract
-        D1["'refresh-metrics' → RefreshMetricsHandler\n→ recarga todos los metric cards"]
-    end
-
-    ScreenContractRegistry --> SchoolsListContract
-    ScreenContractRegistry --> SchoolsFormContract
-    ScreenContractRegistry --> SubjectsListContract
-    ScreenContractRegistry --> SubjectsFormContract
-    ScreenContractRegistry --> DashboardContract
+```kotlin
+single(named("user-create")) { UserCrudContract("user-create", get()) }
+single(named("user-edit"))   { UserCrudContract("user-edit", get()) }
+single(named("school-create")) { SchoolCrudContract("school-create", get()) }
+single(named("school-edit"))   { SchoolCrudContract("school-edit", get()) }
+single(named("unit-create"))   { UnitCrudContract("unit-create", get()) }
+single(named("unit-edit"))     { UnitCrudContract("unit-edit", get()) }
+single(named("children-list"))   { GuardianContract("children-list") }
+single(named("child-progress"))  { GuardianContract("child-progress") }
 ```
 
 ---
@@ -495,4 +519,5 @@ Estrategia actual: **last-write-wins**
 | Optimistic UI en SAVE | Actualizar lista inmediatamente, revertir si falla | Parcial - form saves offline retornan exito optimistico, pero la lista no muestra el item nuevo hasta sincronizar |
 | Event Bus para cross-screen | Cuando una pantalla guarda datos, notificar a otras pantallas que tienen cache invalidada | Pendiente |
 | Feedback de progreso en DELETE | Actualmente no hay indicador visual mientras se procesa el DELETE | Pendiente |
-| Validacion client-side en FORM | Antes de llamar al backend, validar campos `required`, tipos, longitudes | Pendiente |
+| Validacion client-side en FORM | Antes de llamar al backend, validar campos `required`, tipos, longitudes | Parcial — CrudContracts (UserCrud, SchoolCrud, UnitCrud, MembershipAdd, MaterialCreate/Edit) ya validan campos obligatorios en el handler; falta validacion generica desde metadata del slot |
+| SubmitForm type conversion | Convertir tipos en el body: numbers → JsonPrimitive(int/double), booleans → JsonPrimitive(bool) | **HECHO** — `DynamicScreenViewModel.submitForm()` convierte automaticamente |

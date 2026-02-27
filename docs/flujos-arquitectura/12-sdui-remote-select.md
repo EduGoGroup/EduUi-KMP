@@ -1,27 +1,37 @@
-# 12 — SDUI Remote Select (Dropdown Dinamico)
+# 12 — SDUI Select y Remote Select (Dropdown Dinamico)
 
-> Nuevo controlType para formularios SDUI que carga opciones desde un endpoint.
+> **Estado:** `select` (opciones fijas) esta **IMPLEMENTADO**. `remote_select` (opciones
+> desde endpoint) esta **PENDIENTE** de implementacion.
+>
 > Prerequisito para el formulario de creacion de instituciones (doc 11)
 > y para cualquier campo select que dependa de datos del servidor.
 
 ---
 
-## Problema Actual
+## Estado de Implementacion
 
-Hoy el sistema SDUI soporta estos controlTypes en formularios:
+| Variante | Estado | Archivo(s) |
+|----------|--------|------------|
+| `select` (opciones fijas en `slot.options`) | ✅ **Implementado** | `ControlType.SELECT` en `Slot.kt`, `SelectField.kt` en `kmp-screens/dynamic/components/`, `SlotRenderer.kt` |
+| `remote_select` (opciones desde endpoint) | ❌ **Pendiente** | Requiere: nuevo `ControlType.REMOTE_SELECT`, `loadSelectOptions()` en ViewModel, campos `options_endpoint`/`option_label`/`option_value` en Slot |
+
+---
+
+## Contexto
+
+El sistema SDUI soporta 22 controlTypes en formularios (ver doc 03), incluyendo:
 
 ```
-text          → DSTextField (texto libre)
-email         → DSTextField (con validacion de email)
-number        → DSTextField (teclado numerico)
-label         → Text (solo lectura)
-outlined-button → DSOutlinedButton
-filled-button → DSFilledButton
+text-input, email-input, password-input, number-input, search-bar,
+select ✅, checkbox, switch, radio-group, chip, rating,
+filled-button, outlined-button, text-button, icon-button,
+label, icon, avatar, image, divider,
+list-item, list-item-navigation, metric-card
 ```
 
-**No existe un select/dropdown** que cargue opciones desde un endpoint.
-Para el formulario de escuelas se necesita un dropdown de "Tipo de institucion"
-cuyas opciones vienen de `GET /api/v1/concept-types`.
+**`select`** ya funciona con opciones fijas definidas en `slot.options`.
+Falta `remote_select` que cargue opciones desde un endpoint para formularios como
+"Tipo de institucion" cuyas opciones vienen de `GET /api/v1/concept-types`.
 
 ---
 
@@ -42,9 +52,55 @@ No es solo para concept_types. Este controlType se necesita en varios formulario
 
 ## Diseño: Dos Variantes de Select
 
-### 1. `select` — Opciones fijas en slotData
+### 1. `select` — Opciones fijas en slotData ✅ IMPLEMENTADO
 
 Para campos con opciones conocidas y pocas (no necesitan endpoint).
+
+**Modelo en Kotlin:**
+```kotlin
+// Slot.kt
+@Serializable
+data class SlotOption(
+    val label: String,   // Texto visible ("Gratuito")
+    val value: String,   // Valor a enviar ("free")
+)
+
+@Serializable
+data class Slot(
+    // ...otros campos...
+    val options: List<SlotOption>? = null,  // Para select
+)
+```
+
+**Composable implementado:** `SelectField.kt` en `kmp-screens/dynamic/components/`
+```kotlin
+@Composable
+fun SelectField(
+    label: String?,
+    placeholder: String?,
+    options: List<SlotOption>,
+    selectedValue: String,
+    onValueChange: (String) -> Unit,
+    // ...
+)
+```
+
+**Uso en SlotRenderer:**
+```kotlin
+ControlType.SELECT -> {
+    val options = slot.options ?: emptyList()
+    SelectField(
+        label = slot.label,
+        placeholder = slot.placeholder,
+        options = options,
+        selectedValue = fieldValues[slot.id] ?: "",
+        onValueChange = { onFieldChanged(slot.id, it) },
+        // ...
+    )
+}
+```
+
+**JSON del backend:**
 
 ```json
 {
@@ -62,7 +118,7 @@ Para campos con opciones conocidas y pocas (no necesitan endpoint).
 }
 ```
 
-### 2. `remote_select` — Opciones desde un endpoint
+### 2. `remote_select` — Opciones desde un endpoint ❌ PENDIENTE
 
 Para campos con opciones dinamicas que vienen del servidor.
 
@@ -409,37 +465,37 @@ quedara vacio y si es `required`, el submit fallara con validacion local.
 
 ## Resumen de Cambios
 
-### Backend
+### Ya implementado (Sprint 9)
 
-Ningun cambio. Los endpoints de listado ya existen y devuelven arrays de objetos.
-Solo se necesita que el endpoint de `concept-types` devuelva el formato esperado
-(`[{ id, name, ... }]`).
+| Cambio | Archivo | Estado |
+|--------|---------|--------|
+| `SlotOption` data class | `model/Slot.kt` | ✅ Implementado |
+| Campo `options: List<SlotOption>?` en `Slot` | `model/Slot.kt` | ✅ Implementado |
+| `ControlType.SELECT` enum value | `model/Slot.kt` | ✅ Implementado |
+| `SelectField` composable (dropdown Material3) | `kmp-screens/dynamic/components/SelectField.kt` | ✅ Implementado |
+| Integrar `SELECT` en `SlotRenderer` | `kmp-screens/dynamic/renderer/SlotRenderer.kt` | ✅ Implementado |
 
-### KMP — modules/dynamic-ui
+### Pendiente para remote_select
 
-| Cambio | Archivo |
-|--------|---------|
-| Agregar `SelectOption`, `SelectOptionsState` | Nuevo: `model/SelectOption.kt` |
-| Agregar `loadSelectOptions()` al ViewModel | Edit: `DynamicScreenViewModel.kt` |
-| Agregar `_selectOptions: StateFlow` | Edit: `DynamicScreenViewModel.kt` |
-
-### KMP — kmp-screens
+#### KMP — modules/dynamic-ui
 
 | Cambio | Archivo |
 |--------|---------|
-| Agregar `SelectField` composable | Nuevo: `components/SelectField.kt` |
-| Agregar `RemoteSelectField` composable | Nuevo: `components/RemoteSelectField.kt` |
-| Integrar en loop de form fields | Edit: `FormPatternRenderer.kt` |
+| Agregar `ControlType.REMOTE_SELECT` | Edit: `model/Slot.kt` |
+| Agregar campos `optionsEndpoint`, `optionLabel`, `optionValue` a `Slot` | Edit: `model/Slot.kt` |
+| Agregar `SelectOptionsState` sealed class | Nuevo o edit: `viewmodel/DynamicScreenViewModel.kt` |
+| Agregar `loadSelectOptions()` al ViewModel | Edit: `viewmodel/DynamicScreenViewModel.kt` |
+| Agregar `_selectOptions: StateFlow<Map<String, SelectOptionsState>>` | Edit: `viewmodel/DynamicScreenViewModel.kt` |
 
-### KMP — modules/dynamic-ui (modelo)
+#### KMP — kmp-screens
 
 | Cambio | Archivo |
 |--------|---------|
-| Agregar campos opcionales a Slot | Edit: `model/Slot.kt` |
-| Agregar `SlotOption` data class | Edit: `model/Slot.kt` |
-| Mapear nuevos campos en FormFieldsResolver | Edit: `FormFieldsResolver.kt` |
+| Agregar `RemoteSelectField` composable (con loading/error states) | Nuevo: `components/RemoteSelectField.kt` |
+| Integrar `REMOTE_SELECT` en `SlotRenderer` | Edit: `renderer/SlotRenderer.kt` |
+| Pasar `selectOptions` state al renderer | Edit: `FormPatternRenderer.kt` |
 
-### SDUI — Base de datos
+#### SDUI — Base de datos
 
 | Cambio | Tabla |
 |--------|-------|

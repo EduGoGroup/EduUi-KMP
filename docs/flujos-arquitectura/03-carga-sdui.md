@@ -29,11 +29,34 @@ classDiagram
         +id: String
         +controlType: ControlType
         +bind: String?
+        +style: String?
+        +value: String?
+        +field: String?
         +eventId: String?
         +label: String?
         +placeholder: String?
+        +icon: String?
         +required: Boolean
         +readOnly: Boolean
+        +width: String?
+        +weight: Float?
+        +options: List~SlotOption~?
+    }
+    class SlotOption {
+        +label: String
+        +value: String
+    }
+    class ControlType {
+        <<enum>>
+        LABEL, TEXT_INPUT, EMAIL_INPUT
+        PASSWORD_INPUT, NUMBER_INPUT
+        SEARCH_BAR, CHECKBOX, SWITCH
+        RADIO_GROUP, SELECT
+        FILLED_BUTTON, OUTLINED_BUTTON
+        TEXT_BUTTON, ICON_BUTTON
+        ICON, AVATAR, IMAGE, DIVIDER
+        LIST_ITEM, LIST_ITEM_NAVIGATION
+        METRIC_CARD, CHIP, RATING
     }
     class ScreenPattern {
         <<enum>>
@@ -320,6 +343,63 @@ flowchart LR
 
 ---
 
+## Catalogo de ControlTypes (22 implementados)
+
+Cada `Slot` en una zona tiene un `controlType` que determina que composable se renderiza. El `SlotRenderer` resuelve el mapping:
+
+| ControlType | Composable | Categoria | Interactivo |
+|-------------|-----------|-----------|:-----------:|
+| `label` | `Text` (con estilo dinamico via `style`) | Texto | No |
+| `text-input` | `DSOutlinedTextField` | Formulario | Si |
+| `email-input` | `DSOutlinedTextField` (KeyboardType.Email) | Formulario | Si |
+| `password-input` | `DSPasswordField` | Formulario | Si |
+| `number-input` | `DSOutlinedTextField` (KeyboardType.Number) | Formulario | Si |
+| `search-bar` | `DSOutlinedTextField` (sin label) | Formulario | Si |
+| `select` | `SelectField` (dropdown con opciones fijas en `slot.options`) | Formulario | Si |
+| `checkbox` | `DSCheckbox` | Seleccion | Si |
+| `switch` | `DSSwitch` | Seleccion | Si |
+| `radio-group` | `Text` (placeholder, pendiente) | Seleccion | No |
+| `chip` | `DSChip` (FILTER variant, toggle) | Seleccion | Si |
+| `rating` | `Text` (placeholder, pendiente) | Display | No |
+| `filled-button` | `DSFilledButton` (dispara `eventId`) | Accion | Si |
+| `outlined-button` | `DSOutlinedButton` (dispara `eventId`) | Accion | Si |
+| `text-button` | `DSTextButton` (dispara `eventId`) | Accion | Si |
+| `icon-button` | `DSIconButton` (dispara `eventId`) | Accion | Si |
+| `icon` | `Icon` (Material Default) | Display | No |
+| `avatar` | `DSAvatar` (initials de `value`) | Display | No |
+| `image` | `Icon` (placeholder, pendiente coil/imagen real) | Display | No |
+| `divider` | `DSDivider` | Layout | No |
+| `list-item` | `DSListItem` (headline + supporting) | Display | No |
+| `list-item-navigation` | `DSListItem` + chevron + onClick (dispara `eventId`) | Navegacion | Si |
+| `metric-card` | `DSElevatedCard` (label + valor grande) | Dashboard | No |
+
+### Resolucion de valores (SlotRenderer)
+
+El `SlotRenderer` resuelve el valor a mostrar con la siguiente prioridad:
+
+1. Si `slot.field` existe y `itemData` (JsonObject) esta disponible → resuelve campo del JSON (soporta dot notation: `user.name`)
+2. Si `slot.field` existe y esta en `fieldValues` → toma el valor del formulario
+3. `slot.value` como fallback estatico
+
+### Estilos de texto soportados
+
+El campo `style` de un slot tipo `label` mapea a estilos de Material Typography:
+
+```
+headline-large, headline-medium, headline-small, headline,
+title-large, title-medium, title-small,
+body-large, body (default), body-small,
+label-large, label, caption
+```
+
+### DisplayValueFormatter
+
+Utilidad para formato automatico de valores:
+- Booleanos: `"true"` → `"Activo"`, `"false"` → `"Inactivo"`
+- Fechas ISO: `"2026-02-15T10:30:00Z"` → `"15/02/2026"`
+
+---
+
 ## Pre-carga desde Sync Bundle (seedFromBundle)
 
 ```mermaid
@@ -583,7 +663,7 @@ Uso: al acceder una pantalla, el ViewModel registra el acceso. Se puede consulta
 | Offline fallback con staleness | HECHO | `NetworkObserver` integrado en `CachedScreenLoader` y `CachedDataLoader`. Retorna datos stale con `isStale=true` cuando esta offline. |
 | Mutation queue offline | HECHO | `MutationQueue` persiste mutaciones pendientes (max 50), con deteccion de duplicados y retry. `pendingMutationCount` expuesto al UI. |
 | Skeleton loading | PENDIENTE | Mostrar placeholders mientras se carga la ScreenDefinition (actualmente es pantalla en blanco) |
-| Error boundaries por zona | PENDIENTE | Si una Zone falla al renderizar, mostrar error solo en esa zona en vez de toda la pantalla |
+| Error boundaries por zona | HECHO | `ZoneErrorBoundary` envuelve cada zona en `ZoneRenderer`. Pre-validacion de datos en `remember` + `SideEffect` reporta a `LocalZoneError`. Funciones de acceso a datos (`evaluateCondition`, `resolveSlotValue`, `resolveFieldFromJson`) con try-catch defensivo. Placeholder inline con retry via `key(retryCount)`. |
 | ScreenDefinition diff | PENDIENTE | Al recibir nueva version del servidor, hacer diff y re-renderizar solo las zonas cambiadas |
 | Paralelización de seedFromBundle | HECHO | Fase 1: memoria secuencial (HashMap), Fase 2: serialización + storage en paralelo via `withContext(Dispatchers.Default)` + `async/awaitAll` |
 | isOnline reactivo | HECHO | `DynamicScreenViewModel.isOnline` es StateFlow reactivo del `NetworkObserver.status`, elimina `updateOnlineStatus()` manual |

@@ -1,4 +1,4 @@
-# 09 — Mejoras Propuestas (Actualizado Sprint 8)
+# 09 — Mejoras Propuestas (Actualizado Sprint 9)
 
 > Documento de referencia para decision-making. Contiene el inventario de mejoras
 > ya implementadas y las pendientes con contexto detallado para priorizar los
@@ -10,24 +10,26 @@
 
 ```mermaid
 pie title Estado de mejoras (total: 37)
-    "Implementadas (Sprint 8)" : 9
-    "Pendientes" : 28
+    "Implementadas (Sprint 8+9+10)" : 15
+    "Pendientes" : 22
 ```
 
 ```mermaid
 pie title Pendientes por area
     "Seguridad" : 4
-    "UX" : 6
-    "Arquitectura" : 6
+    "UX" : 5
+    "Arquitectura" : 4
     "Observabilidad" : 3
-    "Performance" : 4
-    "Offline avanzado" : 4
+    "Performance" : 3
+    "Offline avanzado" : 2
     "Bugs / Deuda tecnica" : 1
 ```
 
 ---
 
-# PARTE 1 — Mejoras Implementadas (Sprint 8, Feb 2026)
+# PARTE 1 — Mejoras Implementadas
+
+## Sprint 8 (Feb 2026)
 
 Las siguientes mejoras fueron completadas como parte del Sprint 8 que incluyo
 Sync Bundle, Offline-First, NetworkObserver, MutationQueue y DynamicToolbar.
@@ -43,6 +45,17 @@ Sync Bundle, Offline-First, NetworkObserver, MutationQueue y DynamicToolbar.
 | O7 | Conflict resolution basico | Parcial | ConflictResolver con estrategia last-write-wins (ver O7-cont para version avanzada) |
 | P1 | Cache del menu por rol | Completado | Menu viene del sync bundle, no se re-fetcha individualmente |
 | A7 | Pre-carga de pantallas | Completado | `seedFromBundle` pre-carga todas las pantallas al login |
+
+## Sprint 9 (Feb 2026)
+
+| Codigo | Mejora | Estado | Notas |
+|--------|--------|--------|-------|
+| SC1 | Catalogo expandido de ScreenContracts (30+) | Completado | Schools, Users, Units, Subjects, Memberships, Materials, Assessments, Roles, Permissions, Guardian + 7 Dashboards + Login + Settings |
+| SC2 | SelectField (opciones fijas) | Completado | `ControlType.SELECT` + `SelectField.kt` + `SlotOption`. `remote_select` pendiente |
+| SC3 | StorageMigrator | Completado | `StorageMigration` interface + `StorageMigrator` con versionado y crash-safety |
+| SC4 | DynamicDashboard por rol | Completado | Seleccion automatica de screenKey segun rol (superadmin, schooladmin, teacher, student, guardian) con placeholders |
+| SC5 | ThemeService | Completado | `ThemeServiceImpl` con LIGHT/DARK/SYSTEM, integrado en DynamicSettingsScreen via campo `dark_mode` |
+| A6 | Error boundaries por zona SDUI | Completado | `ZoneErrorBoundary` + `LocalZoneError` CompositionLocal + pre-validacion en `remember` + funciones de datos defensivas (`evaluateCondition`, `resolveSlotValue`, `resolveFieldFromJson`) con try-catch. Placeholder inline con retry |
 
 ### Flujo implementado: Sync Bundle + Offline
 
@@ -192,12 +205,14 @@ flowchart LR
 
 | Campo | Detalle |
 |-------|---------|
-| **Mejora** | Validar campos del formulario antes de enviar al backend |
-| **Por que es necesario** | Actualmente los forms se envian al backend sin validacion local — el usuario debe esperar la respuesta del servidor para saber si hay errores |
-| **Caso de mejora** | Un docente deja el campo "email" vacio o con formato invalido y debe esperar 2-3 segundos para ver el error del backend |
-| **Que se tocaria** | `DynamicScreenViewModel` (logica de validacion), `FormPatternRenderer` (mostrar errores bajo cada campo). Leer reglas de validacion desde metadata del Slot (required, minLength, maxLength, regex) |
-| **Beneficio esperado** | Feedback instantaneo; menos llamadas fallidas al backend; mejor experiencia en conexiones lentas |
+| **Mejora** | Validacion generica de campos del formulario desde metadata del slot antes de enviar al backend |
+| **Por que es necesario** | Los CrudContracts ya validan campos obligatorios en sus handlers (`UserCrudContract` valida first_name/last_name/email, `SchoolCrudContract` valida name, etc.), pero falta una validacion **generica** que lea `required`, `minLength`, `maxLength`, `regex` de la metadata del slot SDUI |
+| **Caso de mejora** | Un docente deja el campo "email" vacio o con formato invalido y debe esperar 2-3 segundos para ver el error del backend — deberia ver error instantaneo desde el slot metadata |
+| **Que se tocaria** | `DynamicScreenViewModel` (logica de validacion generica), `FormPatternRenderer` (mostrar errores bajo cada campo). Complementaria la validacion especifica que ya existe en los CrudContracts |
+| **Beneficio esperado** | Feedback instantaneo para TODOS los formularios SDUI, no solo los que tienen Contract con validacion manual |
 | **Prioridad sugerida** | Alta |
+| **Esfuerzo estimado** | Medio |
+| **Estado parcial** | CrudContracts (`UserCrudContract`, `SchoolCrudContract`, `UnitCrudContract`, `MembershipAddContract`, `MaterialCreateContract`, `MaterialEditContract`) ya validan campos requeridos en sus `SubmitFormHandler.execute()` |
 | **Esfuerzo estimado** | Medio |
 
 ```mermaid
@@ -294,31 +309,26 @@ flowchart TD
 | **Prioridad sugerida** | Media |
 | **Esfuerzo estimado** | Medio |
 
-### A6: Error boundaries por zona
+### A6: Error boundaries por zona — COMPLETADO
 
 | Campo | Detalle |
 |-------|---------|
-| **Mejora** | Envolver cada Zone en try-catch para que un error de render no tumbe toda la pantalla |
-| **Por que es necesario** | Si una zona falla al renderizar (JSON malformado, tipo inesperado), la pantalla entera muestra error y el usuario no puede usar nada |
-| **Caso de mejora** | Un slot de la zona "sidebar" tiene un tipo desconocido — toda la pantalla de dashboard se pierde, incluyendo las metricas que si funcionan |
-| **Que se tocaria** | `PatternRouter`, todos los `PatternRenderer`. Agregar `ZoneErrorBoundary` composable wrapper |
-| **Beneficio esperado** | Degradacion graceful; el usuario ve el 90% de la pantalla aunque una zona falle |
-| **Prioridad sugerida** | Alta |
-| **Esfuerzo estimado** | Medio |
+| **Mejora** | Envolver cada Zone en error boundary para que un error de render no tumbe toda la pantalla |
+| **Estado** | **Completado** (Sprint 10) |
+| **Implementacion** | `ZoneErrorBoundary` en `kmp-screens/.../renderer/ZoneErrorBoundary.kt`. Cada zona envuelta automaticamente desde `ZoneRenderer`. Pre-validacion de datos en `remember` + reporte via `LocalZoneError` CompositionLocal + `SideEffect`. Funciones defensivas: `evaluateCondition`, `resolveFieldExists`, `resolveSlotValue`, `resolveFieldFromJson` con try-catch. Placeholder inline con titulo, mensaje de error (maxLines=2), y boton "Reintentar" que fuerza recomposicion via `key(retryCount)` |
+| **Limitacion** | Compose no soporta try-catch alrededor de funciones @Composable (a diferencia de React). Los errores dentro de composables del design system no se capturan automaticamente. La proteccion cubre: datos de zona corruptos, condiciones malformadas, JSON malformado en bindings, y errores en resolucion de valores |
 
 ```mermaid
 flowchart TD
-    subgraph Actual ["Actual"]
-        AE["Si una Zone falla\ntoda la pantalla muestra error"]
+    subgraph Implementado ["Implementado"]
+        ZEB["ZoneErrorBoundary\n(envuelve cada zona)"]
+        VAL["remember: validar zone.slots,\nzone.zones, zone.itemLayout"]
+        VAL -- "Error" --> SE["SideEffect reporta\na LocalZoneError"]
+        SE --> PH["ZoneErrorPlaceholder\n(error + Reintentar)"]
+        VAL -- "OK" --> RENDER["Renderizar zona normalmente"]
+        SAFE["Funciones defensivas:\nevaluateCondition\nresolveSlotValue\nresolveFieldFromJson"]
+        SAFE -- "catch" --> FALLBACK["Retornar default\n(true / empty string / null)"]
     end
-    subgraph Propuesto ["Propuesto"]
-        ZEB["ZoneErrorBoundary por cada zona"]
-        OK["Zonas OK → se renderizan normalmente"]
-        FAIL["Zona fallida → placeholder de error\ncon boton Reintentar"]
-    end
-    Actual --> Propuesto
-    ZEB --> OK
-    ZEB --> FAIL
 ```
 
 ### A8: Compression HTTP (gzip)
@@ -527,33 +537,37 @@ gantt
     MutationQueue + ConflictResolver basico        :done, s8b, 2026-02, 4w
     DynamicToolbar + Cache TTL + Pre-carga         :done, s8c, 2026-02, 4w
 
-    section Sprint 9 - Seguridad + Validacion
-    S1 Cifrado Android Keystore                    :crit, s9a, 2026-03, 2w
-    S2 Cifrado iOS Keychain                        :crit, s9b, 2026-03, 2w
-    UX4 Validacion client-side form                :active, s9c, 2026-03, 2w
-    A6 Error boundaries por zona                   :s9d, 2026-03, 2w
+    section Sprint 9 (Completado)
+    30+ ScreenContracts + SelectField              :done, s9a, 2026-02, 2w
+    StorageMigrator + DynamicDashboard por rol     :done, s9b, 2026-02, 2w
+    ThemeService + DisplayValueFormatter           :done, s9c, 2026-02, 1w
 
-    section Sprint 10 - UX + Observabilidad
-    UX1 Skeleton loading                           :s10a, 2026-04, 1w
-    OB1 Crashlytics / Sentry                       :crit, s10b, 2026-04, 2w
-    UX2 Deep-linking                               :s10c, 2026-04, 2w
-    A8 Compression HTTP gzip                       :s10d, 2026-04, 1w
+    section Sprint 10 - Seguridad + Validacion
+    S1 Cifrado Android Keystore                    :crit, s10a, 2026-03, 2w
+    S2 Cifrado iOS Keychain                        :crit, s10b, 2026-03, 2w
+    UX4 Validacion client-side form (generica)     :active, s10c, 2026-03, 2w
+    A6 Error boundaries por zona                   :done, s10d, 2026-02, 1w
 
-    section Sprint 11 - Offline + Eventos
-    O3-cont Auto-invalidacion por version          :s11a, 2026-05, 1w
-    A2 Event Bus cross-screen                      :s11b, 2026-05, 2w
-    UX3 Undo despues de DELETE                     :s11c, 2026-05, 1w
-    OFF-R Retry UI mutaciones fallidas             :s11d, 2026-05, 2w
+    section Sprint 11 - UX + Observabilidad
+    UX1 Skeleton loading                           :s11a, 2026-04, 1w
+    OB1 Crashlytics / Sentry                       :crit, s11b, 2026-04, 2w
+    UX2 Deep-linking                               :s11c, 2026-04, 2w
+    A8 Compression HTTP gzip                       :s11d, 2026-04, 1w
 
-    section Sprint 12+ - Avanzado
-    S3 Certificate pinning                         :s12a, 2026-06, 2w
-    S4 Cifrar cache local                          :s12b, 2026-06, 3w
-    P7 SQLDelight para cache                       :s12c, 2026-06, 4w
-    O7-cont Conflict resolution avanzada           :s12d, 2026-07, 3w
+    section Sprint 12 - Offline + Eventos
+    O3-cont Auto-invalidacion por version          :s12a, 2026-05, 1w
+    A2 Event Bus cross-screen                      :s12b, 2026-05, 2w
+    UX3 Undo despues de DELETE                     :s12c, 2026-05, 1w
+    OFF-R Retry UI mutaciones fallidas             :s12d, 2026-05, 2w
+
+    section Sprint 13+ - Avanzado
+    S3 Certificate pinning                         :s13a, 2026-06, 2w
+    S4 Cifrar cache local                          :s13b, 2026-06, 3w
+    P7 SQLDelight para cache                       :s13c, 2026-06, 4w
+    O7-cont Conflict resolution avanzada           :s13d, 2026-07, 3w
 
     section Futuro
     UX5 Optimistic UI en SAVE                      :sf1, 2026-08, 2w
-    A1 Separar ScreenContracts modulo              :sf2, 2026-08, 2w
     A3 Feature flags                               :sf3, 2026-08, 2w
     P4 Paginacion infinita                         :sf4, 2026-09, 2w
     OFF-B Background sync mobile                   :sf5, 2026-09, 3w
@@ -576,7 +590,6 @@ ALTO IMPACTO
 │  │ UX3 Undo DELETE         │  │ UX4 Validacion client-side      │
 │  │ OB3 Cache hit rate      │  │ S1  Cifrado Android Keystore    │
 │  │                         │  │ S2  Cifrado iOS Keychain        │
-│  │                         │  │ A6  Error boundaries zona       │
 │  │                         │  │ UX2 Deep-linking                │
 │  └─────────────────────────┘  └─────────────────────────────────┘
 │
@@ -588,7 +601,6 @@ ALTO IMPACTO
 │  │ UX6 Breadcrumb          │  │ O7c Conflict resolution avanz.  │
 │  │ OB2 Request metrics     │  │ OFF-B Background sync mobile    │
 │  │ P6  Compresion cache    │  │ A3  Feature flags               │
-│  │                         │  │ A1  Separar ScreenContracts     │
 │  │                         │  │ S3  Certificate pinning         │
 │  │                         │  │ P3  Iconos SVG backend          │
 │  └─────────────────────────┘  └─────────────────────────────────┘
@@ -601,7 +613,7 @@ BAJO IMPACTO
 ### Lectura de la matriz
 
 - **Quick Wins (arriba-izquierda):** Implementar primero. Bajo costo, alto impacto. UX1, A8, O3-cont y UX3 son candidatos ideales para llenar huecos entre features grandes.
-- **Proyectos Estrategicos (arriba-derecha):** Planificar y ejecutar con prioridad. S1/S2 y UX4 para Sprint 9; OB1 para Sprint 10.
+- **Proyectos Estrategicos (arriba-derecha):** Planificar y ejecutar con prioridad. S1/S2 y UX4 para Sprint 10; OB1 para Sprint 11.
 - **Inversiones a Largo Plazo (abajo-derecha):** Diferir hasta tener capacidad. P7 (SQLDelight) tiene impacto potencialmente alto pero requiere inversion significativa.
 - **Relleno (abajo-izquierda):** Hacer cuando haya tiempo libre o como tareas de onboarding para nuevos miembros.
 
@@ -611,30 +623,38 @@ BAJO IMPACTO
 
 | Codigo | Mejora | Prioridad | Esfuerzo | Sprint sugerido |
 |--------|--------|-----------|----------|-----------------|
-| **S1** | Cifrar tokens Android Keystore | Alta | Medio | 9 |
-| **S2** | Cifrar tokens iOS Keychain | Alta | Medio | 9 |
-| **UX4** | Validacion client-side FORM | Alta | Medio | 9 |
-| **A6** | Error boundaries por zona | Alta | Medio | 9 |
-| **S4** | Cifrar cache local | Alta | Alto | 12 |
-| **OB1** | Crashlytics / Sentry | Alta | Medio | 10 |
-| **UX1** | Skeleton loading | Media | Bajo | 10 |
-| **UX2** | Deep-linking | Media | Medio | 10 |
-| **A8** | Compression HTTP gzip | Media | Bajo | 10 |
-| **O3-cont** | Auto-invalidacion version | Media | Bajo | 11 |
-| **A2** | Event Bus cross-screen | Media | Medio | 11 |
-| **UX3** | Undo despues de DELETE | Media | Bajo | 11 |
-| **OFF-R** | Retry UI mutaciones fallidas | Media | Medio | 11 |
+| **S1** | Cifrar tokens Android Keystore | Alta | Medio | 10 |
+| **S2** | Cifrar tokens iOS Keychain | Alta | Medio | 10 |
+| **UX4** | Validacion client-side FORM | Alta | Medio | 10 |
+| **A6** | Error boundaries por zona | ~~Alta~~ | ~~Medio~~ | **HECHO** |
+| **S4** | Cifrar cache local | Alta | Alto | 13 |
+| **OB1** | Crashlytics / Sentry | Alta | Medio | 11 |
+| **UX1** | Skeleton loading | Media | Bajo | 11 |
+| **UX2** | Deep-linking | Media | Medio | 11 |
+| **A8** | Compression HTTP gzip | Media | Bajo | 11 |
+| **O3-cont** | Auto-invalidacion version | Media | Bajo | 12 |
+| **A2** | Event Bus cross-screen | Media | Medio | 12 |
+| **UX3** | Undo despues de DELETE | Media | Bajo | 12 |
+| **OFF-R** | Retry UI mutaciones fallidas | Media | Medio | 12 |
 | **UX5** | Optimistic UI en SAVE | Media | Medio | Futuro |
-| **A1** | Separar ScreenContracts modulo | Media | Medio | Futuro |
 | **A3** | Feature flags | Media | Medio | Futuro |
 | **A5** | Request deduplication | Media | Medio | Futuro |
 | **P3** | Iconos SVG backend | Media | Medio | Futuro |
-| **P4** | Paginacion infinita | Media | Medio | Futuro |
-| **P7** | SQLDelight para cache | Media | Alto | 12+ |
-| **S3** | Certificate pinning | Media | Medio | 12 |
-| **O7-cont** | Conflict resolution avanzada | Baja | Alto | 12+ |
+| **P4** | Paginacion infinita (auto-trigger) | Media | Medio | Futuro |
+| **P7** | SQLDelight para cache | Media | Alto | 13+ |
+| **S3** | Certificate pinning | Media | Medio | 13 |
+| **O7-cont** | Conflict resolution avanzada | Baja | Alto | 13+ |
 | **OFF-B** | Background sync mobile | Baja | Alto | Futuro |
 | **OB2** | Request metrics | Baja | Bajo | Futuro |
 | **OB3** | Cache hit rate logging | Baja | Bajo | Futuro |
 | **UX6** | Breadcrumb EXPANDED | Baja | Bajo | Futuro |
 | **P6** | Compresion de cache | Baja | Medio | Futuro |
+
+### Notas sobre items removidos de pendientes
+
+| Codigo | Mejora | Motivo |
+|--------|--------|--------|
+| A1 | Separar ScreenContracts en modulo propio | Deprioritizado: 30+ contracts funcionan bien en `kmp-screens/contracts/`. La separacion no aporta valor significativo en esta etapa |
+| P1 | Cache del menu por rol | **HECHO** (Sprint 8) — menu via sync bundle |
+| A7 | Pre-carga de pantallas | **HECHO** (Sprint 8) — seedFromBundle |
+| Migracion storage | Migracion de keys | **HECHO** (Sprint 9) — StorageMigrator implementado |
