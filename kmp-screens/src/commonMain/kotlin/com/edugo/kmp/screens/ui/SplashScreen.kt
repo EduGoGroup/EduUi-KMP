@@ -40,6 +40,7 @@ import org.koin.compose.koinInject
 fun SplashScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToHome: () -> Unit,
+    onNavigateToSchoolSelection: () -> Unit = onNavigateToHome,
     modifier: Modifier = Modifier,
     delayMs: Long = ScreenDuration.splash,
 ) {
@@ -63,7 +64,16 @@ fun SplashScreen(
             }
             delay(delayMs)
             deltaJob.await()
-            onNavigateToHome()
+
+            // Check if user needs to select a school first
+            val state = authService.authState.value
+            val needsSchool = state is com.edugo.kmp.auth.service.AuthState.Authenticated &&
+                state.activeContext.schoolId.isNullOrBlank()
+            if (needsSchool) {
+                onNavigateToSchoolSelection()
+            } else {
+                onNavigateToHome()
+            }
         } else {
             delay(delayMs)
             onNavigateToLogin()

@@ -113,6 +113,13 @@ fun MainScreen(
         }
     }
 
+    // Prefetch screens by priority after menu is rendered
+    LaunchedEffect(allItems) {
+        if (allItems.isNotEmpty()) {
+            dataSyncService.prefetchByPriority()
+        }
+    }
+
     if (isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             DSLinearProgress()
@@ -121,6 +128,26 @@ fun MainScreen(
     }
 
     if (allItems.isEmpty()) return
+
+    // Check if user needs to select a school BEFORE rendering sidebar
+    val currentAuthState = authState
+    val needsSchoolSelector = currentAuthState is AuthState.Authenticated
+        && currentAuthState.activeContext.schoolId.isNullOrBlank()
+
+    if (needsSchoolSelector) {
+        // Full-screen school selector — no sidebar visible
+        SchoolSelectorScreen(
+            onSchoolSelected = { _, _ ->
+                isLoading = true
+                scope.launch {
+                    dataSyncService.syncMenuAndPermissions()
+                    dataSyncService.syncScreens()
+                }
+            },
+            modifier = modifier.fillMaxSize(),
+        )
+        return
+    }
 
     Box(modifier = modifier) {
         AdaptiveNavigationLayout(
@@ -202,29 +229,14 @@ fun MainScreen(
                         )
                     }
                     else -> {
-                        // Check if user needs to select a school first
-                        val currentState = authState
-                        val needsSchoolSelector = currentState is AuthState.Authenticated
-                            && currentState.activeContext.schoolId.isNullOrBlank()
-
-                        if (needsSchoolSelector) {
-                            SchoolSelectorScreen(
-                                onSchoolSelected = { _, _ ->
-                                    isLoading = true
-                                    scope.launch { dataSyncService.fullSync() }
-                                },
-                                modifier = paddingModifier,
-                            )
-                        } else {
-                            // Generic dynamic screen for any other tab
-                            val viewModel = remember(currentScreenKey) { koin.get<DynamicScreenViewModel>() }
-                            DynamicScreen(
-                                screenKey = currentScreenKey,
-                                viewModel = viewModel,
-                                onNavigate = onNavigate,
-                                modifier = paddingModifier,
-                            )
-                        }
+                        // Generic dynamic screen for any other tab
+                        val viewModel = remember(currentScreenKey) { koin.get<DynamicScreenViewModel>() }
+                        DynamicScreen(
+                            screenKey = currentScreenKey,
+                            viewModel = viewModel,
+                            onNavigate = onNavigate,
+                            modifier = paddingModifier,
+                        )
                     }
                 }
             }
@@ -243,7 +255,10 @@ fun MainScreen(
                         onSchoolSelected = { _, _ ->
                             showContextPicker = false
                             isLoading = true
-                            scope.launch { dataSyncService.fullSync() }
+                            scope.launch {
+                                dataSyncService.syncMenuAndPermissions()
+                                dataSyncService.syncScreens()
+                            }
                         },
                         modifier = Modifier.heightIn(max = 500.dp),
                     )
@@ -263,9 +278,10 @@ fun MainScreen(
                             }
                             when (authService.switchContext(schoolId)) {
                                 is Result.Success -> {
-                                    // Re-sync to get menu/screens for new context
-                                    dataSyncService.fullSync()
+                                    // Light sync: menu+perms, then screens in background
+                                    dataSyncService.syncMenuAndPermissions()
                                     // Bundle updates trigger LaunchedEffect(bundle) above
+                                    dataSyncService.syncScreens()
                                 }
                                 is Result.Failure -> {
                                     isLoading = false

@@ -5,9 +5,11 @@ import com.edugo.kmp.dynamicui.sync.model.DeltaSyncResponse
 import com.edugo.kmp.dynamicui.sync.model.SyncBundleResponse
 import com.edugo.kmp.foundation.result.Result
 import com.edugo.kmp.network.EduGoHttpClient
+import com.edugo.kmp.network.HttpRequestConfig
 
 interface SyncRepository {
     suspend fun getBundle(): Result<SyncBundleResponse>
+    suspend fun getBundleWithBuckets(buckets: List<String>): Result<SyncBundleResponse>
     suspend fun deltaSync(hashes: Map<String, String>): Result<DeltaSyncResponse>
 }
 
@@ -19,6 +21,18 @@ class SyncRepositoryImpl(
     override suspend fun getBundle(): Result<SyncBundleResponse> {
         return try {
             val response: SyncBundleResponse = httpClient.get("$iamApiBaseUrl/api/v1/sync/bundle")
+            Result.Success(response)
+        } catch (e: Exception) {
+            Result.Failure(e.message ?: "Network error")
+        }
+    }
+
+    override suspend fun getBundleWithBuckets(buckets: List<String>): Result<SyncBundleResponse> {
+        return try {
+            val config = HttpRequestConfig.builder()
+                .queryParam("buckets", buckets.joinToString(","))
+                .build()
+            val response: SyncBundleResponse = httpClient.get("$iamApiBaseUrl/api/v1/sync/bundle", config)
             Result.Success(response)
         } catch (e: Exception) {
             Result.Failure(e.message ?: "Network error")

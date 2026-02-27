@@ -48,6 +48,19 @@ class LocalSyncStore(
         storage.putStringSafe(KEY_SCREEN_KEYS, json.encodeToString(screenKeys))
     }
 
+    fun savePartialBundle(bundle: UserDataBundle) {
+        storage.putStringSafe(KEY_MENU, json.encodeToString(bundle.menu))
+        storage.putStringSafe(KEY_PERMISSIONS, json.encodeToString(bundle.permissions))
+        storage.putStringSafe(KEY_CONTEXTS, json.encodeToString(bundle.availableContexts))
+        storage.putStringSafe(KEY_SYNCED_AT, bundle.syncedAt.toEpochMilliseconds().toString())
+        // Merge hashes: keep existing screen hashes, update metadata hashes
+        val existingHashes = getHashes().toMutableMap()
+        for ((key, hash) in bundle.hashes) {
+            existingHashes[key] = hash
+        }
+        storage.putStringSafe(KEY_HASHES, json.encodeToString(existingHashes))
+    }
+
     suspend fun loadBundle(): UserDataBundle? {
         val menuJson = storage.getStringSafe(KEY_MENU)
         val permJson = storage.getStringSafe(KEY_PERMISSIONS)

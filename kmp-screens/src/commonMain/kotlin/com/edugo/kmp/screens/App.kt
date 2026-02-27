@@ -98,6 +98,30 @@ fun App() {
                 Route.Splash -> SplashScreen(
                     onNavigateToLogin = { navState.replaceAll(Route.Login) },
                     onNavigateToHome = { navState.replaceAll(Route.Dashboard) },
+                    onNavigateToSchoolSelection = {
+                        // User needs to pick a school (e.g. super_admin without schoolId)
+                        // Build SchoolInfo list from available contexts in the bundle
+                        val bundle = dataSyncService.currentBundle.value
+                        val schools = bundle?.availableContexts
+                            ?.mapNotNull { ctx ->
+                                val sid = ctx.schoolId ?: return@mapNotNull null
+                                SchoolInfo(id = sid, name = ctx.schoolName ?: "Escuela")
+                            }
+                            ?.distinctBy { it.id }
+                            ?: emptyList()
+
+                        // Clear stale bundle so menu doesn't bleed into SchoolSelection
+                        dataSyncService.clearAll()
+
+                        if (schools.isNotEmpty()) {
+                            pendingSchools = schools
+                            navState.replaceAll(Route.SchoolSelection)
+                        } else {
+                            // super_admin with no memberships — go to Dashboard where
+                            // SchoolSelectorScreen loads schools from admin API
+                            navState.replaceAll(Route.Dashboard)
+                        }
+                    },
                 )
 
                 Route.Login -> LoginScreen(
@@ -106,10 +130,12 @@ fun App() {
                             pendingSchools = schools
                             navState.replaceAll(Route.SchoolSelection)
                         } else {
-                            // Single or no school: auto full-sync and go to dashboard
+                            // Single or no school: light sync (menu+perms) then navigate immediately
                             scope.launch {
-                                dataSyncService.fullSync()
+                                dataSyncService.syncMenuAndPermissions()
                                 navState.replaceAll(Route.Dashboard)
+                                // Load screens in background - user is already on dashboard
+                                dataSyncService.syncScreens()
                             }
                         }
                     }

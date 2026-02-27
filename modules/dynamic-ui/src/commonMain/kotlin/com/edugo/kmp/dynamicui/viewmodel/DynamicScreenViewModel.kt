@@ -72,6 +72,10 @@ class DynamicScreenViewModel(
         data class Error(val message: String) : ScreenState()
     }
 
+    companion object {
+        const val OFFLINE_NOT_AVAILABLE = "OFFLINE_NOT_AVAILABLE"
+    }
+
     sealed class DataState {
         data object Idle : DataState()
         data object Loading : DataState()
@@ -121,7 +125,12 @@ class DynamicScreenViewModel(
                 }
             }
             is Result.Failure -> {
-                _screenState.value = ScreenState.Error(result.error)
+                val isOffline = networkObserver != null && !networkObserver.isOnline
+                _screenState.value = if (isOffline) {
+                    ScreenState.Error(OFFLINE_NOT_AVAILABLE)
+                } else {
+                    ScreenState.Error(result.error)
+                }
             }
             is Result.Loading -> {
                 // Already in loading state
