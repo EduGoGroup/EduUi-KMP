@@ -8,9 +8,15 @@ classDiagram
         <<sealed>>
         +Splash
         +Login
-        +SchoolSelection
+        +Home
+        +Settings
         +Dashboard
+        +MaterialsList
+        +MaterialDetail(materialId)
+        +SchoolSelection
         +Dynamic(screenKey, params)
+        +fromPath(path): Route?
+        +fromScreenKey(screenKey, params): Route?
     }
     class NavigationState {
         -backstack: List~Route~
@@ -26,7 +32,11 @@ classDiagram
     class MainScreen {
         +selectedKey: String
         +menuItems: List~NavigationItem~
-        +activeContext: UserContext
+        +expandedKeys: Set~String~
+        +contentOverride: String?
+        +contentParams: Map~String,String~
+        +showContextPicker: Boolean
+        +availableContexts: List~UserContext~
     }
     class AdaptiveNavigationLayout {
         +breakpoint: Breakpoint
@@ -254,11 +264,33 @@ stateDiagram-v2
     Login --> Dashboard : login exitoso, <=1 escuela (fullSync)
     SchoolSelection --> Dashboard : switchContext + fullSync completado
     Dashboard --> Dynamic : push(Route.Dynamic)
+    Dashboard --> MaterialsList : push(Route.MaterialsList)
+    MaterialsList --> MaterialDetail : push(Route.MaterialDetail)
     Dynamic --> Dynamic : push(Route.Dynamic anidado)
     Dynamic --> Dashboard : pop()
+    MaterialDetail --> MaterialsList : pop()
     Dashboard --> Login : sesion expirada / logout (clearAll)
     Login --> [*] : app cerrada
 ```
+
+### Routing dentro de MainScreen
+
+MainScreen resuelve el contenido segun `selectedKey` del menu:
+
+```mermaid
+flowchart TD
+    A["selectedKey del menu"] --> B{screenKey.startsWith dashboard?}
+    B -- Si --> C["DynamicDashboardScreen\nselecciona screenKey por rol\n(superadmin, schooladmin, teacher, student, guardian)"]
+    B -- No --> D{screenKey == app-settings?}
+    D -- Si --> E["DynamicSettingsScreen\nThemeService + Logout"]
+    D -- No --> F["DynamicScreen genérico\nPatternRouter(screen.pattern)"]
+
+    G["contentOverride != null?"] --> H["DynamicScreen con screenKey override\n(para forms/detail desde Route.Dynamic)"]
+```
+
+### SchoolSelector in-context
+
+Si el usuario autenticado no tiene `schoolId` en su contexto, MainScreen muestra un `SchoolSelectorScreen` a pantalla completa (sin sidebar). Al seleccionar escuela, ejecuta `syncMenuAndPermissions()` + `syncScreens()`.
 
 ---
 

@@ -448,26 +448,39 @@ graph TD
     subgraph super_admin
         SA1["schools:read, schools:create, schools:update, schools:delete"]
         SA2["users:read, users:create, users:update, users:delete"]
-        SA3["subjects:read, subjects:create ..."]
+        SA3["subjects:read, subjects:create, subjects:update, subjects:delete"]
         SA4["roles:read, roles:assign"]
+        SA5["academic_units:read, academic_units:create, academic_units:update"]
+        SA6["memberships:read, memberships:create, memberships:delete"]
+        SA7["permissions_mgmt:read"]
+        SA8["materials:read, materials:create, materials:update, materials:delete"]
+        SA9["assessments:read, assessments:create"]
     end
 
-    subgraph admin_escuela["admin (por escuela)"]
+    subgraph admin_escuela["school_admin (por escuela)"]
         AD1["schools:read"]
         AD2["users:read, users:create, users:update"]
         AD3["subjects:read, subjects:create, subjects:update"]
-        AD4["grades:read, grades:create, grades:update"]
+        AD4["academic_units:read, academic_units:create, academic_units:update"]
+        AD5["memberships:read, memberships:create"]
+        AD6["materials:read, materials:create, materials:update"]
     end
 
     subgraph teacher ["teacher (por escuela)"]
         TE1["subjects:read"]
-        TE2["grades:read, grades:create, grades:update"]
-        TE3["students:read"]
+        TE2["materials:read, materials:create, materials:update"]
+        TE3["assessments:read, assessments:create"]
+        TE4["progress:read"]
     end
 
     subgraph student ["student"]
-        ST1["grades:read (propio)"]
-        ST2["subjects:read"]
+        ST1["materials:read"]
+        ST2["assessments:read, assessments:create"]
+        ST3["progress:read (propio)"]
+    end
+
+    subgraph guardian ["guardian"]
+        GU1["progress:read (hijos)"]
     end
 
     Note1["Los permisos vienen del sync bundle\nen currentBundle.permissions\ny del active_context en el JWT"]

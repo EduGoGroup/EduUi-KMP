@@ -58,15 +58,36 @@ graph TB
         SES[SafeEduGoStorage\nWrapper seguro]
         ES[EduGoStorage\nType-safe wrapper]
         S[Settings\nmultiplatform-settings]
+        SMIG[StorageMigrator\nMigraciones de esquema]
+    end
+
+    subgraph SettingsMod ["modules/settings (Dominio)"]
+        TS[ThemeService / ThemeServiceImpl\nLIGHT, DARK, SYSTEM]
+    end
+
+    subgraph Foundation ["modules/foundation (Core)"]
+        RES[Result\nSuccess, Failure, Loading]
+        DM2F[DomainMapper\nDTO ↔ Domain]
+        AE[AppError + ErrorCode]
+    end
+
+    subgraph Validation ["modules/validation (Core)"]
+        AV[AccumulativeValidation\nRecolecta todos los errores]
+        VH[ValidationHelpers\nemail, range, length]
     end
 
     subgraph DI ["modules/di (Inyeccion de Dependencias)"]
-        KI[KoinInitializer\nallModules]
+        KI[KoinInitializer\nallModules = core + infra + domain]
         NM[networkModule]
         SM[storageModule]
         AM[authModule]
         DUM[dynamicUiModule]
         SCM[screenContractsModule\nen kmp-screens]
+        CFM[configModule]
+        FM[foundationModule]
+        CM[coreModule + loggerModule]
+        SETM[settingsModule]
+        VALM[validationModule]
     end
 
     Platforms --> KmpScreens
@@ -92,7 +113,11 @@ graph TB
 ```mermaid
 graph LR
     subgraph KoinInitializer
-        allModules["allModules = networkModule\n+ storageModule + authModule\n+ dynamicUiModule + configModule\n+ screenContractsModule"]
+        allModules["allModules = coreModules()\n+ infrastructureModules()\n+ domainModules()"]
+        coreModules["coreModules:\nfoundationModule + coreModule\n+ loggerModule + validationModule"]
+        infraModules["infrastructureModules:\nstorageModule + configModule\n+ networkModule"]
+        domainModules["domainModules:\nauthModule + settingsModule\n+ dynamicUiModule"]
+        screenContracts["+ screenContractsModule\n(registrado en kmp-screens)"]
     end
 
     subgraph networkModule
@@ -135,11 +160,11 @@ graph LR
     end
 
     subgraph screenContractsModule
-        SCM1["single: SchoolsListContract"]
-        SCM2["single: SchoolsFormContract"]
-        SCM3["single: SubjectsListContract"]
-        SCM4["single: DashboardContract(s)"]
-        SCM5["Registra en ScreenContractRegistry"]
+        SCM1["Auth: LoginContract, SettingsContract"]
+        SCM2["Dashboard: 7 contracts por rol\n(Superadmin, Schooladmin, Teacher,\nStudent, Guardian, Progress, Stats)"]
+        SCM3["CRUD: Schools, Users, Units,\nSubjects, Memberships, Materials,\nAssessments, Roles, Permissions"]
+        SCM4["Especiales: GuardianContract,\nAssessmentTakeContract"]
+        SCM5["Registra 30+ contracts en\nScreenContractRegistry via getAll()"]
     end
 
     %% Storage -> Auth

@@ -84,6 +84,19 @@ classDiagram
         +getAll(): List~PendingMutation~
         +clear()
     }
+    class StorageMigrator {
+        -storage: SafeEduGoStorage
+        -migrations: List~StorageMigration~
+        -logger: TaggedLogger
+        +migrate(): Int
+        +currentVersion(): Int
+        +VERSION_KEY: String
+    }
+    class StorageMigration {
+        <<interface>>
+        +version: Int
+        +migrate(storage: SafeEduGoStorage)
+    }
 
     SafeEduGoStorage --> EduGoStorage : wraps
     SafeEduGoStorage --> StorageKeyValidator
@@ -94,6 +107,8 @@ classDiagram
     Settings <|-- WasmJSSettings
     LocalSyncStore --> SafeEduGoStorage : usa
     MutationQueue --> SafeEduGoStorage : usa
+    StorageMigrator --> SafeEduGoStorage : usa
+    StorageMigrator --> StorageMigration : ejecuta
 ```
 
 ---
@@ -438,10 +453,65 @@ flowchart LR
 
 | Mejora | Justificacion | Prioridad | Estado |
 |--------|--------------|-----------|--------|
-| TTL configurable por pantalla | Algunas pantallas cambian con mas frecuencia que otras (dashboards vs forms) | Media | HECHO - CacheConfig implementado con TTLs por ScreenPattern |
-| Limite de cache de datos configurable | `MAX_DATA_CACHE_ENTRIES = 30` esta hardcodeado | Media | Parcial - CacheConfig tiene `maxDataMemoryEntries` y TTLs por patron |
+| TTL configurable por pantalla | Algunas pantallas cambian con mas frecuencia que otras (dashboards vs forms) | Media | **HECHO** - CacheConfig implementado con TTLs por ScreenPattern |
+| Limite de cache de datos configurable | `MAX_DATA_CACHE_ENTRIES = 30` esta hardcodeado | Media | **HECHO** - CacheConfig tiene `maxDataMemoryEntries` y TTLs por patron |
+| Migracion de keys | Al cambiar nombres de keys, los datos existentes se pierden silenciosamente | Media | **HECHO** - `StorageMigrator` + `StorageMigration` implementados (ver seccion abajo) |
 | Cifrar tokens en Android Keystore | Los JWT en SharedPrefs son legibles con ADB backup | Alta | Pendiente |
 | Cifrar tokens en iOS Keychain | NSUserDefaults es legible en dispositivos con backup | Alta | Pendiente |
 | Encriptar toda la cache | Los datos de listas (nombres de alumnos, escuelas) estan en plain text en storage | Alta | Pendiente |
-| Migracion de keys | Al cambiar nombres de keys, los datos existentes se pierden silenciosamente | Media | Pendiente |
 | Compresion de cache grande | Pantallas complejas con muchos slots pueden generar JSON de varios KB | Baja | Pendiente |
+
+---
+
+## StorageMigrator (Implementado)
+
+Sistema de migraciones de esquema para storage local. Permite transformar datos almacenados cuando cambia la estructura de keys o formatos.
+
+### Arquitectura
+
+```mermaid
+flowchart TD
+    A["App.init / Koin setup"] --> B["StorageMigrator.migrate()"]
+    B --> C["Leer version actual\nstorage.schema.version (default: 0)"]
+    C --> D{"Hay migraciones pendientes?"}
+    D -- No --> E["Retornar version actual\n(nothing to do)"]
+    D -- Si --> F["Ordenar migraciones por version"]
+    F --> G["Filtrar version > currentVersion"]
+    G --> H["Para cada migracion:"]
+    H --> I["migration.migrate(storage)"]
+    I --> J["storage.putIntSafe(VERSION_KEY, migration.version)"]
+    J --> K{"Mas migraciones?"}
+    K -- Si --> H
+    K -- No --> L["Retornar nueva version"]
+```
+
+### API
+
+```kotlin
+// Definir una migracion
+class MigrationV2 : StorageMigration {
+    override val version = 2
+    override fun migrate(storage: SafeEduGoStorage) {
+        // Renombrar key
+        val old = storage.getStringSafe("old_key")
+        if (old.isNotEmpty()) {
+            storage.putStringSafe("new_key", old)
+            storage.removeSafe("old_key")
+        }
+    }
+}
+
+// Ejecutar migraciones
+val migrator = StorageMigrator(
+    storage = safeStorage,
+    migrations = listOf(MigrationV2(), MigrationV3())
+)
+val newVersion = migrator.migrate() // ejecuta solo las pendientes
+```
+
+### Caracteristicas
+
+- **Crash-safe**: cada migracion persiste su version inmediatamente despues de completarse. Si la app crashea a mitad de una migracion, al reiniciar continua desde la ultima completada.
+- **Idempotente**: `migrate()` se puede llamar multiples veces; solo ejecuta migraciones con version mayor a la almacenada.
+- **Logging**: emite logs de progreso via `TaggedLogger` (`EduGo.Storage.Migrator`).
+- **Key de version**: `storage.schema.version` en `SafeEduGoStorage`. |

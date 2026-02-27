@@ -293,40 +293,48 @@ private fun resolveSlotValue(
     fieldValues: Map<String, String>,
     itemData: JsonObject?,
 ): String {
-    val fieldBinding = slot.field
+    return try {
+        val fieldBinding = slot.field
 
-    // 1. If there is a field binding and item data, resolve from item data
-    if (fieldBinding != null && itemData != null) {
-        val fieldValue = resolveFieldFromJson(fieldBinding, itemData)
-        if (fieldValue != null) return fieldValue
+        // 1. If there is a field binding and item data, resolve from item data
+        if (fieldBinding != null && itemData != null) {
+            val fieldValue = resolveFieldFromJson(fieldBinding, itemData)
+            if (fieldValue != null) return fieldValue
+        }
+
+        // 2. If there is a field binding and field values, resolve from field values
+        if (fieldBinding != null && fieldValues.containsKey(fieldBinding)) {
+            return fieldValues[fieldBinding] ?: ""
+        }
+
+        // 3. Static value (no fallback to label to avoid duplication)
+        slot.value ?: ""
+    } catch (_: Exception) {
+        slot.value ?: ""
     }
-
-    // 2. If there is a field binding and field values, resolve from field values
-    if (fieldBinding != null && fieldValues.containsKey(fieldBinding)) {
-        return fieldValues[fieldBinding] ?: ""
-    }
-
-    // 3. Static value (no fallback to label to avoid duplication)
-    return slot.value ?: ""
 }
 
 private fun resolveFieldFromJson(field: String, data: JsonObject): String? {
-    val parts = field.split(".")
-    var current: kotlinx.serialization.json.JsonElement = data
-    for (part in parts) {
-        when (current) {
-            is JsonObject -> {
-                current = (current as JsonObject)[part] ?: return null
+    return try {
+        val parts = field.split(".")
+        var current: kotlinx.serialization.json.JsonElement = data
+        for (part in parts) {
+            when (current) {
+                is JsonObject -> {
+                    current = (current as JsonObject)[part] ?: return null
+                }
+                else -> return null
             }
-            else -> return null
         }
-    }
-    return when (current) {
-        is kotlinx.serialization.json.JsonPrimitive -> {
-            val primitive = current as kotlinx.serialization.json.JsonPrimitive
-            if (primitive.isString) primitive.content else primitive.toString()
+        when (current) {
+            is kotlinx.serialization.json.JsonPrimitive -> {
+                val primitive = current as kotlinx.serialization.json.JsonPrimitive
+                if (primitive.isString) primitive.content else primitive.toString()
+            }
+            else -> current.toString()
         }
-        else -> current.toString()
+    } catch (_: Exception) {
+        null
     }
 }
 
